@@ -1,0 +1,60 @@
+# .github/workflows/validate.yml
+#
+# The cheap gate: runs on every push, needs no GPU, no torch and no network
+# beyond installing two linters. It cannot tell you a workshop TEACHES
+# correctly — only execution can do that, and that is Phase 4's `execute`
+# workflow on a GPU runner.
+#
+# What it can do is refuse a repository that has drifted out of the shape the
+# notebooks depend on: an orphaned region, a cell id that would collide in the
+# outputs manifest, a missing Arabic string, a default profile that has crept
+# above the free tier. Every one of those is invisible in review and expensive
+# for a learner to discover.
+name: validate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install linters
+        # PyYAML only. The validator deliberately does not import torch: a
+        # check that needs the heavyweight dependency belongs in `execute`,
+        # not here, or this gate stops being cheap and people stop running it.
+        run: pip install ruff pyyaml
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Validate workshops
+        run: python tools/validate.py
+
+      - name: Assert notebooks carry no committed outputs
+        # Belt and braces: tools/validate.py already checks this, but it is the
+        # single most damaging thing to get wrong — a notebook shipped with
+        # someone's run baked in teaches that those numbers are what the
+        # learner should expect, on hardware they do not have.
+        run: |
+          python - <<'PY'
+          import json, pathlib, sys
+          bad = []
+          for p in pathlib.Path("generated/notebooks").glob("*.ipynb"):
+              nb = json.loads(p.read_text(encoding="utf-8"))
+              for i, c in enumerate(nb["cells"]):
+                  if c["cell_type"] == "code" and (c.get("outputs") or c.get("execution_count")):
+                      bad.append(f"{p.name}: cell {i}")
+          if bad:
+              print("committed outputs found:", *bad, sep="\n  ")
+              sys.exit(1)
+          print("all notebooks are clean")
+          PY

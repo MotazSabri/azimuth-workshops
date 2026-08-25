@@ -1,0 +1,344 @@
+schema: workshop/v1
+id: anomaly-detection-autoencoder
+
+# Explicit, never derived from papers[0]. The core papers of this workshop sit
+# in three different constellations — deep-autoencoders in Neural Networks,
+# isolation-forest in Classical ML, pca in Foundations — so deriving the
+# grouping from the paper list would silently move the workshop the day
+# someone reorders it. It files under the constellation it TEACHES from.
+constellation: neural-networks
+
+title:
+  en: "Anomaly detection with an autoencoder"
+  ar: "كشف الشذوذ بمرمّز ذاتي"
+
+# The card's eyebrow: the one idea, not the task.
+concept:
+  en: "Reconstruction error as a distance"
+  ar: "خطأ إعادة البناء بوصفه مسافة"
+
+# The situation, stated before any architecture. Constraints teach more than
+# instructions do — the same law the Lab challenges are written under.
+scenario:
+  en: >-
+    You have 5,000 heartbeat recordings and almost no labels for the abnormal
+    ones, because abnormal is exactly what nobody collected enough of. This is
+    the ordinary shape of anomaly detection: the rare class is rare in your
+    training data too, so a classifier has nothing to learn from. Train a model
+    on normal alone, and let its failure to reconstruct the unfamiliar be the
+    signal.
+  ar: >-
+    لديك خمسة آلاف تسجيل لنبضات القلب، ولا تكاد تملك تسميات للحالات الشاذة، لأن
+    الشذوذ هو بالضبط ما لم يجمع أحد ما يكفي منه. هذه هي الصورة المعتادة لكشف
+    الشذوذ: الفئة النادرة نادرة في بيانات التدريب أيضاً، فلا يجد المصنّف ما
+    يتعلمه. درّب نموذجاً على الحالة الطبيعية وحدها، ودع عجزه عن إعادة بناء ما
+    لم يألفه يكون هو الإشارة.
+
+goal:
+  en: >-
+    Train an autoencoder on normal heartbeats only, choose a threshold from the
+    reconstruction-error distribution rather than by guessing, and reach at
+    least 0.90 F1 on a held-out set that contains both classes.
+  ar: >-
+    درّب مرمّزاً ذاتياً على النبضات الطبيعية وحدها، واختر عتبة من توزيع خطأ
+    إعادة البناء لا بالتخمين، وحقّق 0.90 على الأقل في مقياس F1 على مجموعة
+    اختبار تضمّ الفئتين.
+
+difficulty: intermediate # starter | intermediate | advanced — the paper enums
+status: draft # draft | published — mirrors the paper enum
+
+maintenance:
+  # stable   — stdlib + torch + numpy + matplotlib only, no gated assets
+  # moderate — one pinned third-party library
+  # volatile — transformers, or anything with a gated checkpoint
+  tier: stable
+  # How often CI should re-execute. Stable workshops rot slowly; there is no
+  # point burning GPU minutes on them monthly.
+  cadence: quarterly
+
+estimate:
+  gpuMinutes: 4
+  totalMinutes: 25
+
+# ── papers: many-to-many, with a role ───────────────────────────────────────
+# `core` papers get a WorkshopInvite on their page (Phase 6) and lead the
+# header. `supporting` are cited where they are used and nowhere else — that
+# distinction is what keeps the invite off ~380 paper pages.
+papers:
+  - slug: deep-autoencoders
+    role: core
+    label:
+      en: "the idea that a narrow layer forces a model to keep only what matters — Hinton & Salakhutdinov, 2006"
+      ar: "الفكرة القائلة إن طبقة ضيقة تُجبر النموذج على الاحتفاظ بما يهم فقط — هينتون وسالاخوتدينوف، 2006"
+  - slug: isolation-forest
+    role: core
+    label:
+      en: "the baseline that isolates anomalies instead of modelling normality — Liu, Ting & Zhou, 2008"
+      ar: "الأساس المرجعي الذي يعزل الشذوذ بدل أن ينمذج الحالة الطبيعية — ليو وتينغ وتشو، 2008"
+  - slug: pca
+    role: supporting
+    label:
+      en: "the linear ancestor: reconstruction error is an old idea with a new encoder"
+      ar: "السلف الخطّي: خطأ إعادة البناء فكرة قديمة بمُرمّز جديد"
+  - slug: denoising-autoencoders
+    role: supporting
+    label:
+      en: "why a bottleneck alone is not the only way to force a useful code"
+      ar: "لماذا ليس عنق الزجاجة وحده السبيل الوحيد لفرض ترميز مفيد"
+
+# ── assets ──────────────────────────────────────────────────────────────────
+# Sources are tried in order. The hash is checked before anything parses the
+# file: a dataset that changed at the source is a different failure from one
+# that would not download, and needs a different fix.
+assets:
+  - name: ecg5000.csv
+    bytes: 5_600_000
+    sha256: null # PINNED IN PHASE 2 — see the note in assets.py
+    license: "UCR Time Series Archive — free for research and teaching"
+    sources:
+      - "https://storage.googleapis.com/download.tensorflow.org/data/ecg.csv"
+    description:
+      en: "5,000 ECG traces, 140 samples each. Column 141 is the label: 1 normal, 0 abnormal."
+      ar: "خمسة آلاف أثر لتخطيط القلب، 140 عيّنة لكل منها. العمود 141 هو التسمية: 1 طبيعي، 0 شاذ."
+
+# ── profiles: scale is DATA ─────────────────────────────────────────────────
+# The free profile is the default and must stay inside Colab's free envelope.
+# The others exist so a reader with better hardware changes one constant
+# instead of hunting for commented-out lines — which is how a notebook rots
+# into two half-maintained versions of itself.
+profiles:
+  - id: free
+    default: true
+    name:
+      en: "Free tier (T4, or CPU)"
+      ar: "المستوى المجاني (T4 أو معالج مركزي)"
+    requires:
+      # This workshop genuinely does not need a GPU — 140-dimensional inputs
+      # and a four-layer model. Declaring `gpu: false` is what lets CI execute
+      # it on a CPU runner, and it is honest: refusing a CPU here would be
+      # theatre.
+      gpu: false
+      vramGb: 0
+      ramGb: 2
+    scale:
+      epochs: 60
+      batchSize: 128
+      latentDim: 8
+      hidden: [64, 32]
+      learningRate: 0.001
+      seed: 17
+  - id: a100
+    name:
+      en: "A100 / paid tier"
+      ar: "A100 / المستوى المدفوع"
+    requires:
+      gpu: true
+      vramGb: 24
+      ramGb: 16
+    scale:
+      epochs: 300
+      batchSize: 512
+      latentDim: 16
+      hidden: [256, 128, 64]
+      learningRate: 0.0005
+      seed: 17
+
+# ── checks: the learner verifies themselves ─────────────────────────────────
+# Thresholds are visible on purpose. This is a check, not an exam, and hiding
+# the bar teaches guessing.
+checks:
+  - id: separation
+    required: true
+    min: 2.0
+    label:
+      en: "Abnormal error is at least 2× normal error"
+      ar: "خطأ الشاذ لا يقل عن ضعف خطأ الطبيعي"
+  - id: f1
+    required: true
+    min: 0.90
+    label:
+      en: "F1 on the held-out set"
+      ar: "مقياس F1 على مجموعة الاختبار"
+
+# ── hints: progressive, mirroring the Lab's pill ────────────────────────────
+hints:
+  - en: >-
+      The training set must contain normal traces only. If abnormal ones leak
+      in, the model learns to reconstruct them too and the whole signal
+      disappears — check what you filtered on before you touch the model.
+    ar: >-
+      يجب أن تحتوي مجموعة التدريب على الآثار الطبيعية وحدها. إن تسرّبت إليها
+      آثار شاذة تعلّم النموذج إعادة بنائها أيضاً واختفت الإشارة كلها — تحقّق مما
+      رشّحت عليه قبل أن تمسّ النموذج.
+  - en: >-
+      The threshold does not need a label to choose it. A high percentile of
+      the error on the TRAINING set — the errors of traces the model has
+      already seen — is a threshold you could set on the day you deploy, with
+      no abnormal examples in hand at all.
+    ar: >-
+      لا تحتاج العتبة إلى تسمية لاختيارها. مئينٌ مرتفع من الخطأ على مجموعة
+      التدريب — أخطاء آثار رآها النموذج فعلاً — هو عتبة يمكنك ضبطها يوم النشر
+      دون أن تملك أي مثال شاذ.
+  - en: >-
+      If the two error distributions overlap almost completely, the bottleneck
+      is probably too wide: an autoencoder with enough capacity learns the
+      identity function and reconstructs everything, including what it should
+      not.
+    ar: >-
+      إن تداخل توزيعا الخطأ تداخلاً شبه تام فالأرجح أن عنق الزجاجة واسع أكثر
+      مما ينبغي: المرمّز الذاتي ذو السعة الكافية يتعلم دالة الهوية فيعيد بناء
+      كل شيء، بما في ذلك ما لا ينبغي له.
+
+# ── terms: the glossary, carried into the notebook ──────────────────────────
+# Written into the file rather than fetched from the site: a notebook must work
+# with no network once its assets are down, and a term that silently fails to
+# resolve is worse than one that was written down.
+terms:
+  bottleneck:
+    en: "The narrowest layer of an autoencoder. Its width is the budget: the model must describe the whole input in this many numbers."
+    ar: "أضيق طبقة في المرمّز الذاتي. عرضها هو الميزانية: على النموذج أن يصف المدخل كله بهذا العدد من الأرقام."
+  reconstruction error:
+    en: "How far the output is from the input. On data the model was trained on it is small; on unfamiliar data it is not, and that gap is the detector."
+    ar: "مقدار بُعد المخرج عن المدخل. يكون صغيراً على البيانات التي دُرّب عليها النموذج، وكبيراً على ما لم يألفه، وهذه الفجوة هي الكاشف."
+  threshold:
+    en: "The error above which a trace is called abnormal. Chosen from a distribution, not guessed — and choosable without ever seeing an anomaly."
+    ar: "الخطأ الذي يُعدّ الأثر فوقه شاذاً. يُختار من توزيع لا بالتخمين، ويمكن اختياره دون رؤية أي حالة شاذة."
+  latent space:
+    en: "The compressed representation the bottleneck produces — what the model decided was worth keeping."
+    ar: "التمثيل المضغوط الذي ينتجه عنق الزجاجة — ما قرّر النموذج أنه يستحق الاحتفاظ به."
+
+# ── the notebook, as an ordered list of blocks ──────────────────────────────
+# `cell` blocks carry a `ref` into code.py's region markers and an `id` that
+# the captured-output manifest joins on. Prose blocks are bilingual and are
+# rendered on the site as well as in the notebook.
+body:
+  - type: prose
+    text:
+      en: >-
+        A classifier needs examples of every class it will meet. Anomaly
+        detection is the case where you cannot have them: the interesting class
+        is rare by definition, and the examples you do have are not
+        representative of the ones you have not seen yet.
+        So we invert the problem. Train a model to do something easy — copy its
+        input to its output — but force it through a layer too narrow to copy
+        everything. It will spend that budget on whatever is common. Then feed
+        it something uncommon, and watch it fail.
+      ar: >-
+        يحتاج المصنّف إلى أمثلة من كل فئة سيقابلها. وكشف الشذوذ هو الحالة التي
+        لا يمكنك فيها امتلاكها: الفئة المهمة نادرة بحكم التعريف، والأمثلة التي
+        بحوزتك لا تمثّل تلك التي لم ترها بعد.
+        لذا نقلب المسألة. درّب نموذجاً على مهمة سهلة — أن ينسخ مدخله إلى مخرجه —
+        لكن أجبره على المرور بطبقة أضيق من أن تنسخ كل شيء. سينفق تلك الميزانية
+        على ما هو شائع. ثم أطعمه ما ليس شائعاً، وراقب فشله.
+
+  - type: cell
+    id: setup
+    ref: setup
+    caption:
+      en: "Preflight: the runtime is checked and the dataset verified before anything trains."
+      ar: "فحص مسبق: تُفحص البيئة ويُتحقق من البيانات قبل أي تدريب."
+
+  - type: paperRef
+    slug: deep-autoencoders
+    note:
+      en: >-
+        Hinton and Salakhutdinov's 2006 paper is where the narrow layer stops
+        being a compression trick and becomes a representation-learning one.
+        The autoencoder below is the same argument at a much smaller scale.
+      ar: >-
+        ورقة هينتون وسالاخوتدينوف لعام 2006 هي الموضع الذي تكفّ فيه الطبقة
+        الضيقة عن كونها حيلة ضغط وتصير أداة لتعلّم التمثيل. والمرمّز أدناه هو
+        الحجة ذاتها على نطاق أصغر بكثير.
+
+  - type: cell
+    id: load-data
+    ref: load_data
+    captures: [class_balance]
+    caption:
+      en: "Note the split: the training set is normal traces only. That is the whole method."
+      ar: "لاحظ التقسيم: مجموعة التدريب آثار طبيعية فقط. وهذه هي الطريقة كلها."
+
+  - type: scaleNote
+    text:
+      en: >-
+        Everything below reads its sizes from `env.cfg`, which comes from the
+        profile you chose at the top. On the free tier that is 60 epochs and an
+        8-dimensional bottleneck — enough to separate the classes cleanly in
+        about four minutes.
+      ar: >-
+        كل ما يلي يقرأ أحجامه من `env.cfg` الآتية من الملف الذي اخترته في
+        الأعلى. في المستوى المجاني هذا يعني 60 دورة وعنق زجاجة بثمانية أبعاد —
+        وهو ما يكفي لفصل الفئتين فصلاً نظيفاً في نحو أربع دقائق.
+
+  - type: cell
+    id: model
+    ref: model
+    captures: [param_count]
+
+  - type: cell
+    id: train
+    ref: train
+    captures: [loss_curve, final_loss]
+    caption:
+      en: "The loss falls and flattens. A loss that keeps falling means the bottleneck is wide enough to memorize."
+      ar: "تنخفض الخسارة ثم تستوي. استمرار انخفاضها يعني أن عنق الزجاجة واسع بما يكفي للحفظ."
+
+  - type: cell
+    id: error-distributions
+    ref: error_distributions
+    captures: [error_hist, separation]
+    thumbnail: true
+    caption:
+      en: "The picture the whole workshop is for: two distributions, and the gap between them."
+      ar: "الصورة التي وُجدت الورشة كلها من أجلها: توزيعان والفجوة بينهما."
+
+  - type: exercise
+    id: choose-threshold
+    prompt:
+      en: >-
+        Choose the threshold. The obvious move is to try values until F1 peaks
+        — but that uses the abnormal labels, which you would not have on the
+        day you deploy. Use the training errors instead: pick a percentile of
+        the errors on data the model has already seen, and justify the number
+        you picked.
+      ar: >-
+        اختر العتبة. الحركة البديهية أن تجرّب القيم حتى تبلغ F1 ذروتها — لكن هذا
+        يستخدم تسميات الشذوذ التي لن تملكها يوم النشر. استخدم أخطاء التدريب
+        بدلاً من ذلك: اختر مئيناً من الأخطاء على بيانات رآها النموذج فعلاً، وبرّر
+        الرقم الذي اخترته.
+    hint: 2
+    ref: choose_threshold
+
+  - type: cell
+    id: evaluate
+    ref: evaluate
+    captures: [f1, precision, recall, confusion]
+
+  - type: paperRef
+    slug: isolation-forest
+    note:
+      en: >-
+        Worth knowing what you are competing with. Isolation Forest does not
+        model normality at all — it isolates points by random splitting, on the
+        theory that anomalies take fewer cuts to separate. On this dataset it is
+        close. On data where "normal" has structure worth learning, it is not.
+      ar: >-
+        من المفيد أن تعرف بمن تقارن. غابة العزل لا تنمذج الحالة الطبيعية أصلاً —
+        بل تعزل النقاط بتقسيم عشوائي، على أساس أن الشذوذ يحتاج قطوعاً أقل
+        لفصله. على هذه البيانات تقترب من نتيجتنا. أما حين يكون لـ«الطبيعي» بنية
+        تستحق التعلّم، فلا.
+
+  - type: cell
+    id: baseline
+    ref: baseline
+    captures: [baseline_f1]
+    caption:
+      en: "The comparison is the point, not the win. Read which one you would ship."
+      ar: "المقارنة هي المقصد لا الفوز. اقرأ أيهما كنت ستشحن."
+
+  - type: cell
+    id: finish
+    ref: finish
+    caption:
+      en: "The receipt: your completion code, and the numbers it was derived from."
+      ar: "الإيصال: رمز إتمامك والأرقام التي اشتُقّ منها."

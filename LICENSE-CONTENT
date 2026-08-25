@@ -1,0 +1,19 @@
+Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+
+The PROSE in this repository — every workshop's scenario, goal, hints, terms,
+captions and paper notes, in both English and Arabic — is licensed under
+CC BY-SA 4.0.
+
+    https://creativecommons.org/licenses/by-sa/4.0/
+
+You are free to share and adapt it, for any purpose including commercially,
+provided you give appropriate credit and license your adaptations under the
+same terms.
+
+The CODE in this repository is licensed separately under LICENSE-CODE (MIT),
+which imposes no share-alike obligation. Two licenses because the two things
+are used differently: code is meant to be lifted into someone's own project
+with no strings, and the teaching is meant to stay open if it is built upon.
+
+The DATASETS are not ours and are not covered by either license. Each asset
+declares its own terms in its workshop's `assets:` block.

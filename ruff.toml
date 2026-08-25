@@ -1,0 +1,59 @@
+# Lint config for the workshops repo.
+#
+# code.py files are NOT ordinary modules: they are executed as notebook cells,
+# and three names are injected by the notebook's bootstrap cell rather than
+# defined in the file. Declaring them here is what lets `ruff check` run
+# meaningfully on a workshop instead of drowning in false positives.
+line-length = 100
+target-version = "py310"
+
+exclude = ["generated"]
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "RUF", "PL"]
+ignore = [
+    # Long lines are almost always bilingual prose in this repo.
+    "E501",
+    # `import torch.nn as nn` is the universal convention in this field. The
+    # workshops teach the code people will actually read elsewhere.
+    "PLR0402",
+    # zip(xs[:-1], xs[1:]) is legible to a reader who has never met
+    # itertools.pairwise. Clarity outranks idiom in teaching code.
+    "RUF007",
+    # Notebook cells legitimately end on an expression.
+    "B018",
+    # The shim's setup() takes the arguments a notebook needs it to take.
+    "PLR0913",
+    "PLR0917",
+]
+
+[lint.per-file-ignores]
+# A code.py is a notebook in disguise, and three of these rules are wrong for
+# that shape rather than being violations we are tolerating:
+#
+#   F821  SLUG / LANG / PROFILE are injected by the bootstrap cell.
+#   E402  imports sit in the cell that needs them. `import matplotlib` next to
+#         the plot is the point — a learner reading one cell should see what it
+#         depends on without scrolling to the top.
+#   E401  same reason, for the paired torch imports.
+#   B905  zip(strict=) has no teaching value here and adds noise to a line a
+#         reader is meant to parse at a glance.
+#   PLC0415  a non-top-level import is the normal case in a notebook.
+"workshops/*/code.py" = ["F821", "E402", "E401", "B905", "PLC0415"]
+
+# The bilingual error catalogue is prose: long strings are the content, and
+# Arabic punctuation legitimately resembles Latin punctuation (RUF001).
+"shim/azimuth_nb/errors.py" = ["E501", "RUF001"]
+# torch is imported inside the function ON PURPOSE: importing it at module
+# level would make the "PyTorch is not installed" error unreachable, because
+# the package would fail to import before it could raise AZ-E201.
+"shim/azimuth_nb/preflight.py" = ["PLC0415"]
+# The validator compares against small literal counts ("exactly one default
+# profile"). Naming those would obscure rather than clarify.
+# check_workshop() is deliberately one flat sequence of independent checks.
+# Splitting it into a dozen helpers to satisfy a branch counter would make the
+# list harder to read and to extend, which is the opposite of the point.
+"tools/validate.py" = ["PLR2004", "PLR0912", "PLR0915"]
+
+[lint.pep8-naming]
+classmethod-decorators = []
