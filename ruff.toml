@@ -54,6 +54,7 @@ ignore = [
 # Splitting it into a dozen helpers to satisfy a branch counter would make the
 # list harder to read and to extend, which is the opposite of the point.
 "tools/validate.py" = ["PLR2004", "PLR0912", "PLR0915"]
+"tools/pin-asset.py" = ["PLR2004"]
 
 [lint.pep8-naming]
 classmethod-decorators = []

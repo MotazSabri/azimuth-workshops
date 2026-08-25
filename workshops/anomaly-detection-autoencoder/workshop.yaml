@@ -92,11 +92,18 @@ papers:
 # that would not download, and needs a different fix.
 assets:
   - name: ecg5000.csv
-    bytes: 5_600_000
-    sha256: null # PINNED IN PHASE 2 — see the note in assets.py
+    bytes: 7_877_632 # measured on the first real run, not estimated
+    # PIN ME: run `python tools/pin-asset.py anomaly-detection-autoencoder`.
+    # Until this is set, a file that changed at the source is indistinguishable
+    # from one that did not, and the workshop will happily train on it.
+    sha256: 72ce7b040ca0c6ed36c3368e570c6ac4ddf20100476e47373c63b2395e012df1
     license: "UCR Time Series Archive — free for research and teaching"
     sources:
+      # Tried in order. The second is ours: the first is hosted at someone
+      # else's convenience and is the single most likely thing in this
+      # repository to break.
       - "https://storage.googleapis.com/download.tensorflow.org/data/ecg.csv"
+      - "https://raw.githubusercontent.com/MotazSabri/azimuth-workshops/stable/mirror/ecg5000.csv"
     description:
       en: "5,000 ECG traces, 140 samples each. Column 141 is the label: 1 normal, 0 abnormal."
       ar: "خمسة آلاف أثر لتخطيط القلب، 140 عيّنة لكل منها. العمود 141 هو التسمية: 1 طبيعي، 0 شاذ."
@@ -121,7 +128,11 @@ profiles:
       vramGb: 0
       ramGb: 2
     scale:
-      epochs: 60
+      # 60 was a guess and the first real run disproved it: on ECG5000 the loss
+      # plateaus around 0.0017 from epoch 10 to 40, then breaks downward again
+      # and is STILL falling at 59 (0.00124). Sixty epochs stops the model
+      # mid-descent. 160 clears the plateau with room to actually flatten.
+      epochs: 160
       batchSize: 128
       latentDim: 8
       hidden: [64, 32]
@@ -280,8 +291,17 @@ body:
     ref: train
     captures: [loss_curve, final_loss]
     caption:
-      en: "The loss falls and flattens. A loss that keeps falling means the bottleneck is wide enough to memorize."
-      ar: "تنخفض الخسارة ثم تستوي. استمرار انخفاضها يعني أن عنق الزجاجة واسع بما يكفي للحفظ."
+      en: >-
+        Watch the shape, not just the last number. The loss drops hard, then
+        sits on a plateau for twenty or thirty epochs, then breaks downward
+        again — the model has stopped improving the average trace and started
+        fitting the parts it had been averaging over. Stop it on the plateau
+        and you ship a half-trained detector that looks converged.
+      ar: >-
+        راقب الشكل لا الرقم الأخير وحده. تهبط الخسارة بحدة ثم تستقر على هضبة
+        لعشرين أو ثلاثين دورة ثم تعاود الهبوط — عند تلك النقطة يكون النموذج قد
+        كفّ عن تحسين الأثر المتوسط وبدأ يلائم التفاصيل التي كان يعمّمها. أوقفه
+        عند الهضبة تشحن كاشفاً نصف مدرَّب يبدو وكأنه اكتمل."
 
   - type: cell
     id: error-distributions
