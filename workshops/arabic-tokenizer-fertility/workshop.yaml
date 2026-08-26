@@ -85,8 +85,8 @@ assets:
   - name: parallel.tsv
     # Small on purpose: fertility is a ratio, and a few thousand aligned
     # sentence pairs measure it as precisely as a million would.
-    bytes: 376314 # exact, from the pinned download
-    sha256: 38bd8dc9d454dfd88102d0d1ca325652aa10deb5a4f7696ebc44ea295d454427
+    bytes: 3926582 # exact, from the pinned download
+    sha256: 52168ce2dee7bc62c9c69d14a80ac05c8059cfaec684a3c233f6d7a811d72338
     license: "Tatoeba — CC BY 2.0 FR"
     sources:
       # Ours first, deliberately — the inverse of the usual order. This corpus
