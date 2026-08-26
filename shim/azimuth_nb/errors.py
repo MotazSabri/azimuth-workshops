@@ -46,7 +46,9 @@ class AzimuthError(RuntimeError):
     not.
     """
 
-    def __init__(self, code: str, en: str, ar: str, fix_en: str = "", fix_ar: str = "", lang: str = "en"):
+    def __init__(
+        self, code: str, en: str, ar: str, fix_en: str = "", fix_ar: str = "", lang: str = "en"
+    ):
         self.code = code
         self.en = en
         self.ar = ar

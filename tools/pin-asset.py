@@ -68,7 +68,11 @@ def pin(slug: str) -> int:
         # what keeps a multi-asset workshop from having its hashes swapped.
         lines = text.split("\n")
         start = next(
-            (i for i, line in enumerate(lines) if re.match(rf"\s*-?\s*name:\s*{re.escape(name)}\s*$", line)),
+            (
+                i
+                for i, line in enumerate(lines)
+                if re.match(rf"\s*-?\s*name:\s*{re.escape(name)}\s*$", line)
+            ),
             None,
         )
         if start is None:

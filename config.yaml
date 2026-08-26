@@ -1,0 +1,43 @@
+# config.yaml — repository-level facts, in one place.
+#
+# Everything here ends up baked into generated notebooks, so a fork, a rename,
+# or a move to a different host is ONE edit plus a rebuild, rather than a
+# find-and-replace across every .ipynb in generated/.
+#
+# It is also the reason the Colab badge and the bootstrap cell can never
+# disagree about which branch they point at: both read this file.
+
+schema: config/v1
+
+repo:
+  # Used by the bootstrap cell's `git clone` and by the Colab badge URL.
+  url: "https://github.com/MotazSabri/azimuth-workshops.git"
+  # owner/name, for building colab.research.google.com/github/... links.
+  slug: "MotazSabri/azimuth-workshops"
+  # Directory the clone lands in, and the marker the bootstrap looks for when
+  # deciding whether it is already inside a checkout.
+  dirname: "azimuth-workshops"
+
+  # The ONLY branch a learner is ever sent to. It fast-forwards to commits of
+  # `main` whose notebooks CI executed end to end, so a badge can never open
+  # code that has not run. `main` may contain work in progress; nothing points
+  # a reader at it.
+  branch: "stable"
+
+site:
+  # Paper links inside notebooks resolve here. Kept absolute because a
+  # notebook is read outside the site, on Colab, with no relative base.
+  base: "https://azimuth.blog"
+  # {lang} and {slug} are substituted.
+  paperPath: "/{lang}/paper/{slug}"
+
+build:
+  # Bumped when the notebook layout changes in a way that invalidates captured
+  # outputs. Stamped into metadata.azimuth.builder so a manifest produced by an
+  # older builder can be spotted rather than silently trusted.
+  builderVersion: "1.0.0"
+  # Must match shim/azimuth_nb.__version__; the build asserts it.
+  shimVersion: "0.1.0"
+  # Languages every workshop is built in. Not a list to trim — a missing
+  # Arabic build is a lint error, not a configuration option.
+  languages: ["en", "ar"]

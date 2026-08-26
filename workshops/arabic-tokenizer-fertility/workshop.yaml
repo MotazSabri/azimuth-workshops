@@ -1,0 +1,310 @@
+schema: workshop/v1
+id: arabic-tokenizer-fertility
+constellation: language
+
+title:
+  en: "Tokenizers and the Arabic tax"
+  ar: "المُجزِّئات والضريبة العربية"
+
+concept:
+  en: "Fertility is a price, paid per token"
+  ar: "الخصوبة سعر يُدفع عن كل رمز"
+
+scenario:
+  en: >-
+    The same sentence costs more in Arabic than in English. Not metaphorically
+    — measurably, in tokens, and tokens are what you pay for and what fills
+    your context window. A tokenizer trained mostly on English learns English
+    words as single pieces and shatters Arabic into fragments, so an Arabic
+    reader pays twice: a higher bill for identical content, and a shorter
+    effective context for the same model. This workshop measures that number
+    instead of asserting it.
+  ar: >-
+    الجملة نفسها تكلّف بالعربية أكثر مما تكلّف بالإنجليزية. لا مجازاً — بل قياساً،
+    بالرموز، والرموز هي ما تدفع ثمنه وما يملأ نافذة السياق. المُجزِّئ المُدرَّب على
+    الإنجليزية في معظمه يتعلّم كلماتها قطعاً كاملة ويفتّت العربية شظايا، فيدفع
+    القارئ العربي مرتين: فاتورة أعلى للمحتوى ذاته، وسياق فعلي أقصر للنموذج ذاته.
+    هذه الورشة تقيس ذلك الرقم بدل أن تدّعيه.
+
+goal:
+  en: >-
+    Measure fertility — tokens per word — for the same parallel text in Arabic
+    and English across three production tokenizers, convert the ratio into what
+    it actually costs in context window and inference price, and find the
+    single change to the text that moves the number most.
+  ar: >-
+    قِس الخصوبة — عدد الرموز لكل كلمة — للنص المتوازي ذاته بالعربية والإنجليزية
+    عبر ثلاثة مُجزِّئات إنتاجية، وحوِّل النسبة إلى تكلفتها الحقيقية في نافذة السياق
+    وسعر الاستدلال، ثم جِد التغيير الواحد في النص الذي يحرّك الرقم أكثر من غيره.
+
+difficulty: beginner # foundational | beginner | intermediate | advanced (PaperMeta)
+status: draft # stable | draft (PaperMeta)
+publishedAt: null
+
+maintenance:
+  # moderate: one third-party library (`tokenizers`) plus downloaded tokenizer
+  # files. No model weights, no gated assets — the vocabularies are small and
+  # publicly served.
+  tier: moderate
+  cadence: quarterly
+
+estimate:
+  # No accelerator: this is string processing. Measure and correct after the
+  # first real run.
+  gpuMinutes: 0
+  totalMinutes: 30
+
+papers:
+  - slug: bpe
+    role: core
+    label:
+      en: "the merge algorithm every modern tokenizer descends from — Sennrich, Haddow & Birch, 2016"
+      ar: "خوارزمية الدمج التي تنحدر منها كل المُجزِّئات الحديثة — سينريتش وهادو وبيرتش، 2016"
+  - slug: bloom
+    role: core
+    label:
+      en: "what it costs to build a vocabulary for 46 languages instead of one"
+      ar: "ما يكلّفه بناء مفردات لستٍّ وأربعين لغة بدل لغة واحدة"
+  - slug: fasttext
+    role: supporting
+    label:
+      en: "subword units before transformers: the same problem, an older answer"
+      ar: "الوحدات الجزئية قبل المحوّلات: المسألة ذاتها بجواب أقدم"
+
+assets:
+  - name: parallel.tsv
+    # Small on purpose: fertility is a ratio, and a few thousand aligned
+    # sentence pairs measure it as precisely as a million would.
+    bytes: 0 # measured by tools/pin-asset.py on the first run
+    sha256: null # PIN ME
+    license: "Tatoeba — CC BY 2.0 FR"
+    sources:
+      - "https://raw.githubusercontent.com/MotazSabri/azimuth-workshops/stable/mirror/ara-eng-parallel.tsv"
+    description:
+      en: "Aligned Arabic/English sentence pairs, one pair per line, tab-separated."
+      ar: "أزواج جُمل عربية/إنجليزية متقابلة، زوج في كل سطر، مفصولة بعلامة جدولة."
+
+profiles:
+  - id: free
+    default: true
+    name:
+      en: "Any runtime (no GPU)"
+      ar: "أي بيئة (دون معالج رسوميات)"
+    requires:
+      # String processing. Asking for an accelerator here would be theatre,
+      # and declaring it honestly is what lets CI run this on a CPU runner.
+      gpu: false
+      vramGb: 0
+      ramGb: 2
+    scale:
+      sampleSentences: 4000
+      # Prices are inputs, not facts — they change, and a workshop that hard-codes
+      # them lies quietly. Overridable here so a reader can plug in their own.
+      pricePerMillionTokens: 3.0
+      contextWindow: 8192
+      seed: 17
+  - id: full
+    name:
+      en: "Whole corpus"
+      ar: "المدوّنة كاملة"
+    requires:
+      gpu: false
+      vramGb: 0
+      ramGb: 8
+    scale:
+      sampleSentences: 0 # 0 means "all"
+      pricePerMillionTokens: 3.0
+      contextWindow: 8192
+      seed: 17
+
+checks:
+  - id: fertility-measured
+    required: true
+    min: 1.0
+    label:
+      en: "Arabic fertility, as a multiple of English"
+      ar: "خصوبة العربية منسوبة إلى الإنجليزية"
+  - id: tokenizers-compared
+    required: true
+    min: 3
+    label:
+      en: "Tokenizers measured"
+      ar: "عدد المُجزِّئات المقيسة"
+
+hints:
+  - en: >-
+      Fertility is tokens ÷ words, and "words" has to mean the same thing in
+      both languages or the ratio is meaningless. Whitespace splitting is the
+      honest choice here: it undercounts Arabic morphology, which makes your
+      number a LOWER bound on the real gap rather than a flattering one.
+    ar: >-
+      الخصوبة هي الرموز ÷ الكلمات، و«الكلمة» يجب أن تعني الشيء ذاته في اللغتين
+      وإلا فالنسبة بلا معنى. التقسيم بالمسافات هو الخيار الأمين هنا: فهو يقلّل
+      من تقدير الصرف العربي، ما يجعل رقمك حدّاً أدنى للفجوة الحقيقية لا رقماً
+      متساهلاً.
+  - en: >-
+      Look at the actual pieces, not just the average. Print the token strings
+      for one sentence. The English words survive whole; the Arabic ones break
+      at the definite article, then again at the affixes — and each break is a
+      token you paid for.
+    ar: >-
+      انظر إلى القطع نفسها لا إلى المتوسط وحده. اطبع سلاسل الرموز لجملة واحدة.
+      كلمات الإنجليزية تنجو كاملة؛ أما العربية فتنكسر عند أداة التعريف ثم عند
+      اللواصق — وكل كسرة رمز دفعت ثمنه.
+  - en: >-
+      Before blaming the algorithm, check the vocabulary budget. A tokenizer
+      with 250k pieces spread over 46 languages and one with 50k pieces spent
+      almost entirely on English are making different trades, and neither is a
+      bug — the cost just lands on different readers.
+    ar: >-
+      قبل أن تلوم الخوارزمية، افحص ميزانية المفردات. مُجزِّئ بمئتين وخمسين ألف
+      قطعة موزّعة على ستٍّ وأربعين لغة، وآخر بخمسين ألف قطعة أُنفقت كلها تقريباً
+      على الإنجليزية، يعقدان صفقتين مختلفتين، وليست أيّهما خطأً — التكلفة وحدها
+      تقع على قرّاء مختلفين.
+
+terms:
+  tokenization:
+    en: "Cutting text into the pieces a model actually reads. The model never sees characters or words — only these."
+    ar: "تقطيع النص إلى القطع التي يقرأها النموذج فعلاً. لا يرى النموذج حروفاً ولا كلمات — بل هذه وحدها."
+  subword:
+    en: "A piece smaller than a word. It lets a fixed vocabulary cover words it has never seen, at the cost of splitting them."
+    ar: "قطعة أصغر من الكلمة. تتيح لمفردات ثابتة أن تغطي كلمات لم ترها قط، بثمن تفتيتها."
+  vocabulary:
+    en: "The fixed set of pieces a tokenizer knows. Its size is a budget, and every language in the training mix competes for it."
+    ar: "المجموعة الثابتة من القطع التي يعرفها المُجزِّئ. حجمها ميزانية، وكل لغة في خليط التدريب تنافس عليها."
+  context window:
+    en: "How many tokens a model can hold at once. Measured in tokens, not words — so a language with higher fertility gets less of it."
+    ar: "عدد الرموز التي يسع النموذج حملها دفعة واحدة. تُقاس بالرموز لا بالكلمات — فاللغة الأعلى خصوبة تنال منها أقل."
+
+body:
+  - type: prose
+    text:
+      en: >-
+        Everything a language model charges you for is counted in tokens.
+        Context windows are quoted in tokens, prices are quoted per million
+        tokens, and rate limits are enforced in tokens. So the question "how
+        many tokens does this sentence cost?" is not a technical curiosity —
+        it is the bill.
+        A tokenizer decides that number, and it decides it by having been
+        trained on some particular mixture of text. Whatever was common in
+        that mixture became whole pieces. Whatever was rare became fragments.
+      ar: >-
+        كل ما يحاسبك عليه نموذج اللغة محسوب بالرموز. نوافذ السياق تُقاس
+        بالرموز، والأسعار تُحدَّد لكل مليون رمز، وحدود المعدّل تُطبَّق بالرموز.
+        فسؤال «كم رمزاً تكلّف هذه الجملة؟» ليس فضولاً تقنياً — بل هو الفاتورة.
+        المُجزِّئ هو من يقرّر ذلك الرقم، ويقرّره لأنه دُرِّب على خليط بعينه من
+        النصوص. فما كان شائعاً في ذلك الخليط صار قطعاً كاملة، وما كان نادراً
+        صار شظايا.
+
+  - type: cell
+    id: setup
+    ref: setup
+    caption:
+      en: "Preflight, then the parallel corpus — verified before anything is measured."
+      ar: "فحص مسبق، ثم المدوّنة المتوازية — يُتحقق منها قبل أي قياس."
+
+  - type: paperRef
+    slug: bpe
+    note:
+      en: >-
+        Byte-pair encoding was proposed to solve the opposite problem: rare
+        words in machine translation, which whole-word vocabularies could not
+        represent at all. Merging frequent pairs into single pieces was the
+        fix. The Arabic tax is that same mechanism working exactly as designed
+        — on a corpus where Arabic pairs were not frequent.
+      ar: >-
+        اقتُرح ترميز أزواج البايتات لحل المشكلة المعاكسة: الكلمات النادرة في
+        الترجمة الآلية، التي عجزت مفردات الكلمات الكاملة عن تمثيلها أصلاً.
+        وكان الحل دمج الأزواج المتكررة في قطع مفردة. والضريبة العربية هي تلك
+        الآلية ذاتها تعمل تماماً كما صُمِّمت — على مدوّنة لم تكن الأزواج العربية
+        فيها متكررة.
+
+  - type: cell
+    id: load-corpus
+    ref: load_corpus
+    captures: [pairs, ar_words, en_words]
+    caption:
+      en: "Word counts first. Fertility is a ratio, and the denominator has to be defined before the numerator means anything."
+      ar: "عدّ الكلمات أولاً. الخصوبة نسبة، ولا معنى للبسط قبل تعريف المقام."
+
+  - type: cell
+    id: tokenizers
+    ref: tokenizers
+    captures: [n_tokenizers]
+    caption:
+      en: "Three vocabularies, three different bets about which languages matter."
+      ar: "ثلاث مفردات، ثلاث مراهنات مختلفة على اللغات التي تهمّ."
+
+  - type: cell
+    id: fertility
+    ref: fertility
+    captures: [ar_fertility, en_fertility, ratio, table]
+    thumbnail: true
+    caption:
+      en: "The number the whole workshop is for. Read the ratio column, not the absolute values."
+      ar: "الرقم الذي وُجدت الورشة كلها من أجله. اقرأ عمود النسبة لا القيم المطلقة."
+
+  - type: cell
+    id: pieces
+    ref: pieces
+    caption:
+      en: "One sentence, cut both ways. This is where the average stops being abstract."
+      ar: "جملة واحدة، مقطّعة بالطريقتين. هنا يكفّ المتوسط عن كونه تجريداً."
+
+  - type: scaleNote
+    text:
+      en: >-
+        The free profile measures {{scale.sampleSentences}} sentence pairs,
+        which is more than enough for a stable ratio. Price and context
+        assumptions come from the profile too — they are inputs, not facts, so
+        put your own numbers in `env.cfg` rather than trusting these.
+      ar: >-
+        يقيس الملف المجاني {{scale.sampleSentences}} زوجاً من الجمل، وهو أكثر
+        من كافٍ لنسبة مستقرة. وتأتي افتراضات السعر والسياق من الملف أيضاً —
+        فهي مُدخلات لا حقائق، فضع أرقامك في `env.cfg` بدل الوثوق بهذه.
+
+  - type: cell
+    id: the-bill
+    ref: the_bill
+    captures: [ar_cost_multiple, effective_context_ar, effective_context_en]
+    caption:
+      en: "The ratio, converted into the two things it actually costs: money and room to think."
+      ar: "النسبة محوَّلة إلى ما تكلّفه فعلاً: المال ومساحة التفكير."
+
+  - type: exercise
+    id: reduce-the-tax
+    ref: reduce_the_tax
+    prompt:
+      en: >-
+        Find the single cheapest change that moves the number. Try stripping
+        diacritics, normalizing alef and yaa variants, or removing tatweel —
+        each is one line, and each changes how the vocabulary matches.
+
+
+        Then ask the harder question: which of these changes is safe? Stripping
+        diacritics is nearly free on modern prose and destructive on Qur'anic
+        or poetic text. A tokenizer optimization that quietly corrupts your
+        corpus is not an optimization. Report both the tokens saved and what
+        you gave up.
+      ar: >-
+        جِد التغيير الأرخص الذي يحرّك الرقم. جرّب تجريد التشكيل، أو توحيد صور
+        الألف والياء، أو إزالة التطويل — كل منها سطر واحد، وكل منها يغيّر كيفية
+        مطابقة المفردات.
+
+
+        ثم اطرح السؤال الأصعب: أيّ هذه التغييرات آمن؟ تجريد التشكيل شبه مجاني
+        في النثر الحديث ومُدمِّر في النص القرآني أو الشعري. وتحسينُ تجزئةٍ يُفسد
+        مدوّنتك بصمت ليس تحسيناً. اذكر الرموز الموفَّرة وما تخلّيت عنه معاً.
+    hint: 1
+
+  - type: cell
+    id: verify
+    ref: verify
+    captures: [fertility_ratio_final]
+    caption:
+      en: "Both checks: the ratio you measured, and that you measured it on more than one tokenizer."
+      ar: "الفحصان معاً: النسبة التي قِستها، وأنك قِستها على أكثر من مُجزِّئ واحد."
+
+  - type: cell
+    id: finish
+    ref: finish

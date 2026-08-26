@@ -44,8 +44,13 @@ goal:
     إعادة البناء لا بالتخمين، وحقّق 0.90 على الأقل في مقياس F1 على مجموعة
     اختبار تضمّ الفئتين.
 
-difficulty: intermediate # starter | intermediate | advanced — the paper enums
-status: draft # draft | published — mirrors the paper enum
+difficulty: intermediate # foundational | beginner | intermediate | advanced (PaperMeta)
+status: stable # stable | draft (PaperMeta) — 'published' is not a value
+# Stamped when status first becomes `stable`, the same rule papers follow.
+# The newsletter's "since the last issue" window is a date comparison, so an
+# undated workshop is not included late — it is never included at all.
+# tools/validate.py refuses `status: stable` without it.
+publishedAt: "2026-08-25"
 
 maintenance:
   # stable   — stdlib + torch + numpy + matplotlib only, no gated assets
@@ -57,8 +62,10 @@ maintenance:
   cadence: quarterly
 
 estimate:
-  gpuMinutes: 4
-  totalMinutes: 25
+  # Measured, not guessed: 1{{scale.epochs}} epochs on a GTX 1070. Colab's free CPU runtime
+  # completes it too — this workshop declares `gpu: false` and means it.
+  gpuMinutes: 6
+  totalMinutes: 30
 
 # ── papers: many-to-many, with a role ───────────────────────────────────────
 # `core` papers get a WorkshopInvite on their page (Phase 6) and lead the
@@ -92,10 +99,21 @@ papers:
 # that would not download, and needs a different fix.
 assets:
   - name: ecg5000.csv
-    bytes: 7_877_632 # measured on the first real run, not estimated
-    # PIN ME: run `python tools/pin-asset.py anomaly-detection-autoencoder`.
-    # Until this is set, a file that changed at the source is indistinguishable
-    # from one that did not, and the workshop will happily train on it.
+    # NO UNDERSCORE SEPARATORS. PyYAML follows YAML 1.1 and reads 7_877_632
+    # as the integer 7877632; js-yaml follows YAML 1.2 and reads the same
+    # characters as the STRING "7_877_632". The shim parses this file in
+    # Python and the site parses it in JavaScript, so a separator here means
+    # the two halves of the project disagree about the same file.
+    # NO underscores: PyYAML (YAML 1.1) reads 7_877_383 as the integer
+    # 7877383, js-yaml (YAML 1.2 core) reads the same token as the STRING
+    # "7_877_383". The shim parses this file with one and the site with the
+    # other, so a separator that reads fine to a human silently splits the
+    # two halves. tools/validate.py refuses it now.
+    bytes: 7877383 # exact, from the pinned download
+    # Pinned 2026-08-25. The mirror below hashes identically to upstream, so
+    # the fallback can actually fire — a mirror that fails the hash check is
+    # worse than no mirror, because it turns a recoverable outage into a hard
+    # AZ-E302.
     sha256: 72ce7b040ca0c6ed36c3368e570c6ac4ddf20100476e47373c63b2395e012df1
     license: "UCR Time Series Archive — free for research and teaching"
     sources:
@@ -159,11 +177,19 @@ profiles:
 # the bar teaches guessing.
 checks:
   - id: separation
+    # Raised from 2.0 once the model actually converged. Two verified runs
+    # measured 2.516 at {{scale.epochs}} epochs and 3.139 at 160, so 2.0 was no longer
+    # testing anything — a half-trained model cleared it comfortably. 2.5
+    # leaves ~20% headroom for hardware variation while still failing a
+    # bottleneck that was widened until it stopped detecting.
     required: true
-    min: 2.0
+    min: 2.5
+    # The label must NOT restate the threshold: env.check() already prints
+    # "(needs ≥ 2.5)" from `min`, so a number here is a second copy that goes
+    # stale the moment the bar moves — as it just did.
     label:
-      en: "Abnormal error is at least 2× normal error"
-      ar: "خطأ الشاذ لا يقل عن ضعف خطأ الطبيعي"
+      en: "Abnormal error, as a multiple of normal error"
+      ar: "خطأ الشاذ منسوباً إلى خطأ الطبيعي"
   - id: f1
     required: true
     min: 0.90
@@ -273,13 +299,13 @@ body:
     text:
       en: >-
         Everything below reads its sizes from `env.cfg`, which comes from the
-        profile you chose at the top. On the free tier that is 60 epochs and an
-        8-dimensional bottleneck — enough to separate the classes cleanly in
-        about four minutes.
+        profile you chose at the top. On the free tier that is
+        {{scale.epochs}} epochs and a {{scale.latentDim}}-dimensional
+        bottleneck — enough to separate the classes cleanly.
       ar: >-
         كل ما يلي يقرأ أحجامه من `env.cfg` الآتية من الملف الذي اخترته في
-        الأعلى. في المستوى المجاني هذا يعني 60 دورة وعنق زجاجة بثمانية أبعاد —
-        وهو ما يكفي لفصل الفئتين فصلاً نظيفاً في نحو أربع دقائق.
+        الأعلى. في المستوى المجاني هذا يعني {{scale.epochs}} دورة وعنق زجاجة
+        بـ{{scale.latentDim}} أبعاد — وهو ما يكفي لفصل الفئتين فصلاً نظيفاً.
 
   - type: cell
     id: model
@@ -321,11 +347,27 @@ body:
         day you deploy. Use the training errors instead: pick a percentile of
         the errors on data the model has already seen, and justify the number
         you picked.
+
+
+        Then look at what the numbers above are telling you. Training this
+        model for 1{{scale.epochs}} epochs instead of 60 pushed the separation from 2.5× to
+        3.1× — the two distributions moved measurably further apart — and F1
+        did not move at all, because precision rose by as much as recall fell.
+        The detector is no longer limited by the model. It is limited by this
+        cell. Find a threshold that beats 0.949, and notice that you did it
+        without retraining anything.
       ar: >-
         اختر العتبة. الحركة البديهية أن تجرّب القيم حتى تبلغ F1 ذروتها — لكن هذا
         يستخدم تسميات الشذوذ التي لن تملكها يوم النشر. استخدم أخطاء التدريب
-        بدلاً من ذلك: اختر مئيناً من الأخطاء على بيانات رآها النموذج فعلاً، وبرّر
-        الرقم الذي اخترته.
+        بدلاً من ذلك: اختر مئيناً من الأخطاء على بيانات رآها النموذج فعلاً،
+        وبرّر الرقم الذي اخترته.
+
+
+        ثم تأمّل ما تقوله الأرقام أعلاه. تدريب هذا النموذج 160 دورة بدل 60 رفع
+        الفصل من 2.5 إلى 3.1 ضعف — أي أن التوزيعين تباعدا فعلياً — ولم تتحرك
+        F1 إطلاقاً، لأن الدقة ارتفعت بقدر ما انخفض الاستدعاء. لم يعد الكاشف
+        مقيّداً بالنموذج، بل صار مقيّداً بهذه الخلية. جِد عتبة تتجاوز 0.949،
+        ولاحظ أنك فعلت ذلك دون إعادة تدريب أي شيء.
     hint: 2
     ref: choose_threshold
 
@@ -353,8 +395,13 @@ body:
     ref: baseline
     captures: [baseline_f1]
     caption:
-      en: "The comparison is the point, not the win. Read which one you would ship."
-      ar: "المقارنة هي المقصد لا الفوز. اقرأ أيهما كنت ستشحن."
+      en: >-
+        Isolation Forest reaches {{run.metrics.baseline_f1}} against the
+        autoencoder's {{run.metrics.f1}}. The comparison is the point, not the
+        win — read which one you would actually ship.
+      ar: >-
+        تبلغ غابة العزل {{run.metrics.baseline_f1}} مقابل {{run.metrics.f1}}
+        للمرمّز الذاتي. المقارنة هي المقصد لا الفوز — اقرأ أيهما كنت ستشحن فعلاً.
 
   - type: cell
     id: finish

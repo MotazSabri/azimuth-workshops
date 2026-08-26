@@ -22,6 +22,14 @@ ignore = [
     "RUF007",
     # Notebook cells legitimately end on an expression.
     "B018",
+    # RUF001/2/3 flag "ambiguous" Unicode — Arabic alef as possibly-Latin-l,
+    # the multiplication sign as possibly-x. In a corpus that is half Arabic
+    # by design, this fires on correct prose in every file and would train
+    # authors to reach for noqa. The confusable-character risk it guards is a
+    # single-script codebase's problem, not ours.
+    "RUF001",
+    "RUF002",
+    "RUF003",
     # The shim's setup() takes the arguments a notebook needs it to take.
     "PLR0913",
     "PLR0917",
@@ -39,7 +47,7 @@ ignore = [
 #   B905  zip(strict=) has no teaching value here and adds noise to a line a
 #         reader is meant to parse at a glance.
 #   PLC0415  a non-top-level import is the normal case in a notebook.
-"workshops/*/code.py" = ["F821", "E402", "E401", "B905", "PLC0415"]
+"workshops/*/code.py" = ["F821", "E402", "E401", "B905", "PLC0415", "PLR2004"]
 
 # The bilingual error catalogue is prose: long strings are the content, and
 # Arabic punctuation legitimately resembles Latin punctuation (RUF001).
@@ -55,6 +63,16 @@ ignore = [
 # list harder to read and to extend, which is the opposite of the point.
 "tools/validate.py" = ["PLR2004", "PLR0912", "PLR0915"]
 "tools/pin-asset.py" = ["PLR2004"]
+# main() is a flat sequence of independent steps for the same reason
+# check_workshop() is; splitting it to satisfy a branch counter would hide the
+# order the build actually runs in.
+"tools/build_notebooks.py" = ["PLR0912"]
+# nbformat/nbclient are imported inside run_notebook so that --dry-run works
+# on a machine with no Jupyter installed: building the execution copy needs
+# neither, and CPU-only contributors should not have to install them.
+# normalize_outputs() is a flat dispatch over nbformat's output kinds; a
+# branch counter is the wrong shape to judge it by.
+"tools/execute.py" = ["PLC0415", "BLE001", "PLR0912"]
 
 [lint.pep8-naming]
 classmethod-decorators = []

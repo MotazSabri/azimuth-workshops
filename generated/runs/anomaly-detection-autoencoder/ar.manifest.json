@@ -1,0 +1,96 @@
+{
+ "schema": "run/v1",
+ "slug": "anomaly-detection-autoencoder",
+ "lang": "ar",
+ "codeHash": "87676dbbc5ff8470",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-08-25T20:44:20Z",
+  "device": "CPU",
+  "torch": "2.2.2+cu121",
+  "python": "3.12.3",
+  "shim": "0.1.0",
+  "elapsedSec": 12.0,
+  "commit": "unknown"
+ },
+ "metrics": {
+  "param_count": 22868,
+  "final_loss": 0.0005663097527860429,
+  "separation": 3.1033883094787598,
+  "f1": 0.9463869463869463,
+  "precision": 0.9248291571753986,
+  "recall": 0.9689737470167065,
+  "baseline_f1": 0.7798507462686567
+ },
+ "shapes": {
+  "class_balance": "dict[3]",
+  "loss_curve": "list[160]",
+  "confusion": "dict[4]"
+ },
+ "cells": {
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "كشف الشذوذ بمرمّز ذاتي\nبدون معالج رسوميات · ذاكرة 3.9 غ.ب · PyTorch 2.2.2+cu121\nالملف: ⁦free⁩\nالبيانات:\n  · ecg5000.csv — already present\nجاهز · ⁦epochs=160, batchSize=128, latentDim=8, hidden=[64, 32], learningRate=0.001, seed=17⁩"
+   }
+  ],
+  "load-data": [
+   {
+    "kind": "stream",
+    "text": "التدريب: 2338 أثراً طبيعياً فقط\nالاختبار: 581 طبيعي · 419 شاذ"
+   }
+  ],
+  "model": [
+   {
+    "kind": "stream",
+    "text": "⁦bottleneck⁩ — أضيق طبقة في المرمّز الذاتي. عرضها هو الميزانية: على النموذج أن يصف المدخل كله بهذا العدد من الأرقام.\nعنق الزجاجة: 8 من أصل 140 بُعداً · 22,868 معامل"
+   }
+  ],
+  "train": [
+   {
+    "kind": "stream",
+    "text": "epoch   0  loss 0.02346\nepoch  10  loss 0.00169\nepoch  20  loss 0.00169\nepoch  30  loss 0.00168\nepoch  40  loss 0.00166\nepoch  50  loss 0.00160\nepoch  60  loss 0.00123\nepoch  70  loss 0.00114\nepoch  80  loss 0.00093\nepoch  90  loss 0.00075\nepoch 100  loss 0.00071\nepoch 110  loss 0.00070\nepoch 120  loss 0.00068\nepoch 130  loss 0.00066\nepoch 140  loss 0.00062\nepoch 150  loss 0.00058\nepoch 159  loss 0.00057"
+   }
+  ],
+  "error-distributions": [
+   {
+    "kind": "stream",
+    "text": "⁦reconstruction error⁩ — مقدار بُعد المخرج عن المدخل. يكون صغيراً على البيانات التي دُرّب عليها النموذج، وكبيراً على ما لم يألفه، وهذه الفجوة هي الكاشف."
+   },
+   {
+    "kind": "image",
+    "src": "anomaly-detection-autoencoder/error-distributions.svg",
+    "format": "svg"
+   },
+   {
+    "kind": "stream",
+    "text": "normal mean   0.0146\nabnormal mean 0.0452\n✓ خطأ الشاذ منسوباً إلى خطأ الطبيعي: 3.103 (المطلوب ≥ 2.5)"
+   }
+  ],
+  "choose-threshold": [
+   {
+    "kind": "stream",
+    "text": "threshold = 0.0253  (p95 of training error)"
+   }
+  ],
+  "evaluate": [
+   {
+    "kind": "stream",
+    "text": "الدقة 0.925 · الاستدعاء 0.969 · F1 0.946\nأخطأ في 13 حالة شاذة، وأنذر زوراً في 33 حالة طبيعية\n✓ مقياس F1 على مجموعة الاختبار: 0.9464 (المطلوب ≥ 0.9)"
+   }
+  ],
+  "baseline": [
+   {
+    "kind": "stream",
+    "text": "isolation forest F1 0.780   ·   autoencoder F1 0.946"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "اكتملت الورشة.\n\nرمز الإتمام: ⁦AZ-D22DEA92BA⁩\nالصقه في صفحة الورشة على أزيموث لتسجيل إتمامها."
+   }
+  ]
+ }
+}

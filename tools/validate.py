@@ -70,6 +70,31 @@ def bilingual_gaps(node: object, path: str = "") -> list[str]:
     return gaps
 
 
+def check_yaml_portability(path: Path, where: str) -> None:
+    """Refuse YAML that two parsers would read differently.
+
+    This repository is parsed by PyYAML (the shim, in the notebook) and by
+    js-yaml (the site, at build time). PyYAML implements YAML 1.1; js-yaml
+    defaults to the YAML 1.2 core schema. They disagree on two constructs that
+    look completely ordinary:
+
+        bytes: 7_877_383   ->  int 7877383   vs  str "7_877_383"
+        gpu: yes           ->  bool True     vs  str "yes"
+
+    Neither raises. The workshop simply behaves differently depending on which
+    side is looking at it, and the divergence surfaces as a budget check that
+    passes in the notebook and fails on the site.
+    """
+    for n, line in enumerate(
+        path.read_text(encoding="utf-8").replace("\r\n", "\n").split("\n"), 1
+    ):
+        code = line.split("#", 1)[0]
+        if re.search(r":\s*-?\d[\d_]*_[\d_]*\d\s*$", code):
+            err(f"{where}:{n}: numeric underscore — PyYAML reads an int, js-yaml a string")
+        if re.search(r":\s*(yes|no|on|off|Yes|No|On|Off|YES|NO|ON|OFF)\s*$", code):
+            err(f"{where}:{n}: bare yes/no/on/off — a bool to PyYAML, a string to js-yaml")
+
+
 def check_workshop(directory: Path) -> None:
     slug = directory.name
     where = f"workshops/{slug}"
@@ -83,8 +108,31 @@ def check_workshop(directory: Path) -> None:
         err(f"{where}: no code.py")
         return
 
-    spec = yaml.safe_load(spec_path.read_text(encoding="utf-8"))
-    code = code_path.read_text(encoding="utf-8")
+    spec_text = spec_path.read_text(encoding="utf-8")
+    spec = yaml.safe_load(spec_text)
+    code = code_path.read_text(encoding="utf-8").replace("\r\n", "\n")
+
+    # ── the two parsers must agree about this file ─────────────────────────
+    # This validator runs under PyYAML (YAML 1.1). The site reads the same
+    # file with js-yaml (YAML 1.2). Where the two specs differ, a value means
+    # different things on the two sides of the project and nothing raises.
+    #
+    # Underscore digit separators are the case that actually bit us:
+    # `bytes: 7_877_632` is the integer 7877632 to PyYAML and the string
+    # "7_877_632" to js-yaml.
+    for i, line in enumerate(spec_text.split("\n"), 1):
+        if re.search(r":\s*-?\d+(?:_\d+)+\s*(?:#.*)?$", line):
+            err(
+                f"{where}:{i}: numeric underscore separator — PyYAML reads it as a "
+                f"number and js-yaml reads it as a string. Write plain digits."
+            )
+        # YAML 1.1 also reads unquoted yes/no/on/off as booleans; YAML 1.2
+        # does not. Quote them or use true/false.
+        if re.search(r":\s*(?:yes|no|on|off|Yes|No|On|Off|YES|NO|ON|OFF)\s*(?:#.*)?$", line):
+            err(
+                f"{where}:{i}: unquoted yes/no/on/off — a boolean to PyYAML, a "
+                f"string to js-yaml. Use true/false."
+            )
 
     if spec.get("id") != slug:
         err(f"{where}: id is {spec.get('id')!r} but the directory is {slug!r}")
@@ -131,6 +179,54 @@ def check_workshop(directory: Path) -> None:
         if not defaults[0].get("scale"):
             err(f"{where}: default profile declares no scale — sizes would have no source")
 
+    # ── enums ──────────────────────────────────────────────────────────────
+    # These reuse the PAPER enums exactly (types/content.ts). A wrong value
+    # does not crash anything — the site simply filters the workshop out of
+    # the index, search and the newsletter, and the author is left staring at
+    # nine empty constellations wondering what broke. Silence is the whole
+    # problem, so it is an error here.
+    valid_status = ("stable", "draft")
+    if spec.get("status") not in valid_status:
+        err(
+            f"{where}: status is {spec.get('status')!r} — must be one of "
+            f"{' | '.join(valid_status)}. 'published' is a common guess and is NOT a "
+            f"value; the site filters on 'stable' and would hide this workshop."
+        )
+    valid_difficulty = ("foundational", "beginner", "intermediate", "advanced")
+    if spec.get("difficulty") not in valid_difficulty:
+        err(
+            f"{where}: difficulty is {spec.get('difficulty')!r} — must be one of "
+            f"{' | '.join(valid_difficulty)}"
+        )
+    valid_tier = ("stable", "moderate", "volatile")
+    if (spec.get("maintenance") or {}).get("tier") not in valid_tier:
+        err(f"{where}: maintenance.tier must be one of {' | '.join(valid_tier)}")
+
+    # ── scale prose must not restate the scale ─────────────────────────────
+    # Same rule as check labels, and for the same reason: the note read
+    # "60 epochs" for weeks after the profile moved to 160, telling readers
+    # the wrong number directly above code that would run the right one.
+    # Use {{scale.epochs}} — the site resolves it from the default profile.
+    for i, block in enumerate(body):
+        if block.get("type") != "scaleNote":
+            continue
+        for lang, text in (block.get("text") or {}).items():
+            if not isinstance(text, str):
+                continue
+            stripped = re.sub(r"\{\{[^}]+\}\}", "", text)
+            if re.search(r"(?<![A-Za-z])\d+(?:\.\d+)?", stripped):
+                warn(
+                    f"{where}: body[{i}] scaleNote.{lang} hardcodes a number — "
+                    f"use {{{{scale.<knob>}}}} so it cannot drift from the profile"
+                )
+
+    # ── chronology ─────────────────────────────────────────────────────────
+    if spec.get("status") == "stable" and not spec.get("publishedAt"):
+        err(
+            f"{where}: status is stable but publishedAt is unset — the newsletter "
+            f"window is a date comparison, so this workshop would never appear in one"
+        )
+
     # ── papers ─────────────────────────────────────────────────────────────
     papers = spec.get("papers") or []
     if not any(p.get("role") == "core" for p in papers):
@@ -152,6 +248,17 @@ def check_workshop(directory: Path) -> None:
     for check in checks:
         if check.get("min") is None and check.get("max") is None:
             err(f"{where}: check '{check.get('id')}' declares no threshold")
+        # A label that restates the threshold is a second copy of it, and the
+        # copy does not move when the bar does. This exact drift shipped once:
+        # `min` went 2.0 -> 2.5 and the label still read "at least 2x".
+        for lang, text in (check.get("label") or {}).items():
+            # A digit bound to a letter is part of a name ("F1", "R2", "GPT-4"),
+            # not a threshold. Only free-standing numbers are the drift risk.
+            if isinstance(text, str) and re.search(r"(?<![A-Za-z])\d+(?:\.\d+)?", text):
+                warn(
+                    f"{where}: check '{check.get('id')}' label.{lang} contains a number — "
+                    f"env.check() already prints the threshold from min/max"
+                )
 
     # ── assets ─────────────────────────────────────────────────────────────
     for asset in spec.get("assets") or []:
@@ -213,9 +320,7 @@ def main() -> int:
     for error in errors:
         print(f"  ✖ {error}")
 
-    print(
-        f"\n{len(directories)} workshop(s) · {len(errors)} error(s) · {len(warnings)} warning(s)"
-    )
+    print(f"\n{len(directories)} workshop(s) · {len(errors)} error(s) · {len(warnings)} warning(s)")
     return 1 if errors else 0
 
 

@@ -34,26 +34,47 @@ class Runtime:
     accelerator: str  # 'cuda' | 'mps' | 'cpu'
     device_name: str
     vram_gb: float  # 0.0 when there is no accelerator
-    ram_gb: float
+    ram_gb: float | None  # None when the platform will not tell us
     disk_gb: float
     torch_version: str
 
     def summary(self, lang: str = "en") -> str:
         if lang == "ar":
-            gpu = f"{self.device_name} · {self.vram_gb:.1f} غ.ب" if self.accelerator == "cuda" else "بدون معالج رسوميات"
-            return f"{gpu} · ذاكرة {self.ram_gb:.1f} غ.ب · PyTorch {self.torch_version}"
-        gpu = f"{self.device_name} · {self.vram_gb:.1f} GB" if self.accelerator == "cuda" else "no GPU"
-        return f"{gpu} · {self.ram_gb:.1f} GB RAM · PyTorch {self.torch_version}"
+            gpu = (
+                f"{self.device_name} · {self.vram_gb:.1f} غ.ب"
+                if self.accelerator == "cuda"
+                else "بدون معالج رسوميات"
+            )
+            ram = f"ذاكرة {self.ram_gb:.1f} غ.ب" if self.ram_gb else "الذاكرة غير معروفة"
+            return f"{gpu} · {ram} · PyTorch {self.torch_version}"
+        gpu = (
+            f"{self.device_name} · {self.vram_gb:.1f} GB"
+            if self.accelerator == "cuda"
+            else "no GPU"
+        )
+        ram = f"{self.ram_gb:.1f} GB RAM" if self.ram_gb else "RAM unknown"
+        return f"{gpu} · {ram} · PyTorch {self.torch_version}"
 
 
-def _ram_gb() -> float:
-    """Total system RAM. os.sysconf is present on Linux, which is every Colab
-    runtime; anything else reports 0 and the RAM check is skipped rather than
-    guessed at."""
+def _ram_gb() -> float | None:
+    """Total system RAM, or None when we cannot tell.
+
+    os.sysconf exists on Linux and macOS — which covers every Colab runtime —
+    but not on Windows, where it raises AttributeError. The first Windows run
+    of this shim printed "0.0 GB RAM", which is not a degraded reading, it is
+    a WRONG one: it says the machine has no memory. None is the honest answer,
+    and the RAM check skips rather than comparing against a number it invented.
+    """
     try:
         return os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / (1024**3)
     except (ValueError, OSError, AttributeError):
-        return 0.0
+        pass
+    try:  # Windows, and a more accurate reading anywhere it exists
+        import psutil
+
+        return psutil.virtual_memory().total / (1024**3)
+    except Exception:
+        return None
 
 
 def inspect_runtime(lang: str = "en") -> Runtime:

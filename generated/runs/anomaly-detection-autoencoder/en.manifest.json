@@ -1,0 +1,96 @@
+{
+ "schema": "run/v1",
+ "slug": "anomaly-detection-autoencoder",
+ "lang": "en",
+ "codeHash": "87676dbbc5ff8470",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-08-25T20:46:11Z",
+  "device": "CPU",
+  "torch": "2.2.2+cu121",
+  "python": "3.12.3",
+  "shim": "0.1.0",
+  "elapsedSec": 12.2,
+  "commit": "unknown"
+ },
+ "metrics": {
+  "param_count": 22868,
+  "final_loss": 0.0005663097527860429,
+  "separation": 3.1033883094787598,
+  "f1": 0.9463869463869463,
+  "precision": 0.9248291571753986,
+  "recall": 0.9689737470167065,
+  "baseline_f1": 0.7798507462686567
+ },
+ "shapes": {
+  "class_balance": "dict[3]",
+  "loss_curve": "list[160]",
+  "confusion": "dict[4]"
+ },
+ "cells": {
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "Anomaly detection with an autoencoder\nno GPU \u00b7 3.9 GB RAM \u00b7 PyTorch 2.2.2+cu121\nprofile: free\nassets:\n  \u00b7 ecg5000.csv \u2014 already present\nready \u00b7 epochs=160, batchSize=128, latentDim=8, hidden=[64, 32], learningRate=0.001, seed=17"
+   }
+  ],
+  "load-data": [
+   {
+    "kind": "stream",
+    "text": "train: 2338 normal traces only\ntest:  581 normal \u00b7 419 abnormal"
+   }
+  ],
+  "model": [
+   {
+    "kind": "stream",
+    "text": "bottleneck \u2014 The narrowest layer of an autoencoder. Its width is the budget: the model must describe the whole input in this many numbers.\nbottleneck: 8 of 140 dims \u00b7 22,868 parameters"
+   }
+  ],
+  "train": [
+   {
+    "kind": "stream",
+    "text": "epoch   0  loss 0.02346\nepoch  10  loss 0.00169\nepoch  20  loss 0.00169\nepoch  30  loss 0.00168\nepoch  40  loss 0.00166\nepoch  50  loss 0.00160\nepoch  60  loss 0.00123\nepoch  70  loss 0.00114\nepoch  80  loss 0.00093\nepoch  90  loss 0.00075\nepoch 100  loss 0.00071\nepoch 110  loss 0.00070\nepoch 120  loss 0.00068\nepoch 130  loss 0.00066\nepoch 140  loss 0.00062\nepoch 150  loss 0.00058\nepoch 159  loss 0.00057"
+   }
+  ],
+  "error-distributions": [
+   {
+    "kind": "stream",
+    "text": "reconstruction error \u2014 How far the output is from the input. On data the model was trained on it is small; on unfamiliar data it is not, and that gap is the detector."
+   },
+   {
+    "kind": "image",
+    "src": "anomaly-detection-autoencoder/error-distributions.svg",
+    "format": "svg"
+   },
+   {
+    "kind": "stream",
+    "text": "normal mean   0.0146\nabnormal mean 0.0452\n\u2713 Abnormal error, as a multiple of normal error: 3.103 (needs \u2265 2.5)"
+   }
+  ],
+  "choose-threshold": [
+   {
+    "kind": "stream",
+    "text": "threshold = 0.0253  (p95 of training error)"
+   }
+  ],
+  "evaluate": [
+   {
+    "kind": "stream",
+    "text": "precision 0.925 \u00b7 recall 0.969 \u00b7 F1 0.946\nmissed 13 abnormal \u00b7 false-alarmed on 33 normal\n\u2713 F1 on the held-out set: 0.9464 (needs \u2265 0.9)"
+   }
+  ],
+  "baseline": [
+   {
+    "kind": "stream",
+    "text": "isolation forest F1 0.780   \u00b7   autoencoder F1 0.946"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "Workshop complete.\n\nCompletion code: AZ-D22DEA92BA\nPaste it on the workshop's page on Azimuth to record it."
+   }
+  ]
+ }
+}

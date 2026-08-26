@@ -124,9 +124,13 @@ class Env:
         """Print the next hint, or a specific one. Mirrors the Lab's pill."""
         hints = self.spec.get("hints") or []
         if not hints:
-            print("No hints for this workshop." if self.lang == "en" else "لا توجد تلميحات لهذه الورشة.")
+            print(
+                "No hints for this workshop."
+                if self.lang == "en"
+                else "لا توجد تلميحات لهذه الورشة."
+            )
             return
-        index = (self._hints_used if n is None else n - 1)
+        index = self._hints_used if n is None else n - 1
         index = max(0, min(index, len(hints) - 1))
         self._hints_used = max(self._hints_used, index + 1)
         text = hints[index].get(self.lang) or hints[index].get("en", "")
@@ -242,7 +246,11 @@ def _load_spec(slug: str, lang: str) -> dict[str, Any]:
     spec = yaml.safe_load(path.read_text(encoding="utf-8"))
     code_path = REPO_ROOT / "workshops" / slug / "code.py"
     if code_path.exists():
-        spec["codeHash"] = hashlib.sha256(code_path.read_bytes()).hexdigest()[:16]
+        # Normalized, so the hash a learner's receipt carries matches the one
+        # CI and the site computed — a Windows checkout would otherwise never
+        # produce a matching completion code.
+        code_bytes = code_path.read_bytes().replace(b"\r\n", b"\n")
+        spec["codeHash"] = hashlib.sha256(code_bytes).hexdigest()[:16]
     return spec
 
 
