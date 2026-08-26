@@ -1,0 +1,89 @@
+{
+ "schema": "run/v1",
+ "slug": "arabic-tokenizer-fertility",
+ "lang": "ar",
+ "codeHash": "4f6d8bab7719c4df",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-08-26T13:24:05Z",
+  "device": "NVIDIA GeForce GTX 1070 with Max-Q Design",
+  "torch": "2.6.0+cu124",
+  "python": "3.13.5",
+  "shim": "0.1.0",
+  "elapsedSec": 22.2,
+  "commit": "052b6142602ee389e151d359c2f5933b3af02876"
+ },
+ "metrics": {
+  "ar_words": 8676,
+  "en_words": 9995,
+  "n_tokenizers": 3,
+  "ar_fertility": 5.934,
+  "en_fertility": 1.317,
+  "ratio": 4.505,
+  "ar_cost_multiple": 4.505,
+  "effective_context_ar": 1380,
+  "effective_context_en": 6220,
+  "fertility_ratio_final": 4.505
+ },
+ "shapes": {
+  "pairs": "list[1000]",
+  "table": "list[3]"
+ },
+ "cells": {
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "المُجزِّئات والضريبة العربية\nNVIDIA GeForce GTX 1070 with Max-Q Design · 8.0 غ.ب · ذاكرة 15.9 غ.ب · PyTorch 2.6.0+cu124\nالملف: ⁦free⁩\nالبيانات:\n  · parallel.tsv — already present\nجاهز · ⁦sampleSentences=1000, pricePerMillionTokens=3.0, contextWindow=8192, seed=17⁩"
+   }
+  ],
+  "load-corpus": [
+   {
+    "kind": "stream",
+    "text": "note: columns were (english, arabic) — swapped to match\nأزواج: 1,000 من أصل 24,999\nكلمات: 8,676 عربية · 9,995 إنجليزية"
+   }
+  ],
+  "tokenizers": [
+   {
+    "kind": "stream",
+    "text": "  · gpt2         50k pieces, almost all English\n  · bloom        250k pieces shared across 46 languages\n  · xlm-roberta  250k pieces, 100 languages"
+   }
+  ],
+  "fertility": [
+   {
+    "kind": "stream",
+    "text": "tokenizer        ar/word   en/word    ratio\n-------------------------------------------\ngpt2                5.93      1.32     4.50\nbloom               1.70      1.34     1.26\nxlm-roberta         1.91      1.51     1.26"
+   }
+  ],
+  "pieces": [
+   {
+    "kind": "stream",
+    "text": "⁦subword⁩ — قطعة أصغر من الكلمة. تتيح لمفردات ثابتة أن تغطي كلمات لم ترها قط، بثمن تفتيتها.\n\nالعربية — 71 tokens, 10 words  [gpt2]\n  ال | � | � | � | � | � | � | ر | � | � | ه | م | ي | ة | � | � | � | � | ن | � | � | � | � | ي | ن | ة |  ال | � | � | ي | � | � | ة | � | � | ال | � | � | � | � | ر | ة | � | � | ت | م | ت | ل | � | � | � | � | � | � | د | � | � | ن | ة |  ال | ع | و | � | � | م |  ال | س | ا | م | ة | .\n  ← 38 من 71 رمزاً (54%) ليست حروفاً كاملة. رمز � يعني قطعة أصغر من الحرف الواحد — وهذا هو القياس لا خطأ عرض.\n\nالإنجليزية — 19 tokens, 14 words  [gpt2]\n  More |  importantly | , |  the |  driving |  c | abs |  of |  the |  locom | ot | ives |  would |  fill |  with |  poisonous |  exhaust |  fumes | .\n\nالعربية — 22 tokens, 10 words  [bloom]\n  الأ | كثر |  أهمية | ، |  أن |  كاب | ينة |  القيادة |  بالق | اطرة |  ستم | تل | ئ |  بأ | د | خ | نة |  العو | ادم |  الس | امة | ."
+   }
+  ],
+  "the-bill": [
+   {
+    "kind": "stream",
+    "text": "⁦context window⁩ — عدد الرموز التي يسع النموذج حملها دفعة واحدة. تُقاس بالرموز لا بالكلمات — فاللغة الأعلى خصوبة تنال منها أقل.\nلكل مليون كلمة: 17.80$ بالعربية · 3.95$ بالإنجليزية\nالقارئ العربي يدفع 4.50× للمحتوى ذاته\nنافذة 8,192 رمز تسع 1,380 كلمة عربية · 6,220 كلمة إنجليزية"
+   }
+  ],
+  "reduce-the-tax": [
+   {
+    "kind": "stream",
+    "text": "لم تُفعَّل أي معالجة بعد — أعد أحد الثوابت أعلاه إلى True ثم شغّل الخلية."
+   }
+  ],
+  "verify": [
+   {
+    "kind": "stream",
+    "text": "✓ خصوبة العربية منسوبة إلى الإنجليزية: 4.505 (المطلوب ≥ 2.0)\n✓ عدد المُجزِّئات المقيسة: 3 (المطلوب ≥ 3)"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "اكتملت الورشة.\n\nرمز الإتمام: ⁦AZ-██████████⁩\nالصقه في صفحة الورشة على أزيموث لتسجيل إتمامها."
+   }
+  ]
+ }
+}
