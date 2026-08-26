@@ -16,12 +16,50 @@ env = azimuth.setup(SLUG, lang=LANG, profile=PROFILE)
 # --8<-- [start:load_corpus]
 import random
 
-pairs_raw = []
+ARABIC_RANGE = ("\u0600", "\u06ff")
+
+
+def arabic_share(text):
+    """Fraction of letters that are Arabic script."""
+    letters = [ch for ch in text if ch.isalpha()]
+    if not letters:
+        return 0.0
+    return sum(ARABIC_RANGE[0] <= ch <= ARABIC_RANGE[1] for ch in letters) / len(letters)
+
+
+rows = []
 with open(env.assets["parallel.tsv"], encoding="utf-8") as fh:
     for line in fh:
         parts = line.rstrip("\n").split("\t")
         if len(parts) >= 2 and parts[0].strip() and parts[1].strip():
-            pairs_raw.append((parts[0].strip(), parts[1].strip()))
+            rows.append((parts[0].strip(), parts[1].strip()))
+
+# WHICH COLUMN IS ARABIC IS DETECTED, NOT ASSUMED.
+#
+# An earlier run of this workshop measured a corpus whose columns were the
+# other way round and reported that Arabic was CHEAPER than English — a
+# confident, precise, exactly-backwards result. Nothing failed: both columns
+# are text, both tokenize, and the arithmetic is identical. Only the sign of
+# the conclusion changed.
+#
+# Reading the script itself costs one pass and removes the assumption. A
+# column order is a property of whoever exported the file; the alphabet is a
+# property of the language.
+sample = rows[: min(200, len(rows))]
+share_0 = sum(arabic_share(a) for a, _ in sample) / len(sample)
+share_1 = sum(arabic_share(b) for _, b in sample) / len(sample)
+
+if max(share_0, share_1) < 0.5:
+    raise SystemExit(
+        "Neither column looks like Arabic script — check the encoding of "
+        "parallel.tsv before trusting anything below."
+    )
+
+if share_0 >= share_1:
+    pairs_raw = rows
+else:
+    pairs_raw = [(b, a) for a, b in rows]
+    print("note: columns were (english, arabic) — swapped to match")
 
 # A fixed seed so the sample — and therefore every number below — is the same
 # on your machine, on CI, and on the page.

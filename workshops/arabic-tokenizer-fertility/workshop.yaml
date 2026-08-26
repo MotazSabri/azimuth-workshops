@@ -144,11 +144,17 @@ profiles:
 
 checks:
   - id: fertility-measured
-    # Measured at 4.82 on GPT-2. 2.0 is deliberately well below that: the check
-    # should confirm a real gap exists, not pin the exact number, because the
-    # ratio reported is the WORST tokenizer's and a Hub outage that drops GPT-2
-    # would legitimately leave BLOOM's 1.22 as the maximum. Failing then would
-    # punish a reader for someone else's downtime.
+    # 2.0 is deliberately below the measured value: the check should confirm a
+    # real gap exists, not pin an exact number, because the ratio reported is
+    # the WORST tokenizer's and a Hub outage that drops GPT-2 would leave a
+    # multilingual tokenizer's much smaller ratio as the maximum.
+    #
+    # The floor matters more than it looks. A run with the corpus columns
+    # swapped reported 0.798 — "Arabic is cheaper than English" — precise,
+    # confident and exactly backwards. Nothing errored, because both columns
+    # are text and the arithmetic is the same either way. A ratio below 1 is
+    # not a finding about Arabic; it is a wiring fault, and this check is the
+    # only thing that says so out loud.
     required: true
     min: 2.0
     label:
