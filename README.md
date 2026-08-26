@@ -172,3 +172,156 @@ Datasets are not ours; each declares its own terms in its `assets:` block.
 حدود المستوى المجاني بإعداداتها الافتراضية. هذا القيد لا يُخفَّف أبداً.
 
 </div>
+
+---
+
+## Adding a workshop, end to end
+
+Nine steps. Everything else — notebooks, manifests, indexes, search entries,
+paper invites — is generated.
+
+```
+ 1. pick papers      →  2. write 2 files  →  3. build   →  4. run locally
+                                                              ↓
+ 9. it's on the site ←  8. bump submodule ←  7. promote ←  5-6. push & CI runs
+```
+
+### 1 · Pick the papers, and the constellation
+
+Two or three `core` papers the workshop genuinely teaches from, plus any
+`supporting` ones. They may span constellations — the first one draws on three.
+Then choose the constellation the workshop **teaches from**, and check
+`WORKSHOP.md`'s coverage sketch so you know where it lands.
+
+### 2 · Write the two files
+
+```
+workshops/<slug>/workshop.yaml     prose, cells, profiles, checks, hints, terms
+workshops/<slug>/code.py           the executable spine, region-marked
+```
+
+That is the whole authoring surface. Copy an existing pair and replace.
+Non-negotiables, each enforced by `tools/validate.py`:
+
+- **Both languages everywhere.** A missing `ar` is an error, not a TODO.
+- **Every size comes from `env.cfg`.** No constants in the code, no
+  commented-out alternatives.
+- **The default profile fits the free tier.** ≤16 GB VRAM, ≤12 GB RAM.
+- **`sha256: null`** on assets for now — step 4 fills it in.
+- **`status: draft`** until it is ready; drafts are reachable by URL and absent
+  from the index and search.
+
+```bash
+python tools/validate.py          # 0 errors before you go on
+```
+
+### 3 · Build the notebooks
+
+```bash
+python tools/build_notebooks.py
+```
+
+Writes `generated/notebooks/<slug>.{en,ar}.ipynb` — outputs stripped, stable
+cell ids, the bootstrap cell pointed at whatever `config.yaml` says. Never edit
+these by hand; they are regenerated and your edit will vanish.
+
+### 4 · Run it yourself, and pin the dataset
+
+```bash
+python tools/fetch-assets.py <slug> --from-mirror   # verify the pin, offline
+python tools/pin-asset.py <slug>                    # downloads, hashes, writes sha256
+python tools/execute.py <slug>                      # runs both languages, captures outputs
+```
+
+**When a dataset changes** — a corrected encoding, a trimmed corpus — the order
+matters, because a stale pin fails silently rather than loudly:
+
+```bash
+# 1. put the new file under mirror/ and push it to main
+git add mirror/<file> && git commit && git push origin main
+# 2. re-pin: `pin-asset` refuses to overwrite an existing hash without --force
+python tools/pin-asset.py <slug> --force
+# 3. refresh the local cache and confirm the two agree
+python tools/fetch-assets.py <slug> --force
+```
+
+Asset URLs point at `main`, never `stable`. Pinning them to `stable` deadlocks
+this: the corrected file is invisible until promotion, promotion should not
+happen before it is tested, and the old hash still matches the old file — so
+the run reports "verified" while measuring stale data.
+
+**Then read what came back.** This is where the workshop actually gets written:
+on the first one, three separate statements in the prose turned out to be wrong
+about the run — an epoch count, a caption describing the loss curve, and a
+threshold. None were catchable by review. Expect to rewrite around the numbers,
+not merely to check them.
+
+Open a notebook on Colab too, at least once. CI is not Colab.
+
+### 5 · Push to `main`
+
+```bash
+git add workshops/<slug> generated/ && git commit && git push origin main
+```
+
+`validate` runs on every push: lint, schema, and that the committed notebooks
+still match their source.
+
+### 6 · Let CI execute it
+
+`execute` fires automatically when `code.py` or `workshop.yaml` changes. It
+runs both languages, captures outputs to
+`generated/runs/<slug>/{en,ar}.manifest.json`, and commits them. A failed run
+still publishes — with its error visible — but will not promote.
+
+You can also trigger it by hand from the Actions tab.
+
+### 7 · Promote to `stable`
+
+`promote` runs after a green `execute` and fast-forwards `stable`. It refuses
+unless every **`status: stable`** workshop has a verified manifest in both
+languages. Drafts are skipped, so an unfinished workshop never freezes the
+branch.
+
+To publish, set in `workshop.yaml`:
+
+```yaml
+status: stable
+publishedAt: "2026-08-25"     # required once stable; the newsletter window is a date
+```
+
+then push and let `execute` → `promote` run again.
+
+### 8 · Bump the submodule in the site repo
+
+```bash
+cd azimuth
+git -C vendor/azimuth-workshops fetch && git -C vendor/azimuth-workshops checkout origin/stable
+npm run content            # build-content → lab → build-workshops
+git add vendor/azimuth-workshops && git commit -m "workshops: add <slug>" && git push
+```
+
+The pin is a reviewable commit on purpose — the site's content should not
+change without one.
+
+### 9 · What appears, with no further work
+
+- `/workshop` — card under its constellation, thumbnail from the captured plot
+- `/workshop/<slug>` — full page, both languages, outputs, verification footer
+- **Every `core` paper's page** — a WorkshopInvite, via the reverse index
+- **Search** — under Workshops, findable by its own name or a linked paper's
+- **Newsletter** — a candidate in the next issue, using `goal` as its line
+- **Analytics** — views and finish rate under `workshop:<slug>`
+- **Badges** — counts toward its constellation
+
+### Changing one afterwards
+
+| you changed | what to do |
+|---|---|
+| prose only | build notebooks, push — no re-run needed |
+| `code.py` | push; `execute` re-runs automatically (the codeHash moved) |
+| a cell `id` | expect "outputs pending re-run" until CI re-executes |
+| a dataset URL | re-pin, add a mirror, re-run |
+
+The one rule: **never hand-edit anything under `generated/`.** It is all
+rebuilt, and `tools/build_notebooks.py --check` fails CI when it drifts.

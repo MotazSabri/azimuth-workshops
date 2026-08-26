@@ -63,6 +63,9 @@ ignore = [
 # list harder to read and to extend, which is the opposite of the point.
 "tools/validate.py" = ["PLR2004", "PLR0912", "PLR0915"]
 "tools/pin-asset.py" = ["PLR2004", "PLR0912", "PLR0915"]
+# The shim is imported lazily so --from-mirror works with no shim on the path
+# at all, which is the whole point of the offline route.
+"tools/fetch-assets.py" = ["PLC0415", "PLR0912"]
 # main() is a flat sequence of independent steps for the same reason
 # check_workshop() is; splitting it to satisfy a branch counter would hide the
 # order the build actually runs in.
