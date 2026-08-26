@@ -20,9 +20,10 @@ scenario:
 
     What this workshop measures is not just that the gap exists but how much
     of it is anyone's fault. Run it and you will find the same Arabic
-    sentences costing one production tokenizer roughly four times what they
-    cost another. That spread is the whole point: the tax is not a property of
-    Arabic, it is a procurement decision, and somebody made it.
+    sentences costing one production tokenizer about four times what they cost
+    another — GPT-2 charges 3.9× for Arabic where BLOOM charges 1.25×. That
+    spread is the whole point: the tax is not a property of Arabic, it is a
+    procurement decision, and somebody made it.
   ar: >-
     الجملة نفسها تكلّف بالعربية أكثر مما تكلّف بالإنجليزية. لا مجازاً — بل قياساً،
     بالرموز، والرموز هي ما تدفع ثمنه وما يملأ نافذة السياق. فيدفع القارئ العربي
@@ -31,8 +32,9 @@ scenario:
 
     وما تقيسه هذه الورشة ليس وجود الفجوة فحسب، بل كم منها صنيعُ أحد. شغّلها
     تجد الجُمل العربية ذاتها تكلّف مُجزِّئاً إنتاجياً نحو أربعة أضعاف ما تكلّفه
-    آخر. وهذا الفارق هو المقصد كله: الضريبة ليست خاصيةً في العربية، بل قرار
-    شراء، وقد اتخذه أحدهم.
+    آخر — يتقاضى GPT-2 نحو 3.9 أضعاف عن العربية حيث يتقاضى BLOOM 1.25 ضعفاً.
+    وهذا الفارق هو المقصد كله: الضريبة ليست خاصيةً في العربية، بل قرار شراء،
+    وقد اتخذه أحدهم.
 
 goal:
   en: >-
@@ -60,7 +62,7 @@ estimate:
   # No accelerator: this is string processing. Measure and correct after the
   # first real run.
   gpuMinutes: 0
-  totalMinutes: 30
+  totalMinutes: 25
 
 papers:
   - slug: bpe
