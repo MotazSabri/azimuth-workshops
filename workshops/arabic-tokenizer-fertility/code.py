@@ -133,26 +133,65 @@ tok = tokenizers[worst_name]
 
 
 def pieces_of(tokenizer, text):
+    """Decoded pieces, plus how many were not even whole characters.
+
+    A byte-level BPE splits UTF-8, and an Arabic letter is two bytes. So a
+    single token id can be HALF A LETTER, and decoding it alone yields no
+    character at all — U+FFFD, the replacement character.
+
+    That is not a corpus problem and not a rendering problem. It is the
+    measurement: the same file decodes perfectly through BLOOM two blocks
+    below. Counting the fragments turns the confusing symbol into the number
+    it was always standing for.
+    """
     ids = tokenizer.encode(text, add_special_tokens=False).ids
-    return [tokenizer.decode([i]) or "�" for i in ids]
+    parts, fragments = [], 0
+    for i in ids:
+        piece = tokenizer.decode([i])
+        if not piece or "\ufffd" in piece:
+            fragments += 1
+            parts.append("\ufffd")
+        else:
+            parts.append(piece)
+    return parts, fragments
 
 
-print(f"\n{worst_name}:")
-for label, text in (
-    (("العربية" if env.lang == "ar" else "Arabic"), sample_ar),
-    (("الإنجليزية" if env.lang == "ar" else "English"), sample_en),
-):
-    parts = pieces_of(tok, text)
-    print(f"\n{label} — {len(parts)} tokens, {len(text.split())} words")
+def show(tokenizer, label, text, name):
+    parts, fragments = pieces_of(tokenizer, text)
+    print(f"\n{label} — {len(parts)} tokens, {len(text.split())} words  [{name}]")
     print("  " + " | ".join(parts))
+    if fragments:
+        share = fragments / len(parts) * 100
+        if env.lang == "ar":
+            print(
+                f"  ← {fragments} من {len(parts)} رمزاً ({share:.0f}%) ليست حروفاً كاملة."
+                " رمز \ufffd يعني قطعة أصغر من الحرف الواحد — وهذا هو القياس لا خطأ عرض."
+            )
+        else:
+            print(
+                f"  ← {fragments} of {len(parts)} tokens ({share:.0f}%) are not whole"
+                " characters. A \ufffd is a piece SMALLER than one letter — that is the"
+                " measurement, not a rendering fault."
+            )
 
-# The contrast is the point: the SAME Arabic sentence through a tokenizer that
-# bought vocabulary for it.
+
+sample_ar, sample_en = pairs[0]
+worst_name = worst["tokenizer"]
+tok = tokenizers[worst_name]
+
+show(tok, "العربية" if env.lang == "ar" else "Arabic", sample_ar, worst_name)
+show(tok, "الإنجليزية" if env.lang == "ar" else "English", sample_en, worst_name)
+
+# The same Arabic sentence through a tokenizer that bought vocabulary for it.
+# This block is what proves the file is fine and the fragmentation is a choice.
 best_name = min(table, key=lambda r: r["ratio"])["tokenizer"]
 if best_name != worst_name:
-    parts = pieces_of(tokenizers[best_name], sample_ar)
-    print(f"\n{best_name} — {len(parts)} tokens for the same Arabic sentence")
-    print("  " + " | ".join(parts))
+    show(
+        tokenizers[best_name],
+        "العربية" if env.lang == "ar" else "Arabic",
+        sample_ar,
+        best_name,
+    )
 # --8<-- [end:pieces]
 
 

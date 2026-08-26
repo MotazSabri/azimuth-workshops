@@ -121,7 +121,7 @@ assets:
       # else's convenience and is the single most likely thing in this
       # repository to break.
       - "https://storage.googleapis.com/download.tensorflow.org/data/ecg.csv"
-      - "https://raw.githubusercontent.com/MotazSabri/azimuth-workshops/stable/mirror/ecg5000.csv"
+      - "https://raw.githubusercontent.com/MotazSabri/azimuth-workshops/main/mirror/ecg5000.csv"
     description:
       en: "5,000 ECG traces, 140 samples each. Column 141 is the label: 1 normal, 0 abnormal."
       ar: "خمسة آلاف أثر لتخطيط القلب، 140 عيّنة لكل منها. العمود 141 هو التسمية: 1 طبيعي، 0 شاذ."

@@ -83,8 +83,8 @@ assets:
   - name: parallel.tsv
     # Small on purpose: fertility is a ratio, and a few thousand aligned
     # sentence pairs measure it as precisely as a million would.
-    bytes: 401537 # exact, from the pinned download
-    sha256: 5652e964e9bcc0eb38db201077e81c9310e6d433e7777d1358a8709f913aa4ea
+    bytes: 376314 # exact, from the pinned download
+    sha256: 38bd8dc9d454dfd88102d0d1ca325652aa10deb5a4f7696ebc44ea295d454427
     license: "Tatoeba — CC BY 2.0 FR"
     sources:
       # Ours first, deliberately — the inverse of the usual order. This corpus
@@ -92,7 +92,19 @@ assets:
       # so our copy IS the canonical one and Tatoeba is the provenance, not a
       # live dependency. Pointing at their download first would make the
       # workshop fail the day they re-cut a release.
-      - "https://raw.githubusercontent.com/MotazSabri/azimuth-workshops/stable/mirror/ara-eng-parallel.tsv"
+      #
+      # `main`, NOT `stable`. Notebooks are served from stable; ASSETS are not,
+      # and pinning them there deadlocks the workflow: a corrected dataset
+      # pushed to main is invisible until promote runs, and promote should not
+      # run until the corrected dataset has been tested. Worse, it fails
+      # silently — the old sha256 still matches the old file, so the run
+      # reports "verified" while measuring stale data. That cost a full
+      # round-trip to diagnose.
+      #
+      # Branch pinning buys nothing here anyway: sha256 is what guarantees the
+      # bytes. The branch only decides which bytes you get offered, and the
+      # hash refuses them if they are wrong.
+      - "https://raw.githubusercontent.com/MotazSabri/azimuth-workshops/main/mirror/ara-eng-parallel.tsv"
     description:
       en: "Aligned Arabic/English sentence pairs, one pair per line, tab-separated."
       ar: "أزواج جُمل عربية/إنجليزية متقابلة، زوج في كل سطر، مفصولة بعلامة جدولة."
@@ -272,12 +284,17 @@ body:
     ref: pieces
     caption:
       en: >-
-        One sentence, cut three ways. Watch where the Arabic breaks: below the
-        letter, into fragments of a UTF-8 character. A `�` is not a rendering
-        bug — it is a token that is half a letter.
+        One sentence, cut three ways. The `�` marks a token smaller than a
+        single letter — the tokenizer is not splitting words, it is splitting
+        characters. It is not a broken file or a broken font: the third block
+        decodes the SAME bytes into readable Arabic, which is the proof that
+        the fragmentation is a choice somebody made rather than a property of
+        the script.
       ar: >-
-        جملة واحدة مقطّعة بثلاث طرائق. راقب أين تنكسر العربية: تحت مستوى الحرف،
-        إلى شظايا من محرف UTF-8. وعلامة `�` ليست خطأ عرض — بل رمز يساوي نصف حرف."
+        جملة واحدة مقطّعة بثلاث طرائق. تشير `�` إلى رمز أصغر من حرف واحد — فالمُجزِّئ
+        لا يقطّع الكلمات بل يقطّع الحروف. وليست ملفاً تالفاً ولا خطاً ناقصاً: فالكتلة
+        الثالثة تفكّ البايتات ذاتها إلى عربية مقروءة، وهذا هو الدليل على أن التفتيت
+        قرارٌ اتخذه أحدهم لا خاصيةٌ في الخط."
 
   - type: scaleNote
     text:

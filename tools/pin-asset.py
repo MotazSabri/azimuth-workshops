@@ -2,6 +2,7 @@
 """Pin a workshop's assets: download, hash, and write the hash into its YAML.
 
     python tools/pin-asset.py anomaly-detection-autoencoder
+    python tools/pin-asset.py <slug> --force   # re-pin after the file changed
 
 An unpinned asset is the quietest failure mode in a notebook corpus. When a
 URL you do not control starts returning something else — a redesigned CSV, a
@@ -29,7 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TIMEOUT = 120
 
 
-def pin(slug: str) -> int:
+def pin(slug: str, force: bool = False) -> int:
     path = ROOT / "workshops" / slug / "workshop.yaml"
     if not path.exists():
         print(f"no such workshop: {slug}")
@@ -41,8 +42,13 @@ def pin(slug: str) -> int:
 
     for asset in spec.get("assets") or []:
         name = asset["name"]
-        if asset.get("sha256"):
-            print(f"  · {name} — already pinned")
+        if asset.get("sha256") and not force:
+            # An asset's bytes CAN legitimately change — a corrected encoding,
+            # a trimmed corpus, a fixed column. Refusing to re-pin then means
+            # the workshop keeps fetching the old file and reporting it as
+            # verified, which is exactly how a bad conversion survived two
+            # full round-trips.
+            print(f"  · {name} — already pinned (use --force to re-pin)")
             continue
 
         digest = None
@@ -101,7 +107,10 @@ def pin(slug: str) -> int:
 
         wrote_hash = False
         for i in range(start, end):
-            if re.match(r"\s*sha256:\s*(null|~|)\s*(#.*)?$", lines[i]):
+            # Matches an existing HASH as well as `null` — otherwise --force
+            # computes the new digest and then silently fails to write it,
+            # which is worse than not offering --force at all.
+            if re.match(r"\s*sha256:\s*(null|~|[0-9a-fA-F]{64})?\s*(#.*)?$", lines[i]):
                 pad = lines[i][: len(lines[i]) - len(lines[i].lstrip())]
                 lines[i] = f"{pad}sha256: {digest}"
                 wrote_hash = True
@@ -126,7 +135,9 @@ def pin(slug: str) -> int:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    force = "--force" in sys.argv
+    if len(args) != 1:
         print(__doc__)
         sys.exit(2)
-    sys.exit(pin(sys.argv[1]))
+    sys.exit(pin(args[0], force=force))

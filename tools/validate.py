@@ -270,6 +270,17 @@ def check_workshop(directory: Path) -> None:
         # and a warning people ignore stops protecting the ones that matter.
         sources = asset.get("sources") or []
         ours = [s for s in sources if "azimuth-workshops" in s]
+        # An asset served from our own `stable` branch cannot be updated and
+        # tested: stable only moves after a verified run, and the run cannot
+        # verify data it has no way to fetch. The failure is silent — the old
+        # hash matches the old file — so it is an error, not a warning.
+        for url in ours:
+            if "/stable/" in url:
+                err(
+                    f"{where}: asset {asset.get('name')!r} is served from our own "
+                    f"`stable` branch — a corrected file could never be tested before "
+                    f"promotion. Use /main/; the sha256 is what guarantees the bytes."
+                )
         if len(sources) < 2 and not ours:
             warn(
                 f"{where}: asset {asset.get('name')!r} has a single third-party source — "
