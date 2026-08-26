@@ -119,15 +119,40 @@ env.explain("subword")
 
 # One sentence, cut both ways. The average is an argument; this is the
 # evidence for it.
+#
+# DECODE EACH PIECE, never print `.tokens` directly. GPT-2 is a BYTE-level
+# BPE: its raw token strings are the bytes re-encoded as printable Latin-1, so
+# an Arabic word shows up as `ĠØ§ÙĦ | Øª | Ø¹` — mojibake that looks like a
+# bug in the notebook rather than the finding. Decoding each id individually
+# puts the actual fragments back on screen, and where a token is half a UTF-8
+# character it shows as `�` — which IS the finding: the tokenizer is cutting
+# below the level of a letter.
 sample_ar, sample_en = pairs[0]
-name, tok = next(iter(tokenizers.items()))
+worst_name = worst["tokenizer"]
+tok = tokenizers[worst_name]
+
+
+def pieces_of(tokenizer, text):
+    ids = tokenizer.encode(text, add_special_tokens=False).ids
+    return [tokenizer.decode([i]) or "�" for i in ids]
+
+
+print(f"\n{worst_name}:")
 for label, text in (
     (("العربية" if env.lang == "ar" else "Arabic"), sample_ar),
     (("الإنجليزية" if env.lang == "ar" else "English"), sample_en),
 ):
-    ids = tok.encode(text, add_special_tokens=False)
-    print(f"\n{label} — {len(ids.ids)} tokens, {len(text.split())} words")
-    print("  " + " | ".join(ids.tokens))
+    parts = pieces_of(tok, text)
+    print(f"\n{label} — {len(parts)} tokens, {len(text.split())} words")
+    print("  " + " | ".join(parts))
+
+# The contrast is the point: the SAME Arabic sentence through a tokenizer that
+# bought vocabulary for it.
+best_name = min(table, key=lambda r: r["ratio"])["tokenizer"]
+if best_name != worst_name:
+    parts = pieces_of(tokenizers[best_name], sample_ar)
+    print(f"\n{best_name} — {len(parts)} tokens for the same Arabic sentence")
+    print("  " + " | ".join(parts))
 # --8<-- [end:pieces]
 
 
@@ -186,10 +211,32 @@ def normalize(text):
     return text
 
 
-normalized = [normalize(t) for t in ar_texts]
-after = count_tokens(tok, normalized) / ar_words
-saved = (ar_fertility - after) / ar_fertility * 100 if ar_fertility else 0.0
-print(f"{name}: {ar_fertility:.3f} -> {after:.3f} tokens/word  ({saved:+.1f}%)")
+enabled = [
+    name
+    for name, on in (
+        ("diacritics", STRIP_DIACRITICS),
+        ("alef", NORMALIZE_ALEF),
+        ("tatweel", STRIP_TATWEEL),
+    )
+    if on
+]
+
+if not enabled:
+    # Saying so beats printing "6.018 -> 6.018 (-0.0%)", which reads like the
+    # normalization does not work rather than like it was never switched on.
+    if env.lang == "ar":
+        print("لم تُفعَّل أي معالجة بعد — أعد أحد الثوابت أعلاه إلى True ثم شغّل الخلية.")
+    else:
+        print("No normalization enabled yet — set one of the flags above to True and re-run.")
+else:
+    # Measured on the WORST tokenizer, the one the headline number came from.
+    # Normalizing against a tokenizer that already handles Arabic well would
+    # show almost no gain and teach the opposite of the truth.
+    normalized = [normalize(t) for t in ar_texts]
+    after = count_tokens(tok, normalized) / ar_words
+    saved = (ar_fertility - after) / ar_fertility * 100 if ar_fertility else 0.0
+    print(f"{worst_name}: {ar_fertility:.3f} -> {after:.3f} tokens/word  ({-saved:+.1f}%)")
+    print(f"  enabled: {', '.join(enabled)}")
 # --8<-- [end:reduce_the_tax]
 
 

@@ -14,17 +14,25 @@ scenario:
   en: >-
     The same sentence costs more in Arabic than in English. Not metaphorically
     — measurably, in tokens, and tokens are what you pay for and what fills
-    your context window. A tokenizer trained mostly on English learns English
-    words as single pieces and shatters Arabic into fragments, so an Arabic
-    reader pays twice: a higher bill for identical content, and a shorter
-    effective context for the same model. This workshop measures that number
-    instead of asserting it.
+    your context window. So an Arabic reader pays twice: a higher bill for
+    identical content, and a shorter effective context from the same model.
+
+
+    What this workshop measures is not just that the gap exists but how much
+    of it is anyone's fault. Run it and you will find the same Arabic
+    sentences costing one production tokenizer roughly four times what they
+    cost another. That spread is the whole point: the tax is not a property of
+    Arabic, it is a procurement decision, and somebody made it.
   ar: >-
     الجملة نفسها تكلّف بالعربية أكثر مما تكلّف بالإنجليزية. لا مجازاً — بل قياساً،
-    بالرموز، والرموز هي ما تدفع ثمنه وما يملأ نافذة السياق. المُجزِّئ المُدرَّب على
-    الإنجليزية في معظمه يتعلّم كلماتها قطعاً كاملة ويفتّت العربية شظايا، فيدفع
-    القارئ العربي مرتين: فاتورة أعلى للمحتوى ذاته، وسياق فعلي أقصر للنموذج ذاته.
-    هذه الورشة تقيس ذلك الرقم بدل أن تدّعيه.
+    بالرموز، والرموز هي ما تدفع ثمنه وما يملأ نافذة السياق. فيدفع القارئ العربي
+    مرتين: فاتورة أعلى للمحتوى ذاته، وسياق فعلي أقصر من النموذج ذاته.
+
+
+    وما تقيسه هذه الورشة ليس وجود الفجوة فحسب، بل كم منها صنيعُ أحد. شغّلها
+    تجد الجُمل العربية ذاتها تكلّف مُجزِّئاً إنتاجياً نحو أربعة أضعاف ما تكلّفه
+    آخر. وهذا الفارق هو المقصد كله: الضريبة ليست خاصيةً في العربية، بل قرار
+    شراء، وقد اتخذه أحدهم.
 
 goal:
   en: >-
@@ -102,7 +110,7 @@ profiles:
       vramGb: 0
       ramGb: 2
     scale:
-      sampleSentences: 4000
+      sampleSentences: 1000
       # Prices are inputs, not facts — they change, and a workshop that hard-codes
       # them lies quietly. Overridable here so a reader can plug in their own.
       pricePerMillionTokens: 3.0
@@ -124,8 +132,13 @@ profiles:
 
 checks:
   - id: fertility-measured
+    # Measured at 4.82 on GPT-2. 2.0 is deliberately well below that: the check
+    # should confirm a real gap exists, not pin the exact number, because the
+    # ratio reported is the WORST tokenizer's and a Hub outage that drops GPT-2
+    # would legitimately leave BLOOM's 1.22 as the maximum. Failing then would
+    # punish a reader for someone else's downtime.
     required: true
-    min: 1.0
+    min: 2.0
     label:
       en: "Arabic fertility, as a multiple of English"
       ar: "خصوبة العربية منسوبة إلى الإنجليزية"
@@ -246,15 +259,25 @@ body:
     captures: [ar_fertility, en_fertility, ratio, table]
     thumbnail: true
     caption:
-      en: "The number the whole workshop is for. Read the ratio column, not the absolute values."
-      ar: "الرقم الذي وُجدت الورشة كلها من أجله. اقرأ عمود النسبة لا القيم المطلقة."
+      en: >-
+        Read DOWN the ratio column, not across one row. The spread between the
+        tokenizers is the finding — the same Arabic sentences cost one of them
+        four times what they cost another.
+      ar: >-
+        اقرأ عمود النسبة رأسياً لا صفاً واحداً أفقياً. الفارق بين المُجزِّئات هو
+        الاكتشاف — الجُمل العربية ذاتها تكلّف أحدها أربعة أضعاف ما تكلّفه آخر."
 
   - type: cell
     id: pieces
     ref: pieces
     caption:
-      en: "One sentence, cut both ways. This is where the average stops being abstract."
-      ar: "جملة واحدة، مقطّعة بالطريقتين. هنا يكفّ المتوسط عن كونه تجريداً."
+      en: >-
+        One sentence, cut three ways. Watch where the Arabic breaks: below the
+        letter, into fragments of a UTF-8 character. A `�` is not a rendering
+        bug — it is a token that is half a letter.
+      ar: >-
+        جملة واحدة مقطّعة بثلاث طرائق. راقب أين تنكسر العربية: تحت مستوى الحرف،
+        إلى شظايا من محرف UTF-8. وعلامة `�` ليست خطأ عرض — بل رمز يساوي نصف حرف."
 
   - type: scaleNote
     text:
@@ -267,6 +290,28 @@ body:
         يقيس الملف المجاني {{scale.sampleSentences}} زوجاً من الجمل، وهو أكثر
         من كافٍ لنسبة مستقرة. وتأتي افتراضات السعر والسياق من الملف أيضاً —
         فهي مُدخلات لا حقائق، فضع أرقامك في `env.cfg` بدل الوثوق بهذه.
+
+  - type: prose
+    text:
+      en: >-
+        Notice which tokenizer is expensive. GPT-2's vocabulary was spent
+        almost entirely on English, so Arabic falls through to its byte-level
+        fallback and is billed one token per byte or so. BLOOM spent 250,000
+        pieces across forty-six languages, and Arabic got some of them — which
+        is why the same sentences cost it barely more than English.
+
+
+        Neither is a bug. They are different purchases, and the difference
+        lands on different readers.
+      ar: >-
+        لاحِظ أيّ المُجزِّئات هو الغالي. أُنفقت مفردات GPT-2 على الإنجليزية كلها
+        تقريباً، فتسقط العربية إلى احتياطه على مستوى البايت وتُحاسَب بنحو رمز
+        لكل بايت. أما BLOOM فأنفق مئتين وخمسين ألف قطعة على ستٍّ وأربعين لغة،
+        ونالت العربية نصيباً منها — ولهذا لا تكلّفه الجُمل ذاتها إلا أكثر قليلاً
+        من الإنجليزية.
+
+
+        وليس أيّهما خطأً. إنهما صفقتان مختلفتان، والفرق يقع على قرّاء مختلفين.
 
   - type: cell
     id: the-bill

@@ -305,7 +305,10 @@ class Builder:
             "# %cd this cell used to do also means the notebook stops caring where\n"
             "# it was opened from.\n"
             "sys.path.insert(0, str(root / 'shim'))\n"
-            "os.environ.setdefault('AZIMUTH_DATA_DIR', str(root / 'data'))",
+            # Assigned, not bare: setdefault RETURNS the value, and a bare call as
+        # the last line of a cell makes Jupyter print it — the setup cell was
+        # ending with a stray "'C:\\\\Users\\\\...\\\\data'" execute_result.
+        "_ = os.environ.setdefault('AZIMUTH_DATA_DIR', str(root / 'data'))",
             cid="bootstrap",
         )
 

@@ -207,6 +207,34 @@ PNG_MIME = "image/png"
 # letting the plaintext ride along in a stream output would defeat the design
 # from the other end. Found by rendering the page and searching for it.
 COMPLETION_CODE = re.compile(r"AZ-[0-9A-F]{10}")
+
+# Progress bars, download meters and library warnings are runtime furniture,
+# not results. They are legitimately useful in a live notebook and pure noise
+# on a published page — the tokenizers cell emitted four tqdm widgets and the
+# same HF auth warning twice, once as a stream and once through logging.
+#
+# Dropped at capture rather than silenced in code.py: suppressing them in the
+# workshop would ALSO hide them from the learner, who has a real reason to see
+# a download is running. The page is the only place they are worthless.
+NOISE = re.compile(
+    r"""^\s*(
+        .*IProgress\ not\ found
+      | .*huggingface_hub.*
+      | Warning:\ You\ are\ sending\ unauthenticated\ requests
+      | .*TqdmWarning.*
+      | \s*from\ \.autonotebook\ import\ tqdm.*
+      | .*\d+%\|[\u2588\u2589\u258a\u258b\u258c\u258d\u258e\u258f\s|]*\|.*
+    )""",
+    re.VERBOSE,
+)
+
+
+def strip_noise(text: str) -> str:
+    """Drop progress/warning lines, keep everything the workshop printed."""
+    kept = [ln for ln in text.split("\n") if not NOISE.match(ln)]
+    return "\n".join(kept).strip("\n")
+
+
 REDACTED = "AZ-\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588"
 
 
@@ -228,6 +256,7 @@ def normalize_outputs(cell_id: str, outputs: list, out_dir: Path, slug: str) -> 
             text = "".join(output.get("text", []))
             if CAPTURE_TAG in text:  # the injected cell's payload, not content
                 continue
+            text = strip_noise(text)
             if text.strip():
                 captured.append(
                     {"kind": "stream", "text": COMPLETION_CODE.sub(REDACTED, text.rstrip())}
@@ -257,8 +286,13 @@ def normalize_outputs(cell_id: str, outputs: list, out_dir: Path, slug: str) -> 
                         "format": "svg" if svg else "png",
                     }
                 )
+            elif "widget-view" in " ".join(data):
+                # A tqdm/ipywidgets view. Its text/plain fallback is a progress
+                # bar snapshot frozen at whatever percentage the run happened to
+                # end on — meaningless on a page.
+                continue
             elif "text/plain" in data:
-                text = "".join(data["text/plain"]).strip()
+                text = strip_noise("".join(data["text/plain"])).strip()
                 if text:
                     captured.append({"kind": "stream", "text": COMPLETION_CODE.sub(REDACTED, text)})
 
