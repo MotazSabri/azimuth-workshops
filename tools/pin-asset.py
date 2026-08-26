@@ -54,6 +54,7 @@ def pin(slug: str) -> int:
                 print(f"  · {name} — {url} failed ({type(exc).__name__})")
                 continue
             digest = hashlib.sha256(data).hexdigest()
+            size = len(data)
             print(f"  · {name} — {len(data):,} bytes from {url}")
             print(f"    sha256: {digest}")
             print(f"    bytes:  {len(data)}")
@@ -63,30 +64,57 @@ def pin(slug: str) -> int:
             print(f"  ✖ {name} — every source failed; not pinned")
             return 1
 
-        # Replace the `sha256: null` line that belongs to THIS asset: the first
-        # one at or after the asset's `name:` line. Anchoring on the name is
-        # what keeps a multi-asset workshop from having its hashes swapped.
+        # Rewrite the sha256 (and bytes) lines belonging to THIS asset.
+        #
+        # Anchored on the asset's `name:` and bounded by the next list item,
+        # rather than by a fixed line count: an asset block with a few lines
+        # of comment in it is normal, and a 12-line window silently missed
+        # one. Bounding on structure instead of distance cannot.
+        #
+        # Both patterns tolerate a trailing comment. The first attempt
+        # required `null` at end of line and failed on `sha256: null # PIN ME`
+        # — which is exactly how an author marks the line they want filled in.
         lines = text.split("\n")
         start = next(
             (
                 i
                 for i, line in enumerate(lines)
-                if re.match(rf"\s*-?\s*name:\s*{re.escape(name)}\s*$", line)
+                if re.match(rf"\s*-?\s*name:\s*{re.escape(name)}\s*(#.*)?$", line)
             ),
             None,
         )
         if start is None:
-            print(f"  ✖ {name} — could not find its block in the YAML")
+            print(f"  x {name} — could not find its block in the YAML")
             return 1
-        for i in range(start, min(start + 12, len(lines))):
-            if re.match(r"\s*sha256:\s*null\s*$", lines[i]):
-                indent = lines[i][: len(lines[i]) - len(lines[i].lstrip())]
-                lines[i] = f"{indent}sha256: {digest}"
-                changed += 1
+
+        indent = len(lines[start]) - len(lines[start].lstrip())
+        end = len(lines)
+        for i in range(start + 1, len(lines)):
+            stripped = lines[i].strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            this_indent = len(lines[i]) - len(lines[i].lstrip())
+            # The next list item, or anything dedented out of the block.
+            if stripped.startswith("- ") or this_indent < indent:
+                end = i
                 break
-        else:
-            print(f"  ✖ {name} — no `sha256: null` line found near it")
+
+        wrote_hash = False
+        for i in range(start, end):
+            if re.match(r"\s*sha256:\s*(null|~|)\s*(#.*)?$", lines[i]):
+                pad = lines[i][: len(lines[i]) - len(lines[i].lstrip())]
+                lines[i] = f"{pad}sha256: {digest}"
+                wrote_hash = True
+            # `bytes:` is measured, never estimated — fill it from the same
+            # download rather than leaving the author to copy it by hand.
+            elif re.match(r"\s*bytes:\s*[\d_]+\s*(#.*)?$", lines[i]):
+                pad = lines[i][: len(lines[i]) - len(lines[i].lstrip())]
+                lines[i] = f"{pad}bytes: {size} # exact, from the pinned download"
+
+        if not wrote_hash:
+            print(f"  x {name} — no `sha256:` line found in its block")
             return 1
+        changed += 1
         text = "\n".join(lines)
 
     if changed:

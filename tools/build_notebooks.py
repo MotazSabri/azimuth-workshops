@@ -371,6 +371,15 @@ class Builder:
 
 
 def build_workshop(directory: Path, config: dict, check: bool) -> list[tuple[Path, str]]:
+    """Build one workshop's notebooks, or return [] if THIS workshop is broken.
+
+    Errors are scoped per workshop. An earlier version tested the global
+    `errors` list, so a fault in the alphabetically-first workshop silently
+    suppressed the output of every workshop after it — the build reported the
+    first one's problem and said nothing at all about the others, which looked
+    exactly like "it just didn't build that one".
+    """
+    before = len(errors)
     slug = directory.name
     where = f"workshops/{slug}"
     spec_path = directory / "workshop.yaml"
@@ -413,7 +422,9 @@ def build_workshop(directory: Path, config: dict, check: bool) -> list[tuple[Pat
         if ref in regions:
             check_identifiers_ascii(regions[ref], ref, where)
 
-    if errors:
+    # Only THIS workshop's errors block THIS workshop.
+    if len(errors) > before:
+        print(f"  ! {slug} — skipped, see errors below")
         return []
 
     outputs: list[tuple[Path, str]] = []
@@ -453,11 +464,22 @@ def main() -> int:
     run_ruff([d / "code.py" for d in directories])
 
     written = 0
+    unchanged = 0
+    skipped = 0
     stale: list[str] = []
     for directory in directories:
-        for path, text in build_workshop(directory, config, args.check):
+        outputs = build_workshop(directory, config, args.check)
+        if not outputs:
+            skipped += 1
+        for path, text in outputs:
             current = path.read_text(encoding="utf-8") if path.exists() else None
             if current == text:
+                # Already byte-identical. Counted, not silent: "0 notebooks
+                # written" with nothing else on the line reads like a failure
+                # when it is the opposite — every notebook already matches its
+                # source, which is exactly what a deterministic build should
+                # say on a second run.
+                unchanged += 1
                 continue
             if args.check:
                 stale.append(path.name)
@@ -481,8 +503,19 @@ def main() -> int:
         print(f"{len(directories)} workshop(s) · notebooks match their source")
         return 0
 
-    print(f"{len(directories)} workshop(s) · {written} notebook(s) written")
-    return 0
+    # Say how many were skipped as well as how many were written. "2 workshops
+    # · 2 notebooks written" reads like success when four were expected.
+    parts = [f"{len(directories)} workshop(s)"]
+    if written:
+        parts.append(f"{written} notebook(s) written")
+    if unchanged:
+        parts.append(f"{unchanged} already up to date")
+    if not written and not unchanged:
+        parts.append("nothing built")
+    if skipped:
+        parts.append(f"{skipped} workshop(s) SKIPPED")
+    print(" · ".join(parts))
+    return 1 if skipped else 0
 
 
 if __name__ == "__main__":

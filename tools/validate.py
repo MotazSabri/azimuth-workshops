@@ -85,9 +85,7 @@ def check_yaml_portability(path: Path, where: str) -> None:
     side is looking at it, and the divergence surfaces as a budget check that
     passes in the notebook and fails on the site.
     """
-    for n, line in enumerate(
-        path.read_text(encoding="utf-8").replace("\r\n", "\n").split("\n"), 1
-    ):
+    for n, line in enumerate(path.read_text(encoding="utf-8").replace("\r\n", "\n").split("\n"), 1):
         code = line.split("#", 1)[0]
         if re.search(r":\s*-?\d[\d_]*_[\d_]*\d\s*$", code):
             err(f"{where}:{n}: numeric underscore — PyYAML reads an int, js-yaml a string")
@@ -266,8 +264,17 @@ def check_workshop(directory: Path) -> None:
             err(f"{where}: asset {asset.get('name')!r} declares no source")
         if not asset.get("sha256"):
             warn(f"{where}: asset {asset.get('name')!r} is unpinned (sha256: null)")
-        if len(asset.get("sources") or []) < 2:
-            warn(f"{where}: asset {asset.get('name')!r} has no mirror — one 404 from broken")
+        # A single source is only a risk when it is SOMEONE ELSE'S. An asset
+        # served from this repository is as available as the workshop itself,
+        # so warning about it would be noise the author learns to ignore —
+        # and a warning people ignore stops protecting the ones that matter.
+        sources = asset.get("sources") or []
+        ours = [s for s in sources if "azimuth-workshops" in s]
+        if len(sources) < 2 and not ours:
+            warn(
+                f"{where}: asset {asset.get('name')!r} has a single third-party source — "
+                f"one 404 from broken; add a mirror under mirror/"
+            )
 
     # ── the thumbnail ──────────────────────────────────────────────────────
     if not any(b.get("thumbnail") for b in body):

@@ -75,10 +75,15 @@ assets:
   - name: parallel.tsv
     # Small on purpose: fertility is a ratio, and a few thousand aligned
     # sentence pairs measure it as precisely as a million would.
-    bytes: 0 # measured by tools/pin-asset.py on the first run
-    sha256: null # PIN ME
+    bytes: 401537 # exact, from the pinned download
+    sha256: 5652e964e9bcc0eb38db201077e81c9310e6d433e7777d1358a8709f913aa4ea
     license: "Tatoeba — CC BY 2.0 FR"
     sources:
+      # Ours first, deliberately — the inverse of the usual order. This corpus
+      # was assembled and trimmed for this workshop rather than fetched whole,
+      # so our copy IS the canonical one and Tatoeba is the provenance, not a
+      # live dependency. Pointing at their download first would make the
+      # workshop fail the day they re-cut a release.
       - "https://raw.githubusercontent.com/MotazSabri/azimuth-workshops/stable/mirror/ara-eng-parallel.tsv"
     description:
       en: "Aligned Arabic/English sentence pairs, one pair per line, tab-separated."

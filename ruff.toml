@@ -62,7 +62,7 @@ ignore = [
 # Splitting it into a dozen helpers to satisfy a branch counter would make the
 # list harder to read and to extend, which is the opposite of the point.
 "tools/validate.py" = ["PLR2004", "PLR0912", "PLR0915"]
-"tools/pin-asset.py" = ["PLR2004"]
+"tools/pin-asset.py" = ["PLR2004", "PLR0912", "PLR0915"]
 # main() is a flat sequence of independent steps for the same reason
 # check_workshop() is; splitting it to satisfy a branch counter would hide the
 # order the build actually runs in.
