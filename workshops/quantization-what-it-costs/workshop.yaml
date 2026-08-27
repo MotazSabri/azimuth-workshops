@@ -7,8 +7,8 @@ title:
   ar: "التكميم: ما تكلّفه الدقة الثمانية والرباعية فعلاً"
 
 concept:
-  en: "The trade curve is not a line, and it has a cliff"
-  ar: "منحنى المقايضة ليس خطاً، وفيه هاوية"
+  en: "Three costs, and the one you did not budget for goes backwards"
+  ar: "ثلاث تكاليف، وأحدها لم تحسب حسابه يسير إلى الوراء"
 
 scenario:
   en: >-
@@ -19,10 +19,11 @@ scenario:
     network the precision was spent.
 
 
-    So the interesting question is not "does int4 work" — it is what the curve
-    between fp16 and int4 looks like. Read most summaries and you would expect
-    a gentle slope. Measure it and you find something closer to a plateau
-    followed by an edge, and the edge is not where the bit count halves.
+    So the interesting question is not "does int4 work" — it is which of the
+    three costs actually moves. Memory falls, predictably. Quality barely
+    moves at all, which is the papers working. And latency does something no
+    summary prepares you for: it can get WORSE, and not even in bit order.
+    Measure all three and the deployment decision stops being obvious.
   ar: >-
     التكميم أرخص مكسب في النشر: خزّن الأوزان ببتّات أقل، فيتّسع النموذج على
     عتاد لم يكن يسعه من قبل. تخبرك الأوراق أنه ينجح. وما لا تستطيع إخبارك به
@@ -30,9 +31,10 @@ scenario:
     إنفاق الدقة في الشبكة.
 
 
-    فالسؤال المهم ليس «هل تنجح الدقة الرباعية» بل كيف يبدو المنحنى بين الدقة
-    النصفية والرباعية. اقرأ أغلب الملخّصات تتوقّع انحداراً لطيفاً. قِسه تجد ما
-    يشبه هضبةً تتلوها حافة، والحافة ليست حيث ينتصف عدد البتّات.
+    فالسؤال المهم ليس «هل تنجح الدقة الرباعية» بل أيُّ التكاليف الثلاثة يتحرك
+    فعلاً. الذاكرة تنخفض كما هو متوقَّع. والجودة لا تكاد تتحرك، وهذا هو نجاح
+    الأوراق. أما زمن الاستجابة فيفعل ما لا يهيّئك له أي ملخّص: قد يسوء، ولا
+    حتى بترتيب البتّات. قِس الثلاثة معاً يكفّ قرار النشر عن كونه بديهياً.
 
 goal:
   en: >-
@@ -89,10 +91,13 @@ dependencies:
     # Pinned hard. This is the volatile tier: bitsandbytes in particular has
     # broken on minor releases, and "whatever PyPI had that morning" is how a
     # workshop starts failing for readers months after it was verified.
-    - "transformers==4.44.2"
-    - "bitsandbytes==0.43.3"
-    - "accelerate==0.33.0"
-    - "datasets==2.21.0"
+    - "transformers==5.16.1"
+    - "accelerate==1.14.0"
+    - "datasets==5.0.1"
+    - "bitsandbytes==0.46.1"
+    - "tokenizers==0.23.1"
+    - "safetensors==0.8.0"
+    - "huggingface-hub==1.28.0"
 
 profiles:
   - id: free
@@ -276,20 +281,25 @@ body:
     thumbnail: true
     caption:
       en: >-
-        Three costs on one figure. Read which line is flat and which has a
-        corner — the corner is the decision, and it is not where the bit count
-        halves.
+        Three costs on one figure, all zero-based so a flat line looks flat.
+        Two of these fall the way you expect. The third is the workshop.
       ar: >-
-        ثلاث تكاليف في شكل واحد. اقرأ أي خط مستوٍ وأيّها فيه انعطاف — الانعطاف
-        هو القرار، وهو ليس حيث ينتصف عدد البتّات.
+        ثلاث تكاليف في شكل واحد، كلها من الصفر ليبدو الخط المستوي مستوياً.
+        اثنتان منها تنخفضان كما تتوقع. والثالثة هي الورشة.
 
   - type: cell
     id: latency
     ref: latency
     captures: [fp16_ms, int8_ms, int4_ms]
     caption:
-      en: "The one that goes the wrong way. Smaller weights, more work per matmul."
-      ar: "الرقم الذي يسير في الاتجاه الخاطئ. أوزان أصغر وعمل أكثر في كل ضرب مصفوفات."
+      en: >-
+        The one that goes the wrong way — and check the ORDER, not just the
+        direction. If a variant with more bits is faster than one with fewer,
+        the cost is not the bits, it is what the kernel has to do around them.
+      ar: >-
+        الرقم الذي يسير في الاتجاه الخاطئ — وافحص الترتيب لا الاتجاه وحده. إن
+        كانت صيغة ببتّات أكثر أسرع من صيغة ببتّات أقل، فالتكلفة ليست البتّات بل
+        ما تفعله النواة حولها.
 
   - type: exercise
     id: pick-a-deployment

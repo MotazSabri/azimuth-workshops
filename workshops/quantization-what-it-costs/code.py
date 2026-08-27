@@ -23,7 +23,10 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL)
 # Every variant is scored on byte-identical text. Re-sampling per model would
 # put sampling noise on the same axis as the effect being measured, and a real
 # int4 regression could hide inside it — the numbers would still look precise.
-raw = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
+# `Salesforce/wikitext`, not bare `wikitext`: the Hub now requires the owning
+# org for this dataset, and the bare name resolves to nothing. Exactly the
+# volatile-tier rot this workshop exists to demonstrate the pinning for.
+raw = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
 text = "\n\n".join(t for t in raw["text"] if t.strip())
 all_ids = tokenizer(text, return_tensors="pt").input_ids[0][: env.cfg["evalTokens"]]
 
@@ -50,7 +53,10 @@ from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 def load(variant):
     """One model, three ways. Only the dtype/quantization config differs."""
     if variant == "fp16":
-        kwargs = {"torch_dtype": torch.float16}
+        # `dtype`, not `torch_dtype` — renamed in transformers 5. The old name
+        # still works and warns, which is exactly how a workshop keeps running
+        # for a year and then stops.
+        kwargs = {"dtype": torch.float16}
     elif variant == "int8":
         kwargs = {"quantization_config": BitsAndBytesConfig(load_in_8bit=True)}
     else:
@@ -167,9 +173,15 @@ else:
 # --8<-- [start:latency]
 fp16_ms, int8_ms, int4_ms = (results[v]["ms"] for v in ("fp16", "int8", "int4"))
 
-# Report the DIRECTION, because the direction is the surprise. Quantized
-# weights are smaller but every matmul now pays a dequantize step, so at batch
-# size 1 the smaller model is often the slower one.
+# Report the direction AND the order. The measured surprise is not just that
+# quantized is slower — it is that int8 is slower than int4, i.e. the cost
+# does not follow the bit count at all.
+#
+# int8 here runs LLM.int8()'s mixed-precision decomposition: outlier columns
+# are split out and computed in fp16, then recombined. That is what buys the
+# near-perfect quality two cells up, and it is not free. NF4 does a plainer
+# dequantize-and-matmul and lands between the two.
+slowest = max(("fp16", fp16_ms), ("int8", int8_ms), ("int4", int4_ms), key=lambda x: x[1])
 if env.lang == "ar":
     print(
         f"زمن الاستجابة: نصفية {fp16_ms:.1f} · ثمانية {int8_ms:.1f} · رباعية {int4_ms:.1f} م.ث/رمز"
@@ -182,6 +194,10 @@ else:
     print(f"latency: fp16 {fp16_ms:.1f} · int8 {int8_ms:.1f} · int4 {int4_ms:.1f} ms/token")
     verdict = "SLOWER" if int4_ms > fp16_ms else "faster"
     print(f"int4 is {verdict} than fp16 by {max(int4_ms, fp16_ms) / min(int4_ms, fp16_ms):.2f}×")
+    if slowest[0] != "int4":
+        print(
+            f"and the slowest is not the smallest — it is {slowest[0]}. The cost is not the bits."
+        )
 # --8<-- [end:latency]
 
 
@@ -189,8 +205,13 @@ else:
 # YOUR TURN.
 #
 # State the constraint BEFORE reading the table. Then let the table choose.
+# Chosen to sit AWAY from the measured values, not on top of them. A 60 ms
+# ceiling put int8 at 58.5 on one run and 62.8 on another, so the two language
+# builds of this page disagreed about which variant was viable — from timing
+# noise, on identical code. A default that flips on noise teaches that the
+# method is unreliable rather than that the choice is yours.
 BUDGET_MB = 400
-MAX_MS_PER_TOKEN = 60
+MAX_MS_PER_TOKEN = 80
 MAX_PPL_RATIO = 1.05
 
 viable = [

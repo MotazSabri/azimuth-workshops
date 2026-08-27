@@ -48,8 +48,8 @@ goal:
     وسعر الاستدلال، ثم جِد التغيير الواحد في النص الذي يحرّك الرقم أكثر من غيره.
 
 difficulty: beginner # foundational | beginner | intermediate | advanced (PaperMeta)
-status: draft # stable | draft (PaperMeta)
-publishedAt: null
+status: stable # stable | draft (PaperMeta)
+publishedAt: "2026-08-25"
 
 maintenance:
   # moderate: one third-party library (`tokenizers`) plus downloaded tokenizer
