@@ -1,0 +1,83 @@
+{
+ "schema": "run/v1",
+ "slug": "quantization-what-it-costs",
+ "lang": "ar",
+ "codeHash": "8fd666ce4e11cece",
+ "status": "failed",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-08-27T22:38:25Z",
+  "device": "NVIDIA GeForce GTX 1070 with Max-Q Design",
+  "torch": "2.6.0+cu124",
+  "python": "3.13.5",
+  "shim": "0.1.0",
+  "elapsedSec": 15.9,
+  "commit": "cd18d2f554c07fa865fa7527f16a651dfd0e4c47"
+ },
+ "metrics": {},
+ "shapes": {},
+ "cells": {
+  "dependencies": [
+   {
+    "kind": "stream",
+    "text": "Note: you may need to restart the kernel to use updated packages.\nWARNING: Ignoring invalid distribution ~uggingface-hub (C:\\Users\\Motaz\\PycharmProjects\\SWARM\\.venv\\Lib\\site-packages)\nWARNING: Ignoring invalid distribution ~uggingface-hub (C:\\Users\\Motaz\\PycharmProjects\\SWARM\\.venv\\Lib\\site-packages)\nWARNING: Ignoring invalid distribution ~uggingface-hub (C:\\Users\\Motaz\\PycharmProjects\\SWARM\\.venv\\Lib\\site-packages)\n\n[notice] A new release of pip is available: 26.1 -> 26.2.1\n[notice] To update, run: python.exe -m pip install --upgrade pip"
+   }
+  ],
+  "setup": [
+   {
+    "kind": "error",
+    "ename": "AzimuthError",
+    "evalue": "⁦AZ-E102⁩ — ذاكرة معالج الرسوميات المتصل أقل مما يطلبه ملف إعدادات هذه الورشة. ⁦needs: 14 GB. found: 8.0 GB.⁩\n\nالحل: اضبط PROFILE = 'free' في خلية الإعداد وأعد التشغيل. هذا الملف مُعدّ لمعالج T4 بسعة 16 غيغابايت."
+   }
+  ],
+  "windows": [
+   {
+    "kind": "error",
+    "ename": "NameError",
+    "evalue": "name 'env' is not defined"
+   }
+  ],
+  "measure": [
+   {
+    "kind": "error",
+    "ename": "NameError",
+    "evalue": "name 'MODEL' is not defined"
+   }
+  ],
+  "curve": [
+   {
+    "kind": "error",
+    "ename": "NameError",
+    "evalue": "name 'fp16_mb' is not defined"
+   }
+  ],
+  "latency": [
+   {
+    "kind": "error",
+    "ename": "KeyError",
+    "evalue": "'fp16'"
+   }
+  ],
+  "pick-a-deployment": [
+   {
+    "kind": "error",
+    "ename": "NameError",
+    "evalue": "name 'variants' is not defined"
+   }
+  ],
+  "verify": [
+   {
+    "kind": "error",
+    "ename": "NameError",
+    "evalue": "name 'env' is not defined"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "error",
+    "ename": "NameError",
+    "evalue": "name 'env' is not defined"
+   }
+  ]
+ }
+}

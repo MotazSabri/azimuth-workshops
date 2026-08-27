@@ -1,0 +1,85 @@
+{
+ "schema": "run/v1",
+ "slug": "reward-shaping-gone-wrong",
+ "lang": "en",
+ "codeHash": "921396b8e8c2671a",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-08-27T22:17:31Z",
+  "device": "NVIDIA GeForce GTX 1070 with Max-Q Design",
+  "torch": "2.6.0+cu124",
+  "python": "3.13.5",
+  "shim": "0.1.0",
+  "elapsedSec": 1094.5,
+  "commit": "cd18d2f554c07fa865fa7527f16a651dfd0e4c47"
+ },
+ "metrics": {
+  "episodes_run": 4500,
+  "landing_ratio": 0.0,
+  "honest_landing": 0.0,
+  "hacked_landing": 0.0
+ },
+ "shapes": {},
+ "cells": {
+  "dependencies": [
+   {
+    "kind": "stream",
+    "text": "The system cannot find the path specified.\nNote: you may need to restart the kernel to use updated packages.\nWARNING: Ignoring invalid distribution ~uggingface-hub (C:\\Users\\Motaz\\PycharmProjects\\SWARM\\.venv\\Lib\\site-packages)\n  error: subprocess-exited-with-error\n  \n  Building wheel for box2d-py (pyproject.toml) did not run successfully.\n  exit code: 1\n  \n  [35 lines of output]\n  C:\\Users\\Motaz\\AppData\\Local\\Temp\\pip-build-env-3oqyebtf\\overlay\\Lib\\site-packages\\setuptools\\_distutils\\dist.py:318: UserWarning: Unknown distribution option: 'test_suite'\n    warnings.warn(msg)\n  C:\\Users\\Motaz\\AppData\\Local\\Temp\\pip-build-env-3oqyebtf\\overlay\\Lib\\site-packages\\setuptools\\dist.py:765: SetuptoolsDeprecationWarning: License classifiers are deprecated.\n  !!\n  \n          ********************************************************************************\n          Please consider removing the following classifiers in favor of a SPDX license expression:\n  \n          License :: OSI Approved :: zlib/libpng License\n  \n          See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.\n          ********************************************************************************\n  \n  !!\n    self._finalize_license_expression()\n  Using setuptools (version 84.0.0).\n  running bdist_wheel\n  running build\n  running build_py\n  creating build\\lib.win-amd64-cpython-313\\Box2D\n  copying library\\Box2D\\Box2D.py -> build\\lib.win-amd64-cpython-313\\Box2D\n  copying library\\Box2D\\__init__.py -> build\\lib.win-amd64-cpython-313\\Box2D\n  creating build\\lib.win-amd64-cpython-313\\Box2D\\b2\n  copying library\\Box2D\\b2\\__init__.py -> build\\lib.win-amd64-cpython-313\\Box2D\\b2\n  running build_ext\n  building 'Box2D._Box2D' extension\n  swigging Box2D\\Box2D.i to Box2D\\Box2D_wrap.cpp\n  swig.exe -python -c++ -IBox2D -small -O -includeall -ignoremissing -w201 -globals b2Globals -outdir library\\Box2D -keyword -w511 -D_SWIG_KWARGS -o Box2D\\Box2D_wrap.cpp Box2D\\Box2D.i\n  Traceback (most recent call last):\n    File \u001b[35m\"<frozen runpy>\"\u001b[0m, line \u001b[35m198\u001b[0m, in \u001b[35m_run_module_as_main\u001b[0m\n    File \u001b[35m\"<frozen runpy>\"\u001b[0m, line \u001b[35m88\u001b[0m, in \u001b[35m_run_code\u001b[0m\n    File \u001b[35m\"C:\\Users\\Motaz\\PycharmProjects\\SWARM\\.venv\\Scripts\\swig.exe\\__main__.py\"\u001b[0m, line \u001b[35m2\u001b[0m, in \u001b[35m<module>\u001b[0m\n      from swig import swig\n  \u001b[1;35mModuleNotFoundError\u001b[0m: \u001b[35mNo module named 'swig'\u001b[0m\n  error: command 'swig.exe' failed with exit code 1\n  [end of output]\n  \n  note: This error originates from a subprocess, and is likely not a problem with pip.\n  ERROR: Failed building wheel for box2d-py\n\n[notice] A new release of pip is available: 26.1 -> 26.2.1\n[notice] To update, run: python.exe -m pip install --upgrade pip\nerror: failed-wheel-build-for-install\n\nFailed to build installable wheels for some pyproject.toml based projects\n\nbox2d-py"
+   }
+  ],
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "Reward shaping, and how it goes wrong\nNVIDIA GeForce GTX 1070 with Max-Q Design · 8.0 GB · 15.9 GB RAM · PyTorch 2.6.0+cu124\nprofile: free\nready · episodes=1500, evalEpisodes=50, hidden=128, learningRate=0.0007, gamma=0.99, seed=17"
+   }
+  ],
+  "rewards": [
+   {
+    "kind": "stream",
+    "text": "three reward functions: honest · shaped · hacked\nwhich do you think lands most often? decide before you run."
+   }
+  ],
+  "train": [
+   {
+    "kind": "stream",
+    "text": "honest:\n      0  return   -405.4\n    100  return   -315.4\n    200  return   -226.4\n    300  return    -69.0\n    400  return    -94.8\n    500  return     39.9\n    600  return   -111.7\n    700  return     10.0\n    800  return     90.1\n    900  return     92.8\n   1000  return      8.1\n   1100  return    -39.1\n   1200  return    -18.4\n   1300  return    -17.6\n   1400  return    -58.8\nshaped:\n      0  return   -389.5\n    100  return    -91.8\n    200  return   -128.2\n    300  return    -77.1\n    400  return     70.6\n    500  return     -3.9\n    600  return    -77.1\n    700  return    -25.3\n    800  return      3.3\n    900  return    -51.9\n   1000  return   -184.5\n   1100  return    -49.2\n   1200  return     28.0\n   1300  return     14.5\n   1400  return    288.8\nhacked:\n      0  return  -1799.4\n    100  return  -1707.0\n    200  return  -1595.2\n    300  return   -928.5\n    400  return  -1770.0\n    500  return   -680.8\n    600  return   -640.8\n    700  return   -976.8\n    800  return   -664.4\n    900  return   -591.3\n   1000  return   -718.8\n   1100  return  -1010.7\n   1200  return   -587.9\n   1300  return   -965.9\n   1400  return   -624.5"
+   }
+  ],
+  "scoreboard": [
+   {
+    "kind": "stream",
+    "text": "agent         own reward   hacked reward    landed\n--------------------------------------------------\nhonest            -165.4        -12445.8       0%\nshaped              58.9         -1684.2      38%\nhacked            -761.5          -761.5       0%"
+   },
+   {
+    "kind": "image",
+    "src": "reward-shaping-gone-wrong/scoreboard.svg",
+    "format": "svg"
+   }
+  ],
+  "watch": [
+   {
+    "kind": "stream",
+    "text": "hacked: 64 steps · median altitude 0.98\nhonest: 1000 steps\n\nThe exploit is a SHORT episode. `potential` is negative everywhere, so the bonus is a tax charged every step, and the cheapest policy is to stop paying it — end the episode. The agent is not confused; it found the fastest exit from a reward you wrote."
+   }
+  ],
+  "fix-it": [
+   {
+    "kind": "stream",
+    "text": "      0  return   -389.5\n    100  return    -91.8\n    200  return   -128.2\n    300  return    -77.1\n    400  return     70.6\n    500  return     -3.9\n    600  return    -77.1\n    700  return    -25.3\n    800  return      3.3\n    900  return    -51.9\n   1000  return   -184.5\n   1100  return    -49.2\n   1200  return     28.0\n   1300  return     14.5\n   1400  return    288.8\nyours: landed 38%  ·  honest 0%  ·  hacked 0%"
+   }
+  ],
+  "verify": [
+   {
+    "kind": "stream",
+    "text": "✗ Landing rate of the control agent, before any comparison is meaningful: 0 (needs ≥ 0.3)\n  the control never learned to land — raise `episodes`, do not lower the bar.\n✓ How far the mis-specified agent out-scores the honest one, on the written objective: 1.168e+04 (needs ≥ 50)\n✓ Mis-specified agent's landing rate, relative to the honest agent's: 0 (needs ≤ 0.5)"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "Not complete yet — failed: honest-agent-works"
+   }
+  ]
+ }
+}

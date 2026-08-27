@@ -2,17 +2,17 @@
  "schema": "run/v1",
  "slug": "arabic-tokenizer-fertility",
  "lang": "ar",
- "codeHash": "4f6d8bab7719c4df",
+ "codeHash": "0ec44bce5186046f",
  "status": "verified",
  "profile": "free",
  "receipt": {
-  "at": "2026-08-26T13:24:05Z",
+  "at": "2026-08-27T23:43:48Z",
   "device": "NVIDIA GeForce GTX 1070 with Max-Q Design",
   "torch": "2.6.0+cu124",
   "python": "3.13.5",
   "shim": "0.1.0",
-  "elapsedSec": 22.2,
-  "commit": "052b6142602ee389e151d359c2f5933b3af02876"
+  "elapsedSec": 10.9,
+  "commit": "cd18d2f554c07fa865fa7527f16a651dfd0e4c47"
  },
  "metrics": {
   "ar_words": 8676,
