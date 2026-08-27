@@ -10,9 +10,31 @@ or the hash check will reject the mirror and the fallback will never fire.
 
 To add one:
 
-    curl -L <upstream-url> -o mirror/<name>
-    python tools/pin-asset.py <slug>     # if not already pinned
-    sha256sum mirror/<name>              # must equal the pinned value
+```
+curl -L <upstream-url> -o mirror/<name>
+python tools/pin-asset.py <slug>     # if not already pinned
+sha256sum mirror/<name>              # must equal the pinned value
+```
 
 `ecg5000.csv` is ~7.9 MB, which is fine to keep in git. Anything much larger
 belongs in a release asset rather than the tree.
+
+## Dataset citations
+
+### ECG5000
+
+The `ecg5000.csv` mirror is sourced from the ECG dataset distributed by
+TensorFlow:
+
+* TensorFlow dataset URL:
+  http://storage.googleapis.com/download.tensorflow.org/data/ecg.csv
+
+### CoVoST2 English–Arabic
+
+The English–Arabic translation pairs are from the **CoVoST2-EN-AR-Text**
+dataset by ymoslem, hosted on Hugging Face:
+
+* Dataset:
+  https://huggingface.co/datasets/ymoslem/CoVoST2-EN-AR-Text
+* Training data:
+  https://huggingface.co/datasets/ymoslem/CoVoST2-EN-AR-Text/blob/main/data/train-00000-of-00001.parquet

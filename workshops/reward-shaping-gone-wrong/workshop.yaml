@@ -1,0 +1,364 @@
+schema: workshop/v1
+id: reward-shaping-gone-wrong
+constellation: agents
+
+title:
+  en: "Reward shaping, and how it goes wrong"
+  ar: "تشكيل المكافأة وكيف ينحرف"
+
+concept:
+  en: "The agent optimises what you wrote, not what you meant"
+  ar: "الوكيل يُحسِّن ما كتبتَه لا ما قصدتَه"
+
+scenario:
+  en: >-
+    Sparse rewards are hard to learn from: an agent that only scores on
+    success spends most of training seeing nothing at all. So you help it.
+    You add a term for progress — distance closed, fuel saved, altitude held —
+    and learning speeds up immediately. That term is a shaping reward, and it
+    is the most common intervention in applied RL.
+
+
+    It is also where the failures live. The agent does not read your intent;
+    it reads the sum. If some behaviour you never considered scores higher
+    than the behaviour you wanted, it will find that behaviour, and it will
+    look like success on your own metric while doing the opposite of the job.
+  ar: >-
+    المكافآت المتفرّقة صعبة التعلّم: الوكيل الذي لا يُكافأ إلا عند النجاح يقضي
+    معظم التدريب دون أن يرى شيئاً. فتساعده. تضيف حدّاً للتقدّم — مسافة قُطعت،
+    وقود وُفِّر، ارتفاع حُوفظ عليه — فيتسارع التعلّم فوراً. ذلك الحدّ هو مكافأة
+    التشكيل، وهو أشيع تدخّل في التعلّم المعزز التطبيقي.
+
+
+    وهو أيضاً حيث تسكن الإخفاقات. الوكيل لا يقرأ نيّتك، بل يقرأ المجموع. فإن
+    كان سلوكٌ لم يخطر لك يسجّل أعلى من السلوك الذي أردته، فسيجده، وسيبدو
+    نجاحاً على مقياسك أنت بينما يفعل نقيض المطلوب.
+
+goal:
+  en: >-
+    Train the same agent on three reward functions — the environment's own, a
+    correct potential-based shaping, and one plausible mis-specification —
+    then show that the mis-specified agent scores best on the shaped reward
+    and worst on the thing you actually wanted.
+  ar: >-
+    درِّب الوكيل ذاته على ثلاث دوال مكافأة — دالة البيئة الأصلية، وتشكيل صحيح
+    قائم على الجهد، وسوء تحديد واحد معقول — ثم بيِّن أن الوكيل سيئ التحديد
+    يسجّل الأعلى في المكافأة المُشكَّلة والأسوأ فيما أردته فعلاً.
+
+difficulty: intermediate
+status: stable
+publishedAt: "2026-08-27"
+
+maintenance:
+  # moderate: gymnasium is one pinned third-party library. No downloaded
+  # weights, no gated assets — the environment is generated, not fetched.
+  tier: moderate
+  cadence: quarterly
+
+estimate:
+  gpuMinutes: 0
+  totalMinutes: 45
+
+papers:
+  - slug: ppo
+    role: core
+    label:
+      en: "the policy-gradient method almost every applied RL system reaches for — Schulman et al., 2017"
+      ar: "طريقة تدرّج السياسة التي يلجأ إليها كل نظام تعلّم معزز تطبيقي تقريباً — شولمان وزملاؤه، 2017"
+  - slug: concrete-problems
+    role: core
+    label:
+      en: "reward hacking named as a research problem, nine years before it was a headline — Amodei et al., 2016"
+      ar: "اختراق المكافأة مُسمّى كمسألة بحثية قبل تسع سنوات من صيرورته عنواناً — أمودي وزملاؤه، 2016"
+  - slug: reinforce
+    role: supporting
+    label:
+      en: "the gradient estimator underneath, and why reward variance matters so much"
+      ar: "مُقدِّر التدرّج تحته، ولماذا يهمّ تباين المكافأة إلى هذا الحد"
+  - slug: deep-rl-human-preferences
+    role: supporting
+    label:
+      en: "one answer to a reward you cannot write down: learn it from comparisons instead"
+      ar: "جواب واحد عن مكافأة يتعذّر كتابتها: تعلّمها من المقارنات بدلاً من ذلك"
+
+assets: []
+
+# ── dependencies ────────────────────────────────────────────────────────────
+# Emitted as a pip/apt cell right after setup. Pinned, because "whatever PyPI
+# had that morning" is not a reproducible run — and this is a `moderate`-tier
+# workshop precisely because these exist.
+#
+# box2d needs swig to build its Python bindings, and Colab does not ship it.
+# That is an apt package, not a pip one, so it needs its own line.
+dependencies:
+  apt:
+    - swig
+  pip:
+    - "gymnasium[box2d]==1.2.0"
+
+profiles:
+  - id: free
+    default: true
+    name:
+      en: "Free tier (CPU is enough)"
+      ar: "المستوى المجاني (المعالج المركزي يكفي)"
+    requires:
+      # LunarLander with a small MLP policy is CPU work. Declaring a GPU it
+      # does not need would send CI to a GPU runner for nothing.
+      gpu: false
+      vramGb: 0
+      ramGb: 4
+    scale:
+      # 600 was too few: the CONTROL agent never landed, so the comparison had
+      # nothing to compare against. Raised until the honest agent actually
+      # solves the task — an untrained control makes the whole workshop
+      # vacuous, however good the exploit looks beside it.
+      episodes: 1500
+      evalEpisodes: 50
+      hidden: 128
+      learningRate: 0.0007
+      gamma: 0.99
+      seed: 17
+  - id: long
+    name:
+      en: "Longer training"
+      ar: "تدريب أطول"
+    requires:
+      gpu: false
+      vramGb: 0
+      ramGb: 8
+    scale:
+      episodes: 2500
+      evalEpisodes: 200
+      hidden: 256
+      learningRate: 0.0005
+      gamma: 0.99
+      seed: 17
+
+checks:
+  # THE CONTROL MUST WORK FIRST.
+  #
+  # Without this, the comparison passes on a run that demonstrates nothing: at
+  # 600 episodes every agent landed 0%, `landing_ratio` came out 0/0 -> 0, and
+  # "the exploit lands less than half as often" was satisfied by an exploit
+  # and a control that both never landed. A vacuous pass is worse than a
+  # failure — it certifies an empty result.
+  #
+  # An untrained control cannot be out-performed, so this check gates the
+  # other two: if it fails, the answer is more episodes, not a smaller bar.
+  - id: honest-agent-works
+    required: true
+    min: 0.3
+    label:
+      en: "Landing rate of the control agent, before any comparison is meaningful"
+      ar: "معدّل هبوط الوكيل الشاهد، قبل أن تكون أي مقارنة ذات معنى"
+
+  - id: hacked-scores-higher
+    # A DIFFERENCE in return, not a ratio. These returns are negative, and a
+    # ratio over signed values is meaningless — the first version computed
+    # -742.9 / 1372.6 = -0.54 and read as "the exploit lost" when it had won
+    # by 630 points. Any positive number proves the exploit out-scores the
+    # honest agent on the objective as written; 50 is a margin against noise.
+    required: true
+    min: 50
+    label:
+      en: "How far the mis-specified agent out-scores the honest one, on the written objective"
+      ar: "بكم يتفوّق الوكيل سيئ التحديد على الأمين في الهدف كما كُتب"
+  - id: hacked-lands-less
+    required: true
+    max: 0.5
+    label:
+      en: "Mis-specified agent's landing rate, relative to the honest agent's"
+      ar: "معدّل هبوط الوكيل سيئ التحديد منسوباً إلى الوكيل الأمين"
+
+hints:
+  - en: >-
+      Shaping is safe when it is potential-based: reward the CHANGE in some
+      potential function, γ·Φ(s′) − Φ(s), and never the state itself. Ng,
+      Harada and Russell proved that this form leaves the optimal policy
+      unchanged. Anything else — including the obvious "give points for being
+      close" — can and does change what is optimal.
+    ar: >-
+      التشكيل آمن حين يكون قائماً على الجهد: كافئ التغيّر في دالة جهد ما،
+      γ·Φ(s′) − Φ(s)، لا الحالة نفسها. وقد أثبت نغ وهارادا وراسل أن هذه الصورة
+      تترك السياسة المثلى دون تغيير. أما ما عداها — بما في ذلك البديهي «امنح
+      نقاطاً للقرب» — فيمكنه أن يغيّر ما هو أمثل، وهو يفعل.
+  - en: >-
+      Watch what the hacked agent actually does, not just its score. Hovering
+      close to the pad collects the proximity bonus every single step and
+      never risks the crash penalty. It is not confused; it found a better
+      policy for the reward you wrote.
+    ar: >-
+      راقب ما يفعله الوكيل المخترِق فعلاً لا درجته وحدها. فالتحويم قرب المنصّة
+      يجمع مكافأة القرب في كل خطوة ولا يخاطر قط بعقوبة التحطّم. إنه ليس
+      مرتبكاً — بل وجد سياسة أفضل للمكافأة التي كتبتَها أنت.
+  - en: >-
+      If the mis-specified agent is not out-scoring the honest one, your bonus
+      is probably too small to compete with the environment's own terms. Raise
+      it until the exploit is worth more than the landing. That the exploit
+      has a price, and that the price is a number you chose, is itself the
+      lesson.
+    ar: >-
+      إن لم يكن الوكيل سيئ التحديد يتفوّق على الأمين، فالأرجح أن مكافأتك أصغر
+      من أن تنافس حدود البيئة نفسها. ارفعها حتى تصير الثغرة أثمن من الهبوط.
+      وكون الثغرة لها ثمن، وكون هذا الثمن رقماً اخترتَه أنت، هو الدرس ذاته.
+
+terms:
+  reward shaping:
+    en: "Adding terms to a reward to make it easier to learn from. Safe only in a specific form; otherwise it changes what the agent is optimising."
+    ar: "إضافة حدود إلى المكافأة لتسهيل التعلّم منها. آمنة في صورة بعينها فقط، وإلا غيّرت ما يُحسِّنه الوكيل."
+  reward hacking:
+    en: "Scoring highly on the written objective while failing the intended one. Not a malfunction — the agent solved the problem you actually posed."
+    ar: "تحقيق درجة عالية في الهدف المكتوب مع الإخفاق في الهدف المقصود. ليس عطلاً — بل الوكيل حلّ المسألة التي طرحتَها فعلاً."
+  policy:
+    en: "The rule mapping what the agent sees to what it does. Training changes the rule; the reward decides which rules are good."
+    ar: "القاعدة التي تربط ما يراه الوكيل بما يفعله. التدريب يغيّر القاعدة، والمكافأة تقرّر أي القواعد جيّد."
+  return:
+    en: "The discounted sum of rewards over an episode. What the agent maximises, and the only thing it maximises."
+    ar: "مجموع المكافآت المخصوم عبر حلقة كاملة. وهو ما يعظّمه الوكيل، وهو الشيء الوحيد الذي يعظّمه."
+
+body:
+  - type: prose
+    text:
+      en: >-
+        The exploit you are about to see is not the one most people predict.
+        Ask yourself, before running anything, what an agent does when the
+        bonus you added is negative at every point in the state space.
+
+
+        LunarLander gives you a clean case to break. Its own reward already
+        balances several things — distance to the pad, fuel spent, a large
+        bonus for landing and a large penalty for crashing — and an agent
+        trained on it learns to land.
+
+
+        We will keep that agent as the control, then add two shaping terms to
+        it. One is provably safe. The other is the kind of thing a reasonable
+        engineer writes on a Tuesday afternoon.
+      ar: >-
+        الثغرة التي أنت على وشك رؤيتها ليست ما يتوقعه أكثر الناس. اسأل نفسك قبل
+        أن تشغّل شيئاً: ماذا يفعل وكيلٌ حين تكون المكافأة التي أضفتَها سالبةً في
+        كل نقطة من فضاء الحالات؟
+
+
+        تمنحك «هابط القمر» حالة نظيفة لتكسرها. فمكافأتها الأصلية توازن أموراً
+        عدة أساساً — المسافة إلى المنصّة، والوقود المُنفَق، ومكافأة كبيرة
+        للهبوط، وعقوبة كبيرة للتحطّم — والوكيل المُدرَّب عليها يتعلّم الهبوط.
+
+
+        سنُبقي ذلك الوكيل شاهداً، ثم نضيف إليه حدَّي تشكيل. أحدهما آمن
+        بالبرهان. والآخر من النوع الذي يكتبه مهندس معقول بعد ظهر يوم ثلاثاء.
+
+  - type: cell
+    id: setup
+    ref: setup
+    caption:
+      en: "Preflight. No GPU, no downloads — the environment is generated, not fetched."
+      ar: "فحص مسبق. لا معالج رسوميات ولا تنزيلات — البيئة مُولَّدة لا مجلوبة."
+
+  - type: cell
+    id: rewards
+    ref: rewards
+    caption:
+      en: >-
+        Read the three functions before you run anything. Decide now which one
+        you think will land most often — the point is partly to be wrong.
+      ar: >-
+        اقرأ الدوال الثلاث قبل أن تشغّل شيئاً. قرّر الآن أيّها تظنّه سيهبط أكثر —
+        فجزء من المقصد أن تُخطئ.
+
+  - type: paperRef
+    slug: concrete-problems
+    note:
+      en: >-
+        Amodei and colleagues listed reward hacking in 2016 as one of five
+        concrete problems, with examples that read as hypothetical at the
+        time. The exploit you are about to train is the same failure at a
+        scale you can watch in four minutes.
+      ar: >-
+        أدرج أمودي وزملاؤه اختراق المكافأة عام 2016 ضمن خمس مسائل ملموسة، بأمثلة
+        بدت افتراضية حينها. والثغرة التي أنت على وشك تدريبها هي الإخفاق ذاته على
+        نطاق يمكنك مشاهدته في أربع دقائق.
+
+  - type: cell
+    id: train
+    ref: train
+    captures: [episodes_run]
+    caption:
+      en: "Three agents, one architecture, one seed. Only the reward differs."
+      ar: "ثلاثة وكلاء، معمارية واحدة، بذرة واحدة. المكافأة وحدها تختلف."
+
+  - type: scaleNote
+    text:
+      en: >-
+        The free profile trains {{scale.episodes}} episodes per agent and
+        evaluates on {{scale.evalEpisodes}}. The control agent has to actually
+        land for any of this to mean anything — that is the first check, and if
+        it fails the answer is more episodes, never a lower bar.
+      ar: >-
+        يدرّب الملف المجاني {{scale.episodes}} حلقة لكل وكيل ويقيّم على
+        {{scale.evalEpisodes}} حلقة. وعلى الوكيل الشاهد أن يهبط فعلاً كي يكون
+        لأي من هذا معنى — وذلك هو الفحص الأول، وإن أخفق فالجواب مزيد من
+        الحلقات، لا خفض السقف.
+
+  - type: cell
+    id: scoreboard
+    ref: scoreboard
+    captures: [shaped_ratio, landing_ratio, honest_landing, hacked_landing]
+    thumbnail: true
+    caption:
+      en: >-
+        Two columns, two different verdicts. The shaped-score column is what
+        the training loop saw; the landing column is what you wanted. Read
+        them against each other.
+      ar: >-
+        عمودان وحُكمان مختلفان. عمود الدرجة المُشكَّلة هو ما رآه حلقة التدريب،
+        وعمود الهبوط هو ما أردتَه أنت. اقرأ كلاً منهما في ضوء الآخر.
+
+  - type: cell
+    id: watch
+    ref: watch
+    caption:
+      en: >-
+        One trajectory each, compared. Episode LENGTH is the tell — read it
+        before you read anything else.
+      ar: >-
+        مسار واحد لكلٍّ منهما، مقارنَين. طول الحلقة هو الدليل — اقرأه قبل أي شيء
+        آخر.
+
+  - type: exercise
+    id: fix-it
+    ref: fix_it
+    prompt:
+      en: >-
+        Repair the mis-specified reward without deleting it. Potential-based
+        shaping is the known-safe form: reward γ·Φ(s′) − Φ(s) rather than Φ(s)
+        itself. Convert the proximity bonus into that form and retrain.
+
+
+        Then answer the question the fix raises. If potential-based shaping
+        provably cannot change the optimal policy, what did you actually buy
+        by adding it? Compare not just the final landing rate but how many
+        episodes each agent needed to get there.
+      ar: >-
+        أصلِح المكافأة سيئة التحديد دون حذفها. التشكيل القائم على الجهد هو
+        الصورة الآمنة المعروفة: كافئ γ·Φ(s′) − Φ(s) لا Φ(s) ذاتها. حوِّل مكافأة
+        القرب إلى تلك الصورة وأعد التدريب.
+
+
+        ثم أجب عن السؤال الذي يطرحه الإصلاح. إن كان التشكيل القائم على الجهد
+        لا يمكنه بالبرهان تغيير السياسة المثلى، فما الذي اشتريتَه فعلاً
+        بإضافته؟ قارن لا معدّل الهبوط النهائي وحده، بل عدد الحلقات التي احتاجها
+        كل وكيل ليبلغه.
+    hint: 1
+
+  - type: cell
+    id: verify
+    ref: verify
+    caption:
+      en: "Both checks. The second is a MAXIMUM: the exploit must land less, or nothing was demonstrated."
+      ar: "الفحصان معاً. والثاني حدٌّ أقصى: على الثغرة أن تهبط أقل، وإلا فلم يُثبَت شيء."
+
+  - type: cell
+    id: finish
+    ref: finish
