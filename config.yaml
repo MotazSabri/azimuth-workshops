@@ -27,7 +27,7 @@ repo:
 site:
   # Paper links inside notebooks resolve here. Kept absolute because a
   # notebook is read outside the site, on Colab, with no relative base.
-  base: "https://azimuth.blog"
+  base: "https://azimuth.plus"
   # {lang} and {slug} are substituted.
   paperPath: "/{lang}/paper/{slug}"
 

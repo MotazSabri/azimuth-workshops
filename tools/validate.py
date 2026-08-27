@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -93,6 +94,45 @@ def check_yaml_portability(path: Path, where: str) -> None:
             err(f"{where}:{n}: bare yes/no/on/off — a bool to PyYAML, a string to js-yaml")
 
 
+def check_tracked(directory: Path, where: str) -> None:
+    """Refuse a workshop git does not know about.
+
+    `git commit -am` stages MODIFIED TRACKED files only. A new workshop is an
+    untracked directory, so -a skips it, the commit succeeds, the push
+    succeeds, and the workshop is simply absent from the branch — with no
+    error anywhere. The site then reports "1 workshop(s)" and the author has
+    nothing to look at but a correct-looking build log.
+
+    Cheap to check, and it catches the one mistake that produces no signal at
+    all. Silent on a machine with no git rather than failing: a tarball
+    extract is a legitimate way to work on this.
+    """
+
+    def git(*args):
+        try:
+            return subprocess.run(
+                ["git", *args], cwd=ROOT, capture_output=True, text=True, check=False
+            )
+        except OSError:
+            return None
+
+    # Repo-ness is asked SEPARATELY. `git ls-files --error-unmatch` exits 128
+    # for "no repository here" AND for "that file is untracked" — the two
+    # cases this check exists to tell apart. Conflating them made the check
+    # pass silently on exactly the situation it was written for.
+    probe = git("rev-parse", "--git-dir")
+    if probe is None or probe.returncode != 0:
+        return  # not a git checkout; a tarball extract is a legitimate way to work
+
+    tracked = git("ls-files", "--error-unmatch", str(directory / "workshop.yaml"))
+    if tracked is not None and tracked.returncode != 0:
+        err(
+            f"{where}: not tracked by git — `git commit -am` stages modified tracked "
+            f"files only, so this workshop would be skipped silently and never reach "
+            f"the branch. Run: git add workshops/{directory.name}"
+        )
+
+
 def check_workshop(directory: Path) -> None:
     slug = directory.name
     where = f"workshops/{slug}"
@@ -105,6 +145,8 @@ def check_workshop(directory: Path) -> None:
     if not code_path.exists():
         err(f"{where}: no code.py")
         return
+
+    check_tracked(directory, where)
 
     spec_text = spec_path.read_text(encoding="utf-8")
     spec = yaml.safe_load(spec_text)
@@ -235,6 +277,21 @@ def check_workshop(directory: Path) -> None:
 
     # ── checks ─────────────────────────────────────────────────────────────
     checks = spec.get("checks") or []
+
+    # ── every declared check must actually be called ───────────────────────
+    # A check in workshop.yaml that code.py never calls can never pass, so the
+    # workshop is unpassable — and the notebook says only "still failing",
+    # which sends the reader to tune a threshold that was never evaluated.
+    # This shipped: a control check was added to the YAML while code.py kept
+    # the old two calls.
+    for check in checks:
+        cid = check.get("id")
+        if cid and f'"{cid}"' not in code and f"'{cid}'" not in code:
+            err(
+                f"{where}: check '{cid}' is declared but code.py never calls "
+                f"env.check(\"{cid}\", ...) — it could never pass"
+            )
+
     if not checks:
         err(f"{where}: no checks — the learner would have no way to verify themselves")
     check_ids = [c.get("id") for c in checks]
@@ -244,15 +301,36 @@ def check_workshop(directory: Path) -> None:
     for duplicate in {i for i in check_ids if check_ids.count(i) > 1}:
         err(f"{where}: duplicate check id '{duplicate}' — one result would overwrite the other")
     for check in checks:
-        if check.get("min") is None and check.get("max") is None:
+        lo, hi = check.get("min"), check.get("max")
+        if lo is None and hi is None:
             err(f"{where}: check '{check.get('id')}' declares no threshold")
+        # A max-only check with a non-negative ceiling is satisfied by zero,
+        # and zero is what a workshop produces when nothing happened. One
+        # shipped exactly like that: "the exploit lands less than half as often
+        # as the control" passed on a run where NEITHER ever landed. A vacuous
+        # pass is worse than a failure, because it certifies an empty result.
+        #
+        # A warning, not an error: the shape is legitimate when another
+        # REQUIRED check establishes that the run did something first.
+        if lo is None and hi is not None and hi >= 0:
+            warn(
+                f"{where}: check '{check.get('id')}' has only a max — a result of 0 "
+                f"passes it. Make sure another required check proves the run was not "
+                f"empty, or add a min."
+            )
         # A label that restates the threshold is a second copy of it, and the
         # copy does not move when the bar does. This exact drift shipped once:
         # `min` went 2.0 -> 2.5 and the label still read "at least 2x".
         for lang, text in (check.get("label") or {}).items():
             # A digit bound to a letter is part of a name ("F1", "R2", "GPT-4"),
             # not a threshold. Only free-standing numbers are the drift risk.
-            if isinstance(text, str) and re.search(r"(?<![A-Za-z])\d+(?:\.\d+)?", text):
+            # Strip known technical NAMES before looking for numbers. "int8",
+            # "fp16" and "F1" are identifiers that happen to contain digits;
+            # flagging them trains the author to ignore this warning, and a
+            # warning people ignore stops protecting the case it exists for
+            # (a threshold restated in prose, which goes stale silently).
+            probe = re.sub(r"\b(?:int|fp|bf|F|R)\d+\b", "", text, flags=re.IGNORECASE)
+            if re.search(r"(?<![A-Za-z])\d+(?:\.\d+)?", probe):
                 warn(
                     f"{where}: check '{check.get('id')}' label.{lang} contains a number — "
                     f"env.check() already prints the threshold from min/max"

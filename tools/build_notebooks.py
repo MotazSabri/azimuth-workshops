@@ -312,6 +312,36 @@ class Builder:
             cid="bootstrap",
         )
 
+    def dependencies(self) -> None:
+        """A pip cell, emitted only when the workshop declares packages.
+
+        torch is still ASSERTED, never installed — a second torch over Colab's
+        is the reliable way to break a runtime. But a `moderate` or `volatile`
+        workshop legitimately needs a library Colab does not ship, and until
+        now there was nowhere to say so: the first gymnasium run had to be
+        hand-patched in the notebook, which is a change that vanishes on the
+        next build.
+
+        Quiet by default (`-q`) and pinned by the author, so a run is
+        reproducible rather than "whatever PyPI had that morning".
+        """
+        deps = self.spec.get("dependencies") or {}
+        pip = deps.get("pip") or []
+        apt = deps.get("apt") or []
+        if not pip and not apt:
+            return
+
+        lines = [
+            "# Declared by this workshop (dependencies: in workshop.yaml).",
+            "# torch is NOT installed here — it is asserted, because a second",
+            "# torch over Colab's own will not match the driver.",
+        ]
+        if apt:
+            lines.append(f"!apt-get -qq install -y {' '.join(apt)} > /dev/null")
+        if pip:
+            lines.append(f"%pip install -q {' '.join(pip)}")
+        self.code("\n".join(lines), cid="dependencies")
+
     def body(self) -> None:
         for block in self.spec["body"]:
             kind = block["type"]
@@ -343,6 +373,7 @@ class Builder:
     def build(self, code_hash: str) -> str:
         self.header()
         self.bootstrap()
+        self.dependencies()
         self.body()
         notebook = {
             "cells": self.cells,

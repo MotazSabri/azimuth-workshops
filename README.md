@@ -4,7 +4,7 @@
 
 Multi-paper prototypes that run on a free Colab GPU, in English and Arabic.
 
-This is the fourth tier of [Azimuth](https://azimuth.blog). The papers explain
+This is the fourth tier of [Azimuth](https://azimuth.plus). The papers explain
 why an idea exists. The demos make it tangible. The Lab has you assemble an
 architecture without a GPU. **A workshop is where it runs on real hardware and
 produces a real number.**
@@ -134,7 +134,7 @@ Datasets are not ours; each declares its own terms in its `assets:` block.
 نماذج أولية متعددة الأوراق تعمل على معالج رسوميات مجاني في Colab، بالعربية
 والإنجليزية.
 
-هذه هي الطبقة الرابعة من [أزيموث](https://azimuth.blog). الأوراق تشرح لماذا
+هذه هي الطبقة الرابعة من [أزيموث](https://azimuth.plus). الأوراق تشرح لماذا
 وُجدت الفكرة، والعروض التفاعلية تجعلها ملموسة، والمختبر يجعلك تركّب معمارية دون
 معالج رسوميات. **أما الورشة فهي حيث تعمل الفكرة على عتاد حقيقي وتُنتج رقماً
 حقيقياً.**

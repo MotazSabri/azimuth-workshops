@@ -194,6 +194,13 @@ class Env:
         """
         required = [c["id"] for c in (self.spec.get("checks") or []) if c.get("required", True)]
         passed = [cid for cid in required if self._checks.get(cid)]
+        # A check the workshop DECLARED but the code never CALLED is a
+        # different problem from a check that ran and failed, and it has a
+        # different fix: the notebook is out of step with its workshop.yaml,
+        # usually because only half a change was applied. Reporting both as
+        # "still failing" sends the reader to tune a threshold when what they
+        # need is to rebuild.
+        never_ran = [cid for cid in required if cid not in self._checks]
         complete = len(required) > 0 and len(passed) == len(required)
 
         payload = {
@@ -228,11 +235,27 @@ class Env:
                 print(f"Completion code: {payload['code']}")
                 print("Paste it on the workshop's page on Azimuth to record it.")
         else:
-            missing = [c for c in required if not self._checks.get(c)]
+            failed = [c for c in required if c in self._checks and not self._checks[c]]
             if self.lang == "ar":
-                print(f"لم تكتمل بعد — تبقّى: {ltr(', '.join(missing))}")
+                if failed:
+                    print(f"لم تكتمل بعد — أخفق: {ltr(', '.join(failed))}")
+                if never_ran:
+                    print(f"لم تُستدعَ قط: {ltr(', '.join(never_ran))}")
+                    print(
+                        "  هذه الفحوص معرَّفة في workshop.yaml ولا تستدعيها code.py — "
+                        "الدفتر غير متوافق مع مصدره. أعد البناء: "
+                        + ltr("python tools/build_notebooks.py")
+                    )
             else:
-                print(f"Not complete yet — still failing: {', '.join(missing)}")
+                if failed:
+                    print(f"Not complete yet — failed: {', '.join(failed)}")
+                if never_ran:
+                    print(f"Never called: {', '.join(never_ran)}")
+                    print(
+                        "  These checks are declared in workshop.yaml but code.py does "
+                        "not call them — the notebook is out of step with its source. "
+                        "Rebuild: python tools/build_notebooks.py"
+                    )
         return payload
 
 

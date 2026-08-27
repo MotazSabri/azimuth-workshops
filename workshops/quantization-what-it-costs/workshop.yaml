@@ -1,0 +1,330 @@
+schema: workshop/v1
+id: quantization-what-it-costs
+constellation: systems
+
+title:
+  en: "Quantization: what int8 and int4 actually cost"
+  ar: "التكميم: ما تكلّفه الدقة الثمانية والرباعية فعلاً"
+
+concept:
+  en: "The trade curve is not a line, and it has a cliff"
+  ar: "منحنى المقايضة ليس خطاً، وفيه هاوية"
+
+scenario:
+  en: >-
+    Quantization is the cheapest win in deployment: store the weights in
+    fewer bits, and the model fits on hardware that could not hold it before.
+    The papers tell you it works. What they cannot tell you is what YOUR model
+    loses, because the answer depends on the model, the data, and where in the
+    network the precision was spent.
+
+
+    So the interesting question is not "does int4 work" — it is what the curve
+    between fp16 and int4 looks like. Read most summaries and you would expect
+    a gentle slope. Measure it and you find something closer to a plateau
+    followed by an edge, and the edge is not where the bit count halves.
+  ar: >-
+    التكميم أرخص مكسب في النشر: خزّن الأوزان ببتّات أقل، فيتّسع النموذج على
+    عتاد لم يكن يسعه من قبل. تخبرك الأوراق أنه ينجح. وما لا تستطيع إخبارك به
+    هو ما يخسره نموذجك أنت، لأن الجواب يتوقف على النموذج والبيانات وموضع
+    إنفاق الدقة في الشبكة.
+
+
+    فالسؤال المهم ليس «هل تنجح الدقة الرباعية» بل كيف يبدو المنحنى بين الدقة
+    النصفية والرباعية. اقرأ أغلب الملخّصات تتوقّع انحداراً لطيفاً. قِسه تجد ما
+    يشبه هضبةً تتلوها حافة، والحافة ليست حيث ينتصف عدد البتّات.
+
+goal:
+  en: >-
+    Measure perplexity, memory and latency for the same model at fp16, int8
+    and int4, plot the three against each other, and identify which of the
+    three costs moves first and which barely moves at all.
+  ar: >-
+    قِس الحيرة والذاكرة وزمن الاستجابة للنموذج ذاته بدقة نصفية وثمانية ورباعية،
+    وارسم الثلاثة بعضها في مواجهة بعض، وحدِّد أيُّ التكاليف الثلاثة يتحرك أولاً
+    وأيُّها لا يكاد يتحرك.
+
+difficulty: intermediate
+status: stable
+publishedAt: "2026-08-28"
+
+maintenance:
+  # volatile: bitsandbytes and transformers both move fast, and the workshop
+  # downloads a checkpoint. This is the tier that needs monthly CI and will
+  # eventually need a rewrite — the first one in the corpus, deliberately,
+  # to prove the pin strategy under real conditions.
+  tier: volatile
+  cadence: monthly
+
+estimate:
+  gpuMinutes: 12
+  totalMinutes: 40
+
+papers:
+  - slug: llm-int8
+    role: core
+    label:
+      en: "why naive int8 breaks large models, and the outlier insight that fixes it — Dettmers et al., 2022"
+      ar: "لماذا تنهار الدقة الثمانية الساذجة في النماذج الكبيرة، والبصيرة الشاذة التي تصلحها — ديتمرز وزملاؤه، 2022"
+  - slug: gptq
+    role: core
+    label:
+      en: "one-shot 4-bit quantization that survives, by minimising layer-wise error — Frantar et al., 2023"
+      ar: "تكميم رباعي بخطوة واحدة يصمد، بتصغير الخطأ طبقةً طبقة — فرانتار وزملاؤه، 2023"
+  - slug: qlora
+    role: supporting
+    label:
+      en: "the same 4-bit weights, but trained through rather than only served"
+      ar: "الأوزان الرباعية ذاتها، لكن يُدرَّب عبرها لا تُخدَّم وحسب"
+  - slug: deep-compression
+    role: supporting
+    label:
+      en: "compression before transformers: pruning, quantizing and coding as one pipeline"
+      ar: "الضغط قبل المحوّلات: التشذيب والتكميم والترميز في مسار واحد"
+
+assets: []
+
+dependencies:
+  pip:
+    # Pinned hard. This is the volatile tier: bitsandbytes in particular has
+    # broken on minor releases, and "whatever PyPI had that morning" is how a
+    # workshop starts failing for readers months after it was verified.
+    - "transformers==4.44.2"
+    - "bitsandbytes==0.43.3"
+    - "accelerate==0.33.0"
+    - "datasets==2.21.0"
+
+profiles:
+  - id: free
+    default: true
+    name:
+      en: "Free tier (T4)"
+      ar: "المستوى المجاني (T4)"
+    requires:
+      # A GPU is genuinely needed: bitsandbytes int8/int4 kernels are CUDA
+      # only, and this is the first workshop in the corpus where the honest
+      # answer to `gpu` is true.
+      gpu: true
+      vramGb: 14
+      ramGb: 8
+    scale:
+      # Small enough to load three times on a T4 without reconnecting.
+      model: "facebook/opt-350m"
+      evalTokens: 40000
+      latencyRuns: 20
+      newTokens: 64
+      seed: 17
+  - id: a100
+    name:
+      en: "A100 / paid tier"
+      ar: "A100 / المستوى المدفوع"
+    requires:
+      gpu: true
+      vramGb: 40
+      ramGb: 32
+    scale:
+      model: "facebook/opt-1.3b"
+      evalTokens: 200000
+      latencyRuns: 50
+      newTokens: 128
+      seed: 17
+
+checks:
+  - id: memory-falls
+    required: true
+    min: 1.5
+    label:
+      en: "Memory saved by int4, as a multiple of fp16"
+      ar: "الذاكرة الموفَّرة بالدقة الرباعية منسوبةً إلى النصفية"
+  - id: quality-survives-int8
+    required: true
+    max: 1.15
+    min: 0.85
+    label:
+      en: "int8 perplexity, relative to fp16"
+      ar: "حيرة الدقة الثمانية منسوبةً إلى النصفية"
+
+hints:
+  - en: >-
+      Perplexity has to be measured on the SAME token windows for all three
+      models or the numbers are not comparable. Fix the seed, build the windows
+      once, and reuse them — a different sample per model would hide a real
+      regression inside sampling noise.
+    ar: >-
+      يجب قياس الحيرة على نوافذ الرموز ذاتها للنماذج الثلاثة وإلا فالأرقام غير
+      قابلة للمقارنة. ثبّت البذرة، وابنِ النوافذ مرة واحدة، وأعد استخدامها —
+      فعيّنة مختلفة لكل نموذج تخفي تراجعاً حقيقياً داخل ضجيج المعاينة.
+  - en: >-
+      Memory is the honest win and latency is the surprising one. Quantized
+      weights are smaller, but every matmul now pays a dequantize step, so
+      int4 can be SLOWER than fp16 at small batch sizes even though it uses a
+      fraction of the memory. Measure it rather than assuming the direction.
+    ar: >-
+      الذاكرة هي المكسب الصريح وزمن الاستجابة هو المفاجئ. الأوزان المكمَّمة
+      أصغر، لكن كل ضرب مصفوفات صار يدفع خطوة فكّ تكميم، فقد تكون الرباعية
+      أبطأ من النصفية عند الدفعات الصغيرة رغم استهلاكها جزءاً يسيراً من
+      الذاكرة. قِس ذلك بدل افتراض الاتجاه.
+  - en: >-
+      If int8 perplexity moved a lot, look at which layers you quantized. The
+      LLM.int8() result is that a small number of outlier feature dimensions
+      carry most of the damage, and keeping just those in fp16 recovers nearly
+      all the quality. That is why the paper is a core one here.
+    ar: >-
+      إن تحرّكت حيرة الدقة الثمانية كثيراً فانظر أي الطبقات كمّمت. نتيجة
+      LLM.int8() أن عدداً صغيراً من أبعاد السمات الشاذة يحمل معظم الضرر، وأن
+      إبقاء تلك وحدها بدقة نصفية يستعيد الجودة كلها تقريباً. ولهذا كانت الورقة
+      أساسيةً هنا.
+
+terms:
+  quantization:
+    en: "Storing weights in fewer bits than they were trained in. The weights change; the architecture does not."
+    ar: "تخزين الأوزان ببتّات أقل مما دُرِّبت به. تتغير الأوزان ولا تتغير المعمارية."
+  perplexity:
+    en: "How surprised a language model is by real text. Lower is better, and small relative changes matter more than they look."
+    ar: "مقدار اندهاش نموذج اللغة من نص حقيقي. الأقل أفضل، والتغيّرات النسبية الصغيرة أهم مما تبدو."
+  outlier feature:
+    en: "A dimension whose activations are far larger than the rest. Rare, and responsible for most of the damage naive quantization does."
+    ar: "بُعد تفوق تنشيطاته البقية بكثير. نادر، ومسؤول عن معظم الضرر الذي يحدثه التكميم الساذج."
+  dequantization:
+    en: "Converting stored low-bit weights back to a compute dtype before a matmul. The hidden cost that can make a smaller model slower."
+    ar: "إعادة تحويل الأوزان منخفضة البتّات إلى نوع حسابي قبل ضرب المصفوفات. التكلفة الخفية التي قد تجعل النموذج الأصغر أبطأ."
+
+body:
+  - type: prose
+    text:
+      en: >-
+        Three numbers move when you quantize, and they do not move together.
+        Memory falls roughly with the bit count, and that part is arithmetic.
+        Quality falls too, but not smoothly — it barely moves for a while and
+        then falls off. Latency is the one that surprises people, because it
+        can go the wrong way entirely.
+
+
+        Measuring all three at once is the point. A paper reporting only
+        perplexity is not hiding anything; it is answering a different
+        question from the one you have when you are deciding what to deploy.
+      ar: >-
+        ثلاثة أرقام تتحرك حين تُكمِّم، وهي لا تتحرك معاً. تنخفض الذاكرة تبعاً
+        لعدد البتّات تقريباً، وهذا جزء حسابي. وتنخفض الجودة أيضاً لكن لا بسلاسة
+        — تكاد لا تتحرك حيناً ثم تهوي. أما زمن الاستجابة فهو ما يفاجئ الناس،
+        لأنه قد يسير في الاتجاه الخاطئ تماماً.
+
+
+        وقياس الثلاثة معاً هو المقصد. الورقة التي تذكر الحيرة وحدها لا تخفي
+        شيئاً؛ إنها تجيب عن سؤال غير الذي بين يديك وأنت تقرّر ما تنشره.
+
+  - type: cell
+    id: setup
+    ref: setup
+    caption:
+      en: "Preflight. This is the first workshop here that genuinely needs a GPU — int8 and int4 kernels are CUDA only."
+      ar: "فحص مسبق. هذه أول ورشة هنا تحتاج معالج رسوميات فعلاً — نوى الدقة الثمانية والرباعية على CUDA وحدها."
+
+  - type: cell
+    id: windows
+    ref: windows
+    captures: [n_windows]
+    caption:
+      en: >-
+        Build the evaluation windows ONCE, before any model loads. Every
+        variant is scored on identical text — a different sample per model
+        would hide a real regression inside sampling noise.
+      ar: >-
+        ابنِ نوافذ التقييم مرة واحدة قبل تحميل أي نموذج. كل صيغة تُقيَّم على
+        النص ذاته — فعيّنة مختلفة لكل نموذج تخفي تراجعاً حقيقياً داخل ضجيج
+        المعاينة.
+
+  - type: paperRef
+    slug: llm-int8
+    note:
+      en: >-
+        Dettmers and colleagues found that naive int8 collapses on large models
+        not because 8 bits is too few on average, but because a handful of
+        outlier feature dimensions have a range the rest do not. Keeping those
+        in higher precision is the whole fix, and it is why int8 below is
+        nearly free while a naive implementation would not be.
+      ar: >-
+        وجد ديتمرز وزملاؤه أن الدقة الثمانية الساذجة تنهار في النماذج الكبيرة
+        لا لأن ثماني بتّات قليلة في المتوسط، بل لأن حفنة من أبعاد السمات الشاذة
+        لها مدى لا تملكه البقية. والإبقاء على تلك بدقة أعلى هو الحل كله، ولهذا
+        تكاد الدقة الثمانية أدناه تكون مجانية بينما لن تكون كذلك في تنفيذ ساذج.
+
+  - type: cell
+    id: measure
+    ref: measure
+    captures: [fp16_ppl, int8_ppl, int4_ppl, fp16_mb, int8_mb, int4_mb]
+    caption:
+      en: "Three loads, three measurements each. The model is freed between variants so the memory figure is the model, not the leftovers."
+      ar: "ثلاث عمليات تحميل، وثلاثة قياسات لكل منها. يُحرَّر النموذج بين الصيغ ليكون رقم الذاكرة للنموذج لا للبقايا."
+
+  - type: scaleNote
+    text:
+      en: >-
+        The free profile uses {{scale.model}} and {{scale.evalTokens}} tokens
+        of evaluation text — small enough to load three times on a T4 without
+        reconnecting. The shape of the curve is what transfers to a larger
+        model, not the absolute perplexity.
+      ar: >-
+        يستخدم الملف المجاني {{scale.model}} و{{scale.evalTokens}} رمزاً من نص
+        التقييم — صغير بما يكفي لتحميله ثلاث مرات على T4 دون إعادة اتصال. وشكل
+        المنحنى هو ما ينتقل إلى نموذج أكبر، لا قيمة الحيرة المطلقة.
+
+  - type: cell
+    id: curve
+    ref: curve
+    captures: [memory_ratio, ppl_ratio_int8, ppl_ratio_int4]
+    thumbnail: true
+    caption:
+      en: >-
+        Three costs on one figure. Read which line is flat and which has a
+        corner — the corner is the decision, and it is not where the bit count
+        halves.
+      ar: >-
+        ثلاث تكاليف في شكل واحد. اقرأ أي خط مستوٍ وأيّها فيه انعطاف — الانعطاف
+        هو القرار، وهو ليس حيث ينتصف عدد البتّات.
+
+  - type: cell
+    id: latency
+    ref: latency
+    captures: [fp16_ms, int8_ms, int4_ms]
+    caption:
+      en: "The one that goes the wrong way. Smaller weights, more work per matmul."
+      ar: "الرقم الذي يسير في الاتجاه الخاطئ. أوزان أصغر وعمل أكثر في كل ضرب مصفوفات."
+
+  - type: exercise
+    id: pick-a-deployment
+    ref: pick_a_deployment
+    prompt:
+      en: >-
+        Choose a variant for a stated deployment, and defend it with your own
+        numbers rather than the defaults. Write down the constraint first —
+        "fits in 8 GB", "under 50 ms per token", "quality within 2% of fp16" —
+        then read the table and pick.
+
+
+        Then notice what the exercise did to you. Given one number you optimise
+        it; given three you have to state a constraint, and the constraint is
+        a product decision, not a technical one. Which of the three would you
+        never trade, and would your answer change for a chatbot versus a batch
+        summarizer?
+      ar: >-
+        اختر صيغة لنشر محدَّد، ودافع عنها بأرقامك أنت لا بالافتراضية. اكتب القيد
+        أولاً — «يتّسع في 8 غيغابايت»، «أقل من 50 مللي ثانية لكل رمز»، «جودة في
+        حدود 2٪ من النصفية» — ثم اقرأ الجدول واختر.
+
+
+        ثم لاحظ ما فعله بك التمرين. إن أُعطيت رقماً واحداً حسّنته، وإن أُعطيت
+        ثلاثة لزمك تحديد قيد، والقيد قرار منتج لا قرار تقني. أيُّ الثلاثة لن
+        تساوم عليه أبداً، وهل يتغير جوابك لروبوت محادثة مقابل ملخِّص دفعات؟
+    hint: 2
+
+  - type: cell
+    id: verify
+    ref: verify
+    caption:
+      en: "Memory must actually fall, and int8 must actually survive. If int8 moved a lot, hint 3 is the reason."
+      ar: "على الذاكرة أن تنخفض فعلاً، وعلى الدقة الثمانية أن تصمد فعلاً. وإن تحركت الثمانية كثيراً فالتلميح الثالث هو السبب."
+
+  - type: cell
+    id: finish
+    ref: finish

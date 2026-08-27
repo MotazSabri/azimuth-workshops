@@ -232,25 +232,6 @@ def show(tokenizer, label, text, name):
             )
 
 
-# CHOOSE a demonstrative pair; do not take pairs[0].
-#
-# This corpus contains rows whose Arabic column is untranslated — UN document
-# titles, mostly — and the seeded sample happened to land on one. The result
-# was the showcase cell printing the SAME English sentence under both labels,
-# 15 tokens against 15, on the one screen the entire argument rests on. The
-# averages above were right; the evidence for them was gibberish.
-#
-# So the pair is picked, not indexed: genuinely Arabic on one side, genuinely
-# not on the other, and long enough to show fragmentation. Deterministic,
-# because it scans in order and takes the first that qualifies.
-def demonstrative(candidates):
-    for ar, en in candidates:
-        if arabic_share(ar) > 0.8 and arabic_share(en) < 0.2 and 8 <= len(ar.split()) <= 20:
-            return ar, en
-    return candidates[0]
-
-
-sample_ar, sample_en = demonstrative(pairs)
 worst_name = worst["tokenizer"]
 tok = tokenizers[worst_name]
 

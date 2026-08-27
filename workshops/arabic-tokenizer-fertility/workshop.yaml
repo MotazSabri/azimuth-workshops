@@ -21,8 +21,8 @@ scenario:
     What this workshop measures is not just that the gap exists but how much
     of it is anyone's fault. Run it and you will find the same Arabic
     sentences costing one production tokenizer about four times what they cost
-    another — GPT-2 charges 3.9× for Arabic where BLOOM charges 1.25×. That
-    spread is the whole point: the tax is not a property of Arabic, it is a
+    another — {{run.metrics.ratio}}× on the worst of the three. That spread is
+    the whole point: the tax is not a property of Arabic, it is a
     procurement decision, and somebody made it.
   ar: >-
     الجملة نفسها تكلّف بالعربية أكثر مما تكلّف بالإنجليزية. لا مجازاً — بل قياساً،
@@ -32,8 +32,8 @@ scenario:
 
     وما تقيسه هذه الورشة ليس وجود الفجوة فحسب، بل كم منها صنيعُ أحد. شغّلها
     تجد الجُمل العربية ذاتها تكلّف مُجزِّئاً إنتاجياً نحو أربعة أضعاف ما تكلّفه
-    آخر — يتقاضى GPT-2 نحو 3.9 أضعاف عن العربية حيث يتقاضى BLOOM 1.25 ضعفاً.
-    وهذا الفارق هو المقصد كله: الضريبة ليست خاصيةً في العربية، بل قرار شراء،
+    آخر — {{run.metrics.ratio}} ضعفاً في أسوأ الثلاثة. وهذا الفارق هو المقصد
+    كله: الضريبة ليست خاصيةً في العربية، بل قرار شراء،
     وقد اتخذه أحدهم.
 
 goal:
@@ -48,8 +48,8 @@ goal:
     وسعر الاستدلال، ثم جِد التغيير الواحد في النص الذي يحرّك الرقم أكثر من غيره.
 
 difficulty: beginner # foundational | beginner | intermediate | advanced (PaperMeta)
-status: stable # stable | draft (PaperMeta)
-publishedAt: "2026-08-25"
+status: draft # stable | draft (PaperMeta)
+publishedAt: null
 
 maintenance:
   # moderate: one third-party library (`tokenizers`) plus downloaded tokenizer
@@ -85,8 +85,8 @@ assets:
   - name: parallel.tsv
     # Small on purpose: fertility is a ratio, and a few thousand aligned
     # sentence pairs measure it as precisely as a million would.
-    bytes: 3926582 # exact, from the pinned download
-    sha256: 52168ce2dee7bc62c9c69d14a80ac05c8059cfaec684a3c233f6d7a811d72338
+    bytes: 401537 # exact, from the pinned download
+    sha256: 5652e964e9bcc0eb38db201077e81c9310e6d433e7777d1358a8709f913aa4ea
     license: "Tatoeba — CC BY 2.0 FR"
     sources:
       # Ours first, deliberately — the inverse of the usual order. This corpus
