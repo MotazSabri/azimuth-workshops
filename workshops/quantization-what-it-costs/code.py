@@ -114,22 +114,40 @@ def latency(model, runs, new_tokens):
 
 
 results = {}
+peak_gb = 0.0
 for variant in ("fp16", "int8", "int4"):
+    # Reset before each variant so the peak is THIS model's, not a high-water
+    # mark left by the previous one.
+    torch.cuda.reset_peak_memory_stats()
     model = load(variant)
     results[variant] = {
         "ppl": perplexity(model),
         "mb": footprint(model),
         "ms": latency(model, env.cfg["latencyRuns"], env.cfg["newTokens"]),
     }
+    # PEAK allocated, not the weight footprint. The weights are under a
+    # gigabyte; what actually decides whether this fits on a card is the
+    # activations and the KV cache during generate. Reporting it turns the
+    # profile's `vramGb` from a guess into a measurement — the first version
+    # declared 14 GB because that is what a T4 has, which locked out every
+    # 8 GB card for no reason.
+    variant_peak = torch.cuda.max_memory_allocated() / 1024**3
+    peak_gb = max(peak_gb, variant_peak)
     print(
         f"  {variant:5} ppl {results[variant]['ppl']:7.3f}"
         f"  {results[variant]['mb']:8.1f} MB"
         f"  {results[variant]['ms']:6.1f} ms/token"
+        f"  peak {variant_peak:4.1f} GB"
     )
     # Freed between variants so the memory figure is the model, not leftovers.
     del model
     gc.collect()
     torch.cuda.empty_cache()
+
+if env.lang == "ar":
+    print(f"\nذروة ذاكرة المعالج: {peak_gb:.1f} غ.ب — هذا ما ينبغي أن يعلنه vramGb")
+else:
+    print(f"\npeak VRAM: {peak_gb:.1f} GB — this is what `vramGb` should declare")
 
 fp16_ppl, int8_ppl, int4_ppl = (results[v]["ppl"] for v in ("fp16", "int8", "int4"))
 fp16_mb, int8_mb, int4_mb = (results[v]["mb"] for v in ("fp16", "int8", "int4"))

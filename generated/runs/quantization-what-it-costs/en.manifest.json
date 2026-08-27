@@ -2,46 +2,41 @@
  "schema": "run/v1",
  "slug": "quantization-what-it-costs",
  "lang": "en",
- "codeHash": "8fd666ce4e11cece",
+ "codeHash": "d4a06c39731e75a1",
  "status": "failed",
  "profile": "free",
  "receipt": {
-  "at": "2026-08-27T22:38:09Z",
+  "at": "2026-08-27T23:52:29Z",
   "device": "NVIDIA GeForce GTX 1070 with Max-Q Design",
   "torch": "2.6.0+cu124",
   "python": "3.13.5",
   "shim": "0.1.0",
-  "elapsedSec": 161.2,
-  "commit": "cd18d2f554c07fa865fa7527f16a651dfd0e4c47"
+  "elapsedSec": 39.4,
+  "commit": "4d44cb263abae991016fc07ce36c784097f8782a"
  },
- "metrics": {},
+ "metrics": {
+  "n_windows": 78,
+  "peak_gb": 0.0
+ },
  "shapes": {},
  "cells": {
-  "dependencies": [
-   {
-    "kind": "stream",
-    "text": "Note: you may need to restart the kernel to use updated packages.\nWARNING: Ignoring invalid distribution ~uggingface-hub (C:\\Users\\Motaz\\PycharmProjects\\SWARM\\.venv\\Lib\\site-packages)\nWARNING: Ignoring invalid distribution ~uggingface-hub (C:\\Users\\Motaz\\PycharmProjects\\SWARM\\.venv\\Lib\\site-packages)\nWARNING: Ignoring invalid distribution ~uggingface-hub (C:\\Users\\Motaz\\PycharmProjects\\SWARM\\.venv\\Lib\\site-packages)\n\n[notice] A new release of pip is available: 26.1 -> 26.2.1\n[notice] To update, run: python.exe -m pip install --upgrade pip"
-   }
-  ],
   "setup": [
    {
-    "kind": "error",
-    "ename": "AzimuthError",
-    "evalue": "AZ-E102 — The attached GPU has less memory than this workshop's profile asks for. needs: 14 GB. found: 8.0 GB.\n\nFix: Set PROFILE = 'free' in the setup cell and run again. That profile is sized for a 16 GB T4."
+    "kind": "stream",
+    "text": "Quantization: what int8 and int4 actually cost\nNVIDIA GeForce GTX 1070 with Max-Q Design · 8.0 GB · 15.9 GB RAM · PyTorch 2.6.0+cu124\nprofile: free\nready · model=facebook/opt-350m, evalTokens=40000, latencyRuns=20, newTokens=64, seed=17"
    }
   ],
   "windows": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'env' is not defined"
+    "kind": "stream",
+    "text": "model: facebook/opt-350m\neval windows: 78 × 512 tokens"
    }
   ],
   "measure": [
    {
     "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'MODEL' is not defined"
+    "ename": "OSError",
+    "evalue": "[WinError 127] The specified procedure could not be found"
    }
   ],
   "curve": [
@@ -69,14 +64,13 @@
    {
     "kind": "error",
     "ename": "NameError",
-    "evalue": "name 'env' is not defined"
+    "evalue": "name 'memory_ratio' is not defined"
    }
   ],
   "finish": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'env' is not defined"
+    "kind": "stream",
+    "text": "Never called: memory-falls, quality-survives-int8\n  These checks are declared in workshop.yaml but code.py does not call them — the notebook is out of step with its source. Rebuild: python tools/build_notebooks.py"
    }
   ]
  }

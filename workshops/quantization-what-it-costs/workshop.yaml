@@ -110,7 +110,14 @@ profiles:
       # only, and this is the first workshop in the corpus where the honest
       # answer to `gpu` is true.
       gpu: true
-      vramGb: 14
+      # 6, not 14. The first version declared 14 because that is what a T4
+      # has — a guess dressed as a requirement, and it refused an 8 GB card
+      # that runs this workshop comfortably. The weights are under a gigabyte
+      # at fp16; peak allocation including activations and the KV cache is a
+      # few. The `measure` cell now PRINTS the peak so this number can be set
+      # from a measurement instead of from the hardware that happened to be
+      # nearby.
+      vramGb: 6
       ramGb: 8
     scale:
       # Small enough to load three times on a T4 without reconnecting.
@@ -257,7 +264,7 @@ body:
   - type: cell
     id: measure
     ref: measure
-    captures: [fp16_ppl, int8_ppl, int4_ppl, fp16_mb, int8_mb, int4_mb]
+    captures: [fp16_ppl, int8_ppl, int4_ppl, fp16_mb, int8_mb, int4_mb, peak_gb]
     caption:
       en: "Three loads, three measurements each. The model is freed between variants so the memory figure is the model, not the leftovers."
       ar: "ثلاث عمليات تحميل، وثلاثة قياسات لكل منها. يُحرَّر النموذج بين الصيغ ليكون رقم الذاكرة للنموذج لا للبقايا."
