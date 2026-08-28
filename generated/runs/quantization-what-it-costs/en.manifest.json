@@ -2,17 +2,17 @@
  "schema": "run/v1",
  "slug": "quantization-what-it-costs",
  "lang": "en",
- "codeHash": "d4a06c39731e75a1",
+ "codeHash": "6de6a8c98dc1a822",
  "status": "verified",
  "profile": "free",
  "receipt": {
-  "at": "2026-08-28T04:20:30Z",
+  "at": "2026-08-28T05:18:59Z",
   "device": "unknown",
   "torch": "unknown",
   "python": "3.13.5",
   "shim": "unknown",
   "elapsedSec": null,
-  "commit": "63953160756e13058027aa918124f0c820ebeed6",
+  "commit": "0ea421eb09d1ec9fa924a90f76cbe6050119e365",
   "source": "imported"
  },
  "metrics": {},
@@ -21,7 +21,7 @@
   "setup": [
    {
     "kind": "stream",
-    "text": "Quantization: what int8 and int4 actually cost\nTesla T4 · 14.6 GB · 12.7 GB RAM · PyTorch 2.11.0+cu128\nprofile: free\nready · model=facebook/opt-350m, evalTokens=40000, latencyRuns=20, newTokens=64, seed=17\ncode · d4a06c39731e75a1"
+    "text": "Quantization: what int8 and int4 actually cost\nTesla T4 · 14.6 GB · 12.7 GB RAM · PyTorch 2.11.0+cu128\nprofile: free\nready · model=facebook/opt-350m, evalTokens=40000, latencyRuns=20, newTokens=64, seed=17\ncode · 6de6a8c98dc1a822"
    }
   ],
   "windows": [
@@ -33,7 +33,7 @@
   "measure": [
    {
     "kind": "stream",
-    "text": "[transformers] `torch_dtype` is deprecated! Use `dtype` instead!\n  fp16  ppl  34.655     631.7 MB    15.3 ms/token\n  int8  ppl  34.705     342.7 MB    66.1 ms/token\n/usr/local/lib/python3.13/dist-packages/bitsandbytes/backends/cuda/ops.py:447: FutureWarning: _check_is_size will be removed in a future PyTorch release along with guard_size_oblivious.     Use _check(i >= 0) instead.\n  torch._check_is_size(blocksize)\n  int4  ppl  37.839     198.2 MB    27.7 ms/token"
+    "text": "  fp16  ppl  34.655     631.7 MB    14.8 ms/token  peak  0.9 GB\n  int8  ppl  34.705     342.7 MB    59.6 ms/token  peak  0.6 GB\n/usr/local/lib/python3.13/dist-packages/bitsandbytes/backends/cuda/ops.py:447: FutureWarning: _check_is_size will be removed in a future PyTorch release along with guard_size_oblivious.     Use _check(i >= 0) instead.\n  torch._check_is_size(blocksize)\n  int4  ppl  37.839     198.2 MB    26.0 ms/token  peak  0.5 GB\n\npeak VRAM: 0.9 GB — this is what `vramGb` should declare"
    }
   ],
   "curve": [
@@ -50,13 +50,13 @@
   "latency": [
    {
     "kind": "stream",
-    "text": "latency: fp16 15.3 · int8 66.1 · int4 27.7 ms/token\nint4 is SLOWER than fp16 by 1.81×"
+    "text": "latency: fp16 14.8 · int8 59.6 · int4 26.0 ms/token\nint4 is SLOWER than fp16 by 1.75×\nand the slowest is not the smallest — it is int8. The cost is not the bits."
    }
   ],
   "pick-a-deployment": [
    {
     "kind": "stream",
-    "text": "viable under your constraints: none — loosen one, and say which"
+    "text": "viable under your constraints: ['int8']"
    }
   ],
   "verify": [
