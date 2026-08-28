@@ -6,28 +6,19 @@
  "status": "verified",
  "profile": "free",
  "receipt": {
-  "at": "2026-08-28T00:22:42Z",
-  "device": "NVIDIA GeForce GTX 1070 with Max-Q Design",
-  "torch": "2.6.0+cu124",
+  "at": "2026-08-28T12:50:05Z",
+  "device": "unknown",
+  "torch": "unknown",
   "python": "3.13.5",
-  "shim": "0.1.0",
-  "elapsedSec": 1436.4,
-  "commit": "31e8d4374a1e5f8bf68575754ebce98ea32f7e1c"
+  "shim": "unknown",
+  "elapsedSec": null,
+  "commit": "e884576311add2a0ef5bc4b42221dc3e6cd416d5",
+  "source": "imported"
  },
- "metrics": {
-  "episodes_run": 4500,
-  "landing_ratio": 0.0,
-  "honest_landing": 0.0,
-  "hacked_landing": 0.0
- },
+ "metrics": {},
  "shapes": {},
  "cells": {
-  "setup": [
-   {
-    "kind": "stream",
-    "text": "Reward shaping, and how it goes wrong\nNVIDIA GeForce GTX 1070 with Max-Q Design · 8.0 GB · 15.9 GB RAM · PyTorch 2.6.0+cu124\nprofile: free\nready · episodes=1500, evalEpisodes=50, hidden=128, learningRate=0.0007, gamma=0.99, seed=17"
-   }
-  ],
+  "setup": [],
   "rewards": [
    {
     "kind": "stream",
@@ -37,36 +28,36 @@
   "train": [
    {
     "kind": "stream",
-    "text": "honest:\n      0  return   -405.4\n    100  return   -315.4\n    200  return   -226.4\n    300  return    -69.0\n    400  return    -94.8\n    500  return     39.9\n    600  return   -111.7\n    700  return     10.0\n    800  return     90.1\n    900  return     92.8\n   1000  return      8.1\n   1100  return    -39.1\n   1200  return    -18.4\n   1300  return    -17.6\n   1400  return    -58.8\nshaped:\n      0  return   -389.5\n    100  return    -91.8\n    200  return   -128.2\n    300  return    -77.1\n    400  return     70.6\n    500  return     -3.9\n    600  return    -77.1\n    700  return    -25.3\n    800  return      3.3\n    900  return    -51.9\n   1000  return   -184.5\n   1100  return    -49.2\n   1200  return     28.0\n   1300  return     14.5\n   1400  return    288.8\nhacked:\n      0  return  -1799.4\n    100  return  -1707.0\n    200  return  -1595.2\n    300  return   -928.5\n    400  return  -1770.0\n    500  return   -680.8\n    600  return   -640.8\n    700  return   -976.8\n    800  return   -664.4\n    900  return   -591.3\n   1000  return   -718.8\n   1100  return  -1010.7\n   1200  return   -587.9\n   1300  return   -965.9\n   1400  return   -624.5"
+    "text": "honest:\n      0  return   -264.6\n    100  return   -132.8\n    200  return   -102.0\n    300  return    -65.5\n    400  return     -7.1\n    500  return    -22.2\n    600  return    -99.2\n    700  return    -83.4\n    800  return      8.3\n    900  return     93.6\n   1000  return     -2.7\n   1100  return    -40.8\n   1200  return     52.2\n   1300  return   -100.0\n   1400  return    277.0\n\nshaped:\n      0  return   -248.9\n    100  return   -159.0\n    200  return    -98.8\n    300  return    -63.4\n    400  return     -0.6\n    500  return     25.3\n    600  return    -37.4\n    700  return   -334.1\n    800  return     -9.0\n    900  return    -67.7\n   1000  return   -116.3\n   1100  return     50.5\n   1200  return     -1.7\n   1300  return    237.0\n   1400  return    166.9\n\nhacked:\n      0  return  -1887.8\n    100  return  -1665.9\n    200  return  -1426.3\n    300  return  -1058.9\n    400  return  -1399.0\n    500  return   -683.6\n    600  return   -582.1\n    700  return   -858.4\n    800  return   -679.8\n    900  return   -557.0\n   1000  return   -719.8\n   1100  return   -983.4\n   1200  return   -567.7\n   1300  return   -939.5\n   1400  return   -618.3"
    }
   ],
   "scoreboard": [
    {
     "kind": "stream",
-    "text": "agent         own reward   hacked reward    landed\n--------------------------------------------------\nhonest            -165.4        -12445.8       0%\nshaped              58.9         -1684.2      38%\nhacked            -761.5          -761.5       0%"
+    "text": "agent         own reward   hacked reward    landed\n--------------------------------------------------\nhonest             -34.2         -1654.1      24%\nshaped             -82.5         -5592.5       0%\nhacked            -808.3          -808.3       0%"
    },
    {
     "kind": "image",
-    "src": "reward-shaping-gone-wrong/scoreboard.svg",
-    "format": "svg"
+    "src": "reward-shaping-gone-wrong/scoreboard.png",
+    "format": "png"
    }
   ],
   "watch": [
    {
     "kind": "stream",
-    "text": "hacked: 64 steps · median altitude 0.98\nhonest: 1000 steps\n\nThe exploit is a SHORT episode. `potential` is negative everywhere, so the bonus is a tax charged every step, and the cheapest policy is to stop paying it — end the episode. The agent is not confused; it found the fastest exit from a reward you wrote."
+    "text": "hacked: 103 steps · median altitude 0.41\nhonest: 148 steps\n\nThe exploit is a SHORT episode. `potential` is negative everywhere, so the bonus is a tax charged every step, and the cheapest policy is to stop paying it — end the episode. The agent is not confused; it found the fastest exit from a reward you wrote."
    }
   ],
   "fix-it": [
    {
     "kind": "stream",
-    "text": "      0  return   -389.5\n    100  return    -91.8\n    200  return   -128.2\n    300  return    -77.1\n    400  return     70.6\n    500  return     -3.9\n    600  return    -77.1\n    700  return    -25.3\n    800  return      3.3\n    900  return    -51.9\n   1000  return   -184.5\n   1100  return    -49.2\n   1200  return     28.0\n   1300  return     14.5\n   1400  return    288.8\nyours: landed 38%  ·  honest 0%  ·  hacked 0%"
+    "text": "      0  return   -248.9\n    100  return   -159.0\n    200  return    -98.8\n    300  return    -63.4\n    400  return     -0.6\n    500  return     25.3\n    600  return    -37.4\n    700  return   -334.1\n    800  return     -9.0\n    900  return    -67.7\n   1000  return   -116.3\n   1100  return     50.5\n   1200  return     -1.7\n   1300  return    237.0\n   1400  return    166.9\nyours: landed 0%  ·  honest 24%  ·  hacked 0%"
    }
   ],
   "verify": [
    {
     "kind": "stream",
-    "text": "✗ Landing rate of the control agent, before any comparison is meaningful: 0 (needs ≥ 0.3)\n  the control never learned to land — raise `episodes`, do not lower the bar.\n✓ How far the mis-specified agent out-scores the honest one, on the written objective: 1.168e+04 (needs ≥ 50)\n✓ Mis-specified agent's landing rate, relative to the honest agent's: 0 (needs ≤ 0.5)"
+    "text": "✗ Landing rate of the control agent, before any comparison is meaningful: 0.24 (needs ≥ 0.3)\n  the control never learned to land — raise `episodes`, do not lower the bar.\n✓ How far the mis-specified agent out-scores the honest one, on the written objective: 845.8 (needs ≥ 50)\n✓ Mis-specified agent's landing rate, relative to the honest agent's: 0 (needs ≤ 0.5)"
    }
   ],
   "finish": [

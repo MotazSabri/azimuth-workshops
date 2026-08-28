@@ -53,6 +53,11 @@
    {
     "kind": "stream",
     "text": "tokenizer        ar/word   en/word    ratio\n-------------------------------------------\ngpt2                5.93      1.32     4.50\nbloom               1.70      1.34     1.26\nxlm-roberta         1.91      1.51     1.26"
+   },
+   {
+    "kind": "image",
+    "src": "reward-shaping-gone-wrong/scoreboard.svg",
+    "format": "svg"
    }
   ],
   "pieces": [
