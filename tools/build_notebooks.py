@@ -252,7 +252,7 @@ class Builder:
             f"{save}"
         )
 
-    def bootstrap(self) -> None:
+    def bootstrap(self, code_hash: str) -> None:
         repo = self.config["repo"]
         if self.ar:
             heading = (
@@ -287,6 +287,12 @@ class Builder:
             "# a contributor may already be sitting inside a checkout — the first\n"
             "# Windows run of this notebook cloned the repository into its own\n"
             "# generated/notebooks/ directory because neither case was handled.\n"
+            "# The hash of the code.py THESE CELLS were built from. setup()\n"
+            "# compares it with the code.py it finds on disk: if a notebook is\n"
+            "# older than its source, every number below describes code that is\n"
+            "# not the code anyone is reading. The printed `code ·` line was\n"
+            "# taken from disk and so could not catch this by itself.\n"
+            f"os.environ['AZIMUTH_NOTEBOOK_CODEHASH'] = {code_hash!r}\n\n"
             f"REPO = {dirname!r}\n"
             "here = Path.cwd().resolve()\n"
             "root = next((p for p in [here, *here.parents] "
@@ -306,9 +312,9 @@ class Builder:
             "# it was opened from.\n"
             "sys.path.insert(0, str(root / 'shim'))\n"
             # Assigned, not bare: setdefault RETURNS the value, and a bare call as
-        # the last line of a cell makes Jupyter print it — the setup cell was
-        # ending with a stray "'C:\\\\Users\\\\...\\\\data'" execute_result.
-        "_ = os.environ.setdefault('AZIMUTH_DATA_DIR', str(root / 'data'))",
+            # the last line of a cell makes Jupyter print it — the setup cell was
+            # ending with a stray "'C:\\\\Users\\\\...\\\\data'" execute_result.
+            "_ = os.environ.setdefault('AZIMUTH_DATA_DIR', str(root / 'data'))",
             cid="bootstrap",
         )
 
@@ -372,7 +378,7 @@ class Builder:
 
     def build(self, code_hash: str) -> str:
         self.header()
-        self.bootstrap()
+        self.bootstrap(code_hash)
         self.dependencies()
         self.body()
         notebook = {

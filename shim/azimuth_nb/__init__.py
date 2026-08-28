@@ -340,6 +340,25 @@ def setup(
         # from the numbers that an old notebook had been run; the hash says it
         # in the first cell, before anything is measured.
         code_hash = spec.get("codeHash", "?")
+        # The notebook stamps the hash it was BUILT from; `code_hash` is what
+        # is on disk now. Equal is the only healthy state.
+        built_from = os.environ.get("AZIMUTH_NOTEBOOK_CODEHASH")
+        if built_from and built_from != code_hash:
+            if lang == "ar":
+                print(
+                    f"\n⚠ هذا الدفتر بُني من الشيفرة {ltr(built_from)} بينما "
+                    f"code.py على القرص {ltr(code_hash)}.\n"
+                    "  الخلايا أقدم من مصدرها — أعد البناء قبل الوثوق بأي رقم:\n"
+                    "  " + ltr("python tools/build_notebooks.py")
+                )
+            else:
+                print(
+                    f"\n⚠ this notebook was built from code {built_from}, but "
+                    f"code.py on disk is {code_hash}.\n"
+                    "  The cells are older than their source — rebuild before "
+                    "trusting any number below:\n"
+                    "  python tools/build_notebooks.py"
+                )
         print(f"ready · {knobs}" if lang == "en" else f"جاهز · {ltr(knobs)}")
         print(f"code · {code_hash}" if lang == "en" else f"الشيفرة · {ltr(code_hash)}")
         sys.stdout.flush()
