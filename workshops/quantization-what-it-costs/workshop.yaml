@@ -47,8 +47,8 @@ goal:
     وأيُّها لا يكاد يتحرك.
 
 difficulty: intermediate
-status: stable
-publishedAt: "2026-08-28"
+status: draft
+publishedAt: null
 
 maintenance:
   # volatile: bitsandbytes and transformers both move fast, and the workshop
@@ -119,6 +119,23 @@ profiles:
       # nearby.
       vramGb: 6
       ramGb: 8
+      # bitsandbytes ships no working Windows CUDA extension. Without this,
+      # a Windows run fails 39 seconds in with
+      # `OSError: [WinError 127] The specified procedure could not be found`
+      # thrown from inside a model load — a message that names neither the
+      # library nor the cause. Declaring the platform moves that to preflight,
+      # where it costs a second and says "open it in Colab".
+      platforms: [linux]
+      # bitsandbytes ships no working CUDA extension for Windows: the model
+      # load dies with "[WinError 127] The specified procedure could not be
+      # found", thrown from inside a library, naming nothing a reader could
+      # act on. Declaring the platform turns that into AZ-E104 at setup with
+      # "open this in Colab instead".
+      #
+      # This is the first workshop that needs the field, and it needs it
+      # because it is the first `volatile`-tier one — which is exactly the
+      # kind of thing that tier was introduced to surface.
+      platforms: ["Linux"]
     scale:
       # Small enough to load three times on a T4 without reconnecting.
       model: "facebook/opt-350m"
@@ -134,6 +151,7 @@ profiles:
       gpu: true
       vramGb: 40
       ramGb: 32
+      platforms: [linux]
     scale:
       model: "facebook/opt-1.3b"
       evalTokens: 200000
