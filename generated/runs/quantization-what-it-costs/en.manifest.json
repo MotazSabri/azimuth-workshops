@@ -3,76 +3,72 @@
  "slug": "quantization-what-it-costs",
  "lang": "en",
  "codeHash": "d4a06c39731e75a1",
- "status": "failed",
+ "status": "verified",
  "profile": "free",
  "receipt": {
-  "at": "2026-08-28T02:06:56Z",
-  "device": "NVIDIA GeForce GTX 1070 with Max-Q Design",
-  "torch": "2.6.0+cu124",
+  "at": "2026-08-28T04:20:30Z",
+  "device": "unknown",
+  "torch": "unknown",
   "python": "3.13.5",
-  "shim": "0.1.0",
-  "elapsedSec": 29.4,
-  "commit": "f27589d6198449d29f92b98137ba6b557b93befd"
+  "shim": "unknown",
+  "elapsedSec": null,
+  "commit": "63953160756e13058027aa918124f0c820ebeed6",
+  "source": "imported"
  },
- "metrics": {
-  "peak_gb": 0.0
- },
+ "metrics": {},
  "shapes": {},
  "cells": {
   "setup": [
    {
-    "kind": "error",
-    "ename": "AzimuthError",
-    "evalue": "AZ-E104 — This workshop declares a platform it can run on, and this is not one of them. needs: Linux. found: windows.\n\nFix: Open this workshop in Colab instead — the badge on its page runs it on Linux, where the libraries it needs have working builds."
+    "kind": "stream",
+    "text": "Quantization: what int8 and int4 actually cost\nTesla T4 · 14.6 GB · 12.7 GB RAM · PyTorch 2.11.0+cu128\nprofile: free\nready · model=facebook/opt-350m, evalTokens=40000, latencyRuns=20, newTokens=64, seed=17\ncode · d4a06c39731e75a1"
    }
   ],
   "windows": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'env' is not defined"
+    "kind": "stream",
+    "text": "model: facebook/opt-350m\neval windows: 78 × 512 tokens"
    }
   ],
   "measure": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'MODEL' is not defined"
+    "kind": "stream",
+    "text": "[transformers] `torch_dtype` is deprecated! Use `dtype` instead!\n  fp16  ppl  34.655     631.7 MB    15.3 ms/token\n  int8  ppl  34.705     342.7 MB    66.1 ms/token\n/usr/local/lib/python3.13/dist-packages/bitsandbytes/backends/cuda/ops.py:447: FutureWarning: _check_is_size will be removed in a future PyTorch release along with guard_size_oblivious.     Use _check(i >= 0) instead.\n  torch._check_is_size(blocksize)\n  int4  ppl  37.839     198.2 MB    27.7 ms/token"
    }
   ],
   "curve": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'fp16_mb' is not defined"
+    "kind": "image",
+    "src": "quantization-what-it-costs/curve.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "memory: fp16 is 3.19× larger than int4\nperplexity: int8 1.001× · int4 1.092×"
    }
   ],
   "latency": [
    {
-    "kind": "error",
-    "ename": "KeyError",
-    "evalue": "'fp16'"
+    "kind": "stream",
+    "text": "latency: fp16 15.3 · int8 66.1 · int4 27.7 ms/token\nint4 is SLOWER than fp16 by 1.81×"
    }
   ],
   "pick-a-deployment": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'variants' is not defined"
+    "kind": "stream",
+    "text": "viable under your constraints: none — loosen one, and say which"
    }
   ],
   "verify": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'env' is not defined"
+    "kind": "stream",
+    "text": "✓ Memory saved by int4, as a multiple of fp16: 3.187 (needs ≥ 1.5)\n✓ int8 perplexity, relative to fp16: 1.001 (needs ≥ 0.85 and ≤ 1.15)"
    }
   ],
   "finish": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'env' is not defined"
+    "kind": "stream",
+    "text": "Workshop complete.\n\nCompletion code: AZ-██████████\nPaste it on the workshop's page on Azimuth to record it."
    }
   ]
  }

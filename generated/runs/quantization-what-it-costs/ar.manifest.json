@@ -3,76 +3,72 @@
  "slug": "quantization-what-it-costs",
  "lang": "ar",
  "codeHash": "d4a06c39731e75a1",
- "status": "stable",
+ "status": "verified",
  "profile": "free",
  "receipt": {
-  "at": "2026-08-28T02:07:10Z",
-  "device": "NVIDIA GeForce GTX 1070 with Max-Q Design",
-  "torch": "2.6.0+cu124",
+  "at": "2026-08-28T04:20:30Z",
+  "device": "unknown",
+  "torch": "unknown",
   "python": "3.13.5",
-  "shim": "0.1.0",
-  "elapsedSec": 14.1,
-  "commit": "f27589d6198449d29f92b98137ba6b557b93befd"
+  "shim": "unknown",
+  "elapsedSec": null,
+  "commit": "63953160756e13058027aa918124f0c820ebeed6",
+  "source": "imported"
  },
- "metrics": {
-  "peak_gb": 0.0
- },
+ "metrics": {},
  "shapes": {},
  "cells": {
   "setup": [
    {
-    "kind": "error",
-    "ename": "AzimuthError",
-    "evalue": "⁦AZ-E104⁩ — تعلن هذه الورشة المنصّات التي تعمل عليها، وهذه ليست منها. ⁦needs: Linux. found: windows.⁩\n\nالحل: افتح هذه الورشة في Colab بدلاً من ذلك — فالشارة في صفحتها تشغّلها على لينكس، حيث تتوفر للمكتبات التي تحتاجها نسخ عاملة."
+    "kind": "stream",
+    "text": "التكميم: ما تكلّفه الدقة الثمانية والرباعية فعلاً\nTesla T4 · 14.6 غ.ب · ذاكرة 12.7 غ.ب · PyTorch 2.11.0+cu128\nالملف: ⁦free⁩\nجاهز · ⁦model=facebook/opt-350m, evalTokens=40000, latencyRuns=20, newTokens=64, seed=17⁩\nالشيفرة · ⁦d4a06c39731e75a1⁩"
    }
   ],
   "windows": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'env' is not defined"
+    "kind": "stream",
+    "text": "النموذج: facebook/opt-350m\nنوافذ التقييم: 78 نافذة × 512 رمز"
    }
   ],
   "measure": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'MODEL' is not defined"
+    "kind": "stream",
+    "text": "[transformers] `torch_dtype` is deprecated! Use `dtype` instead!\n  fp16  ppl  34.655     631.7 MB    14.8 ms/token\n  int8  ppl  34.705     342.7 MB    59.6 ms/token\n/usr/local/lib/python3.13/dist-packages/bitsandbytes/backends/cuda/ops.py:447: FutureWarning: _check_is_size will be removed in a future PyTorch release along with guard_size_oblivious.     Use _check(i >= 0) instead.\n  torch._check_is_size(blocksize)\n  int4  ppl  37.839     198.2 MB    27.0 ms/token"
    }
   ],
   "curve": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'fp16_mb' is not defined"
+    "kind": "image",
+    "src": "quantization-what-it-costs/curve.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "الذاكرة: النصفية أكبر بـ 3.19× من الرباعية\nالحيرة: ثمانية 1.001× · رباعية 1.092×"
    }
   ],
   "latency": [
    {
-    "kind": "error",
-    "ename": "KeyError",
-    "evalue": "'fp16'"
+    "kind": "stream",
+    "text": "زمن الاستجابة: نصفية 14.8 · ثمانية 59.6 · رباعية 27.0 م.ث/رمز\nالرباعية أبطأ من النصفية بعامل 1.83"
    }
   ],
   "pick-a-deployment": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'variants' is not defined"
+    "kind": "stream",
+    "text": "viable under your constraints: ['int8']"
    }
   ],
   "verify": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'env' is not defined"
+    "kind": "stream",
+    "text": "✓ الذاكرة الموفَّرة بالدقة الرباعية منسوبةً إلى النصفية: 3.187 (المطلوب ≥ 1.5)\n✓ حيرة الدقة الثمانية منسوبةً إلى النصفية: 1.001 (المطلوب ≥ 0.85 و≤ 1.15)"
    }
   ],
   "finish": [
    {
-    "kind": "error",
-    "ename": "NameError",
-    "evalue": "name 'env' is not defined"
+    "kind": "stream",
+    "text": "اكتملت الورشة.\n\nرمز الإتمام: ⁦AZ-██████████⁩\nالصقه في صفحة الورشة على أزيموث لتسجيل إتمامها."
    }
   ]
  }
