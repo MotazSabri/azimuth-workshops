@@ -135,7 +135,6 @@ profiles:
       # This is the first workshop that needs the field, and it needs it
       # because it is the first `volatile`-tier one — which is exactly the
       # kind of thing that tier was introduced to surface.
-      platforms: ["Linux"]
     scale:
       # Small enough to load three times on a T4 without reconnecting.
       model: "facebook/opt-350m"
