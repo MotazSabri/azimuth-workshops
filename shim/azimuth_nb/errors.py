@@ -95,6 +95,17 @@ CATALOGUE: dict[str, dict[str, str]] = {
         "fix_en": "Runtime → Disconnect and delete runtime, then reconnect. A fresh runtime usually clears it.",
         "fix_ar": "من قائمة Runtime اختر Disconnect and delete runtime ثم أعد الاتصال. البيئة الجديدة تحلّ المشكلة عادةً.",
     },
+    "AZ-E104": {
+        "en": "This workshop declares a platform it can run on, and this is not one of them.",
+        "ar": "تعلن هذه الورشة المنصّات التي تعمل عليها، وهذه ليست منها.",
+        # Some libraries have no working build for every OS — bitsandbytes has
+        # no Windows CUDA extension, and the failure it produces is a bare
+        # "[WinError 127] The specified procedure could not be found" thrown
+        # from deep inside a model load, minutes in, naming nothing useful.
+        # Refusing at setup with the reason is worth a schema field.
+        "fix_en": "Open this workshop in Colab instead — the badge on its page runs it on Linux, where the libraries it needs have working builds.",
+        "fix_ar": "افتح هذه الورشة في Colab بدلاً من ذلك — فالشارة في صفحتها تشغّلها على لينكس، حيث تتوفر للمكتبات التي تحتاجها نسخ عاملة.",
+    },
     # ── AZ-E2xx: the environment ────────────────────────────────────────────
     "AZ-E201": {
         "en": "PyTorch is not installed in this runtime.",
@@ -116,8 +127,11 @@ CATALOGUE: dict[str, dict[str, str]] = {
     "AZ-E301": {
         "en": "The dataset could not be downloaded from any of its sources.",
         "ar": "تعذّر تنزيل مجموعة البيانات من أيٍّ من مصادرها.",
-        "fix_en": "This is usually a transient network failure — run the cell again. If it keeps failing, the mirror may be down; open an issue on the workshops repo and we will re-point it.",
-        "fix_ar": "غالباً ما يكون هذا عطلاً مؤقتاً في الشبكة — أعد تشغيل الخلية. إن استمر الفشل فقد يكون المرآة معطّلة؛ افتح مشكلة في مستودع الورش وسنعيد توجيهها.",
+        # The shim already retried three times with backoff before raising
+        # this, so "try again" is advice it has taken on your behalf. Say what
+        # is left to try instead.
+        "fix_en": "The download was retried three times and failed each time. Check your connection, then run the cell again. If it keeps failing the source may be down — open an issue on the workshops repo and we will re-point it.",
+        "fix_ar": "أُعيدت محاولة التنزيل ثلاث مرات وأخفقت في كلٍّ منها. تحقّق من اتصالك ثم أعد تشغيل الخلية. وإن استمر الفشل فقد يكون المصدر معطّلاً؛ افتح مشكلة في مستودع الورش وسنعيد توجيهه.",
     },
     "AZ-E302": {
         "en": "The dataset downloaded, but its contents are not what this workshop expects.",

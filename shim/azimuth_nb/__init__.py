@@ -333,6 +333,14 @@ def setup(
 
     if not quiet:
         knobs = ", ".join(f"{k}={v}" for k, v in env.cfg.items())
+        # The codeHash, printed. It is the only thing in the output that says
+        # WHICH VERSION of the workshop just ran, and a notebook opened from
+        # the `stable` badge can easily be older than the source someone is
+        # editing. Three separate rounds of debugging were spent discovering
+        # from the numbers that an old notebook had been run; the hash says it
+        # in the first cell, before anything is measured.
+        code_hash = spec.get("codeHash", "?")
         print(f"ready · {knobs}" if lang == "en" else f"جاهز · {ltr(knobs)}")
+        print(f"code · {code_hash}" if lang == "en" else f"الشيفرة · {ltr(code_hash)}")
         sys.stdout.flush()
     return env

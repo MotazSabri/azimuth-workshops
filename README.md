@@ -4,7 +4,7 @@
 
 Multi-paper prototypes that run on a free Colab GPU, in English and Arabic.
 
-This is the fourth tier of [Azimuth](https://azimuth.plus). The papers explain
+This is the fourth tier of [Azimuth](https://azimuth.blog). The papers explain
 why an idea exists. The demos make it tangible. The Lab has you assemble an
 architecture without a GPU. **A workshop is where it runs on real hardware and
 produces a real number.**
@@ -134,7 +134,7 @@ Datasets are not ours; each declares its own terms in its `assets:` block.
 نماذج أولية متعددة الأوراق تعمل على معالج رسوميات مجاني في Colab، بالعربية
 والإنجليزية.
 
-هذه هي الطبقة الرابعة من [أزيموث](https://azimuth.plus). الأوراق تشرح لماذا
+هذه هي الطبقة الرابعة من [أزيموث](https://azimuth.blog). الأوراق تشرح لماذا
 وُجدت الفكرة، والعروض التفاعلية تجعلها ملموسة، والمختبر يجعلك تركّب معمارية دون
 معالج رسوميات. **أما الورشة فهي حيث تعمل الفكرة على عتاد حقيقي وتُنتج رقماً
 حقيقياً.**
@@ -177,13 +177,32 @@ Datasets are not ours; each declares its own terms in its `assets:` block.
 
 ## Adding a workshop, end to end
 
+**One command does the pipeline:**
+
+```bash
+python tools/ship.py <slug>
+```
+
+It validates, builds the notebooks, executes both languages, checks for drift,
+tells you whether the workshop is publishable, and prints the git and site
+commands to finish. It stops at the first failure rather than letting a later
+step report a confusing symptom of an earlier one.
+
+The steps below are what it runs, in the order it runs them, for when you need
+to do one of them alone.
+
+
 Nine steps. Everything else — notebooks, manifests, indexes, search entries,
 paper invites — is generated.
 
 ```
- 1. pick papers      →  2. write 2 files  →  3. build   →  4. run locally
-                                                              ↓
- 9. it's on the site ←  8. bump submodule ←  7. promote ←  5-6. push & CI runs
+ 1. pick papers  →  2. write workshop.yaml + code.py
+                          ↓
+                    3. python tools/ship.py <slug>     ← validate, build, execute
+                          ↓
+ 6. site: bump submodule, npm run content, npm run build
+        ↑                 ↓
+ 5. push main + stable ← 4. git add workshops/<slug> generated/
 ```
 
 ### 1 · Pick the papers, and the constellation

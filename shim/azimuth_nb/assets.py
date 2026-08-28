@@ -22,6 +22,7 @@ publish time.
 from __future__ import annotations
 
 import hashlib
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -30,6 +31,11 @@ from .errors import fail
 
 CHUNK = 1 << 16
 TIMEOUT = 60
+#: A truncated read is the ordinary failure on a domestic connection, not an
+#: exceptional one — a few megabytes over a link that hiccups once. Retrying
+#: costs seconds; failing the workshop costs the whole run.
+ATTEMPTS = 3
+BACKOFF = 2.0
 
 
 def _sha256(path: Path) -> str:
@@ -64,29 +70,64 @@ def fetch(asset: dict, dest_dir: Path, lang: str = "en", quiet: bool = False) ->
 
     attempts: list[str] = []
     for url in sources:
-        try:
-            with urllib.request.urlopen(url, timeout=TIMEOUT) as response:
-                data = response.read()
-            dest.write_bytes(data)
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError) as exc:
-            attempts.append(f"{url} ({type(exc).__name__})")
-            continue
+        for attempt in range(1, ATTEMPTS + 1):
+            try:
+                with urllib.request.urlopen(url, timeout=TIMEOUT) as response:
+                    data = response.read()
+            # BARE Exception, deliberately. The first version caught
+            # (URLError, HTTPError, TimeoutError, OSError) and a real download
+            # died on http.client.IncompleteRead — which is an HTTPException,
+            # NOT an OSError. It escaped as a raw traceback instead of the
+            # bilingual AZ-E301 this module exists to produce.
+            #
+            # Enumerating network exception types is a losing game: every
+            # layer adds its own, and the ones you miss are exactly the ones
+            # that surface at 3am on someone else's connection. Anything that
+            # goes wrong while fetching a URL is a fetch failure.
+            except Exception as exc:
+                attempts.append(f"{url} ({type(exc).__name__}, try {attempt})")
+                if attempt < ATTEMPTS:
+                    if not quiet:
+                        print(f"  · {name} — {type(exc).__name__}, retrying ({attempt}/{ATTEMPTS})")
+                    time.sleep(BACKOFF * attempt)
+                    continue
+                break
 
-        if expected:
-            actual = _sha256(dest)
-            if actual != expected:
-                dest.unlink(missing_ok=True)
-                raise fail(
-                    "AZ-E302",
-                    lang=lang,
-                    asset=name,
-                    expected=expected[:12],
-                    found=actual[:12],
-                )
-        if not quiet:
-            size_kb = dest.stat().st_size / 1024
-            pin = "verified" if expected else "UNPINNED"
-            print(f"  · {name} — {size_kb:,.0f} KB, {pin}")
-        return dest
+            # A truncated read can also arrive as a SHORT FILE with no error
+            # at all, so the declared size is checked before the hash: it
+            # names the problem ("got 3.1 of 3.9 MB") where a hash mismatch
+            # would only say the bytes are wrong.
+            expected_bytes = asset.get("bytes")
+            if expected_bytes and len(data) != expected_bytes:
+                attempts.append(f"{url} (short read: {len(data)} of {expected_bytes})")
+                if attempt < ATTEMPTS:
+                    if not quiet:
+                        print(
+                            f"  · {name} — short read "
+                            f"({len(data):,} of {expected_bytes:,}), retrying "
+                            f"({attempt}/{ATTEMPTS})"
+                        )
+                    time.sleep(BACKOFF * attempt)
+                    continue
+                break
+
+            dest.write_bytes(data)
+
+            if expected:
+                actual = _sha256(dest)
+                if actual != expected:
+                    dest.unlink(missing_ok=True)
+                    raise fail(
+                        "AZ-E302",
+                        lang=lang,
+                        asset=name,
+                        expected=expected[:12],
+                        found=actual[:12],
+                    )
+            if not quiet:
+                size_kb = dest.stat().st_size / 1024
+                pin = "verified" if expected else "UNPINNED"
+                print(f"  · {name} — {size_kb:,.0f} KB, {pin}")
+            return dest
 
     raise fail("AZ-E301", lang=lang, asset=name, tried=" | ".join(attempts))

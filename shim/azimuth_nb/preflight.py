@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import sys
 from dataclasses import dataclass
 
 from .errors import fail
@@ -127,6 +128,32 @@ def check_profile(runtime: Runtime, profile: dict, lang: str = "en") -> None:
     genuinely does not need one.
     """
     needs = profile.get("requires", {}) or {}
+
+    # PLATFORM FIRST, because it is the cheapest check and the one whose
+    # failure is otherwise least legible: a Linux-only CUDA kernel surfaces as
+    # a bare WinError deep inside a model load, long after a download.
+    platforms = needs.get("platforms")
+    if platforms:
+        current = (
+            "linux"
+            if sys.platform.startswith("linux")
+            else "macos"
+            if sys.platform == "darwin"
+            else "windows"
+            if sys.platform.startswith("win")
+            else sys.platform
+        )
+        # Case-insensitive: the field is hand-written YAML, and `[Linux]` vs
+        # `[linux]` is not a distinction anyone should have to get right.
+        # An earlier version compared platform.system() ("Linux") against a
+        # lowercase list and refused EVERY platform, including the correct one.
+        if current not in {str(p).strip().lower() for p in platforms}:
+            raise fail(
+                "AZ-E104",
+                lang=lang,
+                needs=" or ".join(platforms),
+                found=current,
+            )
 
     if needs.get("gpu", True) and runtime.accelerator == "cpu":
         raise fail("AZ-E101", lang=lang)

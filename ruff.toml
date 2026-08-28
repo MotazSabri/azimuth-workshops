@@ -56,6 +56,9 @@ ignore = [
 # level would make the "PyTorch is not installed" error unreachable, because
 # the package would fail to import before it could raise AZ-E201.
 "shim/azimuth_nb/preflight.py" = ["PLC0415"]
+# fetch() is a flat retry loop over sources; splitting it to satisfy a branch
+# counter would scatter the failure handling this module exists to centralize.
+"shim/azimuth_nb/assets.py" = ["PLR0912", "BLE001"]
 # The validator compares against small literal counts ("exactly one default
 # profile"). Naming those would obscure rather than clarify.
 # check_workshop() is deliberately one flat sequence of independent checks.
@@ -66,6 +69,7 @@ ignore = [
 # The shim is imported lazily so --from-mirror works with no shim on the path
 # at all, which is the whole point of the offline route.
 "tools/fetch-assets.py" = ["PLC0415", "PLR0912"]
+"tools/ship.py" = ["PLC0415"]
 # main() is a flat sequence of independent steps for the same reason
 # check_workshop() is; splitting it to satisfy a branch counter would hide the
 # order the build actually runs in.

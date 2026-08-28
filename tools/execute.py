@@ -61,6 +61,14 @@ RUNS = ROOT / "generated" / "runs"
 
 CAPTURE_TAG = "__azimuth_capture__"
 
+# Cells the BUILDER injects, which no workshop.yaml declares and none should.
+# They carry cellIds so the executor can find and rewrite them, but they are
+# not content — leaving them out of this set made the drift assertion report
+# "outputs for 'dependencies', which the YAML no longer declares" on every run
+# of every workshop that has dependencies, which is a correct sentence about
+# the wrong thing.
+INJECTED = ("bootstrap", "dependencies", "__capture__")
+
 
 # -- the injected cells ------------------------------------------------------
 
@@ -351,7 +359,7 @@ def capture(slug: str, lang: str, nb: dict, elapsed: float) -> dict:
 
     for cell in nb["cells"]:
         cell_id = cell.get("metadata", {}).get("azimuth", {}).get("cellId")
-        if not cell_id or cell_id in ("bootstrap", "__capture__"):
+        if not cell_id or cell_id in INJECTED:
             continue
         outputs = normalize_outputs(cell_id, cell.get("outputs", []), out_dir, slug)
         if any(o["kind"] == "error" for o in outputs):
@@ -403,7 +411,7 @@ def assert_no_drift(slug: str, spec: dict, manifest: dict) -> list:
     """
     problems = []
     declared = {b["id"] for b in spec.get("body", []) if b.get("type") in ("cell", "exercise")}
-    captured = set(manifest["cells"])
+    captured = set(manifest["cells"]) - set(INJECTED)
     for missing in sorted(declared - captured):
         problems.append(f"{slug}: cell '{missing}' produced no outputs")
     for orphan in sorted(captured - declared):
@@ -416,8 +424,47 @@ def assert_no_drift(slug: str, spec: dict, manifest: dict) -> list:
 # -- main --------------------------------------------------------------------
 
 
+def unsupported_here(spec: dict) -> str | None:
+    """The platform this machine is not, or None if it can run this workshop.
+
+    Checked BEFORE a kernel starts. The shim raises AZ-E104 for the same
+    reason, but by then a dependency install has already run — thirty seconds
+    to be told the answer was knowable from a YAML field.
+    """
+    profile = next(
+        (p for p in spec.get("profiles") or [] if p.get("default")),
+        (spec.get("profiles") or [None])[0],
+    )
+    platforms = ((profile or {}).get("requires") or {}).get("platforms")
+    if not platforms:
+        return None
+    current = (
+        "linux"
+        if sys.platform.startswith("linux")
+        else "macos"
+        if sys.platform == "darwin"
+        else "windows"
+        if sys.platform.startswith("win")
+        else sys.platform
+    )
+    wanted = {str(x).strip().lower() for x in platforms}
+    return None if current in wanted else f"{'/'.join(sorted(wanted))}, this is {current}"
+
+
 def execute_one(slug: str, lang: str, timeout: int, dry_run: bool):
     spec = yaml.safe_load((WORKSHOPS / slug / "workshop.yaml").read_text(encoding="utf-8"))
+
+    # SKIP, DO NOT FAIL, and above all do not write a manifest.
+    #
+    # A machine that cannot run a workshop has learned nothing about it. The
+    # first version wrote a `failed` manifest anyway — which would have
+    # overwritten a VERIFIED capture from Colab or a Linux runner the next
+    # time someone ran this locally, destroying a good result because the
+    # wrong machine tried. Silence is the correct output here.
+    reason = unsupported_here(spec)
+    if reason:
+        print(f"  - {slug} ({lang}) -- skipped: needs {reason}")
+        return None, []
     nb = build_exec_notebook(slug, lang, spec)
 
     if dry_run:
@@ -448,6 +495,18 @@ def execute_one(slug: str, lang: str, timeout: int, dry_run: bool):
         f"  . {slug} ({lang}) -- {manifest['status']} in {elapsed:.0f}s . "
         f"{len(manifest['metrics'])} metric(s) . {figures} figure(s)"
     )
+
+    # A bare "failed in 24s" sends you to open a JSON file to find out what
+    # broke. The FIRST error is almost always the cause and everything after
+    # it is fallout, so print that one and say where the rest are.
+    if manifest["status"] == "failed":
+        for cell_id, outputs in manifest["cells"].items():
+            first = next((o for o in outputs if o["kind"] == "error"), None)
+            if first:
+                detail = first["evalue"].strip().split("\n")[0][:160]
+                print(f"      first failure in [{cell_id}]: {first['ename']}: {detail}")
+                break
+        print(f"      full log: generated/runs/{slug}/{lang}.manifest.json")
     return manifest["status"] == "verified" and not problems, problems
 
 
@@ -469,16 +528,26 @@ def main() -> int:
             return 1
 
     ok = True
+    skipped = 0
     all_problems: list = []
     for slug in slugs:
         for lang in langs:
             passed, problems = execute_one(slug, lang, args.timeout, args.dry_run)
+            if passed is None:  # skipped: not runnable on this platform
+                skipped += 1
+                continue
             ok = ok and passed
             all_problems += problems
 
     for problem in all_problems:
         print(f"  x {problem}")
 
+    if skipped:
+        print(
+            f"\n{skipped} run(s) skipped -- this platform cannot run them, and no "
+            "manifest was written.\nOpen the workshop in Colab, or let the `execute` "
+            "workflow run it on a Linux runner."
+        )
     if not ok and not args.dry_run:
         print("\nrun did not verify -- manifests written, but stable must not advance")
         return 1

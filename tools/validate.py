@@ -216,6 +216,18 @@ def check_workshop(directory: Path) -> None:
             )
         if float(needs.get("ramGb", 0) or 0) > FREE_TIER_RAM_GB:
             err(f"{where}: default profile needs more RAM than the free tier provides")
+        # A requirement that happens to equal a popular card's capacity is
+        # almost always the card's number, not the workshop's — `vramGb: 14`
+        # was declared because a T4 has 14.6, and it refused every 8 GB card
+        # for no measured reason. Preflight is a hard refusal, so an
+        # over-declared requirement is not conservative; it is a lockout.
+        vram = float(needs.get("vramGb", 0) or 0)
+        if needs.get("gpu") and vram in (8.0, 11.0, 12.0, 14.0, 15.0, 16.0, 24.0, 40.0, 80.0):
+            warn(
+                f"{where}: default profile declares vramGb {vram:g}, which is a "
+                f"card's capacity rather than a measured peak — check what the run "
+                f"actually allocates and declare that"
+            )
         if not defaults[0].get("scale"):
             err(f"{where}: default profile declares no scale — sizes would have no source")
 
