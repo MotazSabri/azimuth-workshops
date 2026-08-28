@@ -47,8 +47,8 @@ goal:
     وأيُّها لا يكاد يتحرك.
 
 difficulty: intermediate
-status: draft
-publishedAt: null
+status: stable
+publishedAt: "2026-08-26"
 
 maintenance:
   # volatile: bitsandbytes and transformers both move fast, and the workshop

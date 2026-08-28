@@ -6,37 +6,38 @@
  "status": "failed",
  "profile": "free",
  "receipt": {
-  "at": "2026-08-27T23:52:52Z",
+  "at": "2026-08-28T02:07:10Z",
   "device": "NVIDIA GeForce GTX 1070 with Max-Q Design",
   "torch": "2.6.0+cu124",
   "python": "3.13.5",
   "shim": "0.1.0",
-  "elapsedSec": 23.3,
-  "commit": "4d44cb263abae991016fc07ce36c784097f8782a"
+  "elapsedSec": 14.1,
+  "commit": "f27589d6198449d29f92b98137ba6b557b93befd"
  },
  "metrics": {
-  "n_windows": 78,
   "peak_gb": 0.0
  },
  "shapes": {},
  "cells": {
   "setup": [
    {
-    "kind": "stream",
-    "text": "التكميم: ما تكلّفه الدقة الثمانية والرباعية فعلاً\nNVIDIA GeForce GTX 1070 with Max-Q Design · 8.0 غ.ب · ذاكرة 15.9 غ.ب · PyTorch 2.6.0+cu124\nالملف: ⁦free⁩\nجاهز · ⁦model=facebook/opt-350m, evalTokens=40000, latencyRuns=20, newTokens=64, seed=17⁩"
+    "kind": "error",
+    "ename": "AzimuthError",
+    "evalue": "⁦AZ-E104⁩ — تعلن هذه الورشة المنصّات التي تعمل عليها، وهذه ليست منها. ⁦needs: Linux. found: windows.⁩\n\nالحل: افتح هذه الورشة في Colab بدلاً من ذلك — فالشارة في صفحتها تشغّلها على لينكس، حيث تتوفر للمكتبات التي تحتاجها نسخ عاملة."
    }
   ],
   "windows": [
    {
-    "kind": "stream",
-    "text": "النموذج: facebook/opt-350m\nنوافذ التقييم: 78 نافذة × 512 رمز"
+    "kind": "error",
+    "ename": "NameError",
+    "evalue": "name 'env' is not defined"
    }
   ],
   "measure": [
    {
     "kind": "error",
-    "ename": "OSError",
-    "evalue": "[WinError 127] The specified procedure could not be found"
+    "ename": "NameError",
+    "evalue": "name 'MODEL' is not defined"
    }
   ],
   "curve": [
@@ -64,13 +65,14 @@
    {
     "kind": "error",
     "ename": "NameError",
-    "evalue": "name 'memory_ratio' is not defined"
+    "evalue": "name 'env' is not defined"
    }
   ],
   "finish": [
    {
-    "kind": "stream",
-    "text": "لم تُستدعَ قط: ⁦memory-falls, quality-survives-int8⁩\n  هذه الفحوص معرَّفة في workshop.yaml ولا تستدعيها code.py — الدفتر غير متوافق مع مصدره. أعد البناء: ⁦python tools/build_notebooks.py⁩"
+    "kind": "error",
+    "ename": "NameError",
+    "evalue": "name 'env' is not defined"
    }
   ]
  }
