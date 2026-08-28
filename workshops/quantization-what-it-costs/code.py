@@ -25,7 +25,7 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL)
 # int4 regression could hide inside it — the numbers would still look precise.
 # `Salesforce/wikitext`, not bare `wikitext`: the Hub now requires the owning
 # org for this dataset, and the bare name resolves to nothing. Exactly the
-# volatile-tier rot this workshop exists to demonstrate the pinning for.
+# volatile-tier rot this workshop exists to demonstrate the pinning for .
 raw = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
 text = "\n\n".join(t for t in raw["text"] if t.strip())
 all_ids = tokenizer(text, return_tensors="pt").input_ids[0][: env.cfg["evalTokens"]]
