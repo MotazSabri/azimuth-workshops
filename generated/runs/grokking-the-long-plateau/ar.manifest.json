@@ -2,17 +2,17 @@
  "schema": "run/v1",
  "slug": "grokking-the-long-plateau",
  "lang": "ar",
- "codeHash": "c757cdab1b2c78d0",
+ "codeHash": "9fc593a2610292a0",
  "status": "verified",
  "profile": "free",
  "receipt": {
-  "at": "2026-08-29T08:02:26Z",
+  "at": "2026-08-29T08:52:21Z",
   "device": "unknown",
   "torch": "unknown",
   "python": "3.13.5",
   "shim": "unknown",
   "elapsedSec": null,
-  "commit": "687507736c21ed3452197d5e15f79dff1f5ccec7",
+  "commit": "829cfde7be36d9bf73303b72a43ca8b6ad1275ba",
   "source": "imported"
  },
  "metrics": {},
@@ -21,7 +21,7 @@
   "setup": [
    {
     "kind": "stream",
-    "text": "الاستيعاب المتأخر: الهضبة التي كانت قاعدة التوقّف لتصدّقها\nبدون معالج رسوميات · ذاكرة 12.7 غ.ب · PyTorch 2.11.0+cpu\nالملف: ⁦free⁩\nجاهز · ⁦modulus=47, trainFrac=0.6, dModel=64, nHeads=4, dFF=256, steps=14000, evalEvery=100, logEvery=1000, learningRate=0.001, weightDecay=2.0, memoriseAt=0.99, generaliseAt=0.9, seed=17⁩\nالشيفرة · ⁦c757cdab1b2c78d0⁩"
+    "text": "الاستيعاب المتأخر: الهضبة التي كانت قاعدة التوقّف لتصدّقها\nبدون معالج رسوميات · ذاكرة 12.7 غ.ب · PyTorch 2.11.0+cpu\nالملف: ⁦free⁩\nجاهز · ⁦modulus=47, trainFrac=0.6, dModel=64, nHeads=4, dFF=256, steps=14000, evalEvery=100, logEvery=1000, learningRate=0.001, weightDecay=2.0, memoriseAt=0.99, generaliseAt=0.9, seed=17⁩\nالشيفرة · ⁦9fc593a2610292a0⁩"
    }
   ],
   "data": [
@@ -45,7 +45,7 @@
   "train": [
    {
     "kind": "stream",
-    "text": "step      1  train 0.020  test 0.018  loss 3.98689      1s\nstep   1000  train 1.000  test 0.000  loss 0.16864     72s\nstep   2000  train 1.000  test 0.002  loss 0.04802    137s\nstep   3000  train 1.000  test 0.000  loss 0.08134    202s\nstep   4000  train 1.000  test 0.025  loss 0.06125    268s\nstep   5000  train 1.000  test 0.335  loss 0.05982    336s\nstep   6000  train 1.000  test 0.416  loss 0.07515    402s\nstep   7000  train 1.000  test 0.710  loss 0.06052    467s\nstep   8000  train 1.000  test 0.841  loss 0.02337    532s\nstep   9000  train 1.000  test 0.896  loss 0.04213    596s\nstep  10000  train 1.000  test 0.921  loss 0.03648    662s\nstep  11000  train 0.833  test 0.676  loss 0.57979    729s\nstep  12000  train 1.000  test 0.921  loss 0.02582    795s\nstep  13000  train 1.000  test 0.930  loss 0.02328    860s\nstep  14000  train 1.000  test 0.923  loss 0.01406    926s\n⁦weight decay⁩ — شدٌّ لكل معامل نحو الصفر يُطبَّق في كل خطوة. يسعّر التعقيد، وهو هنا ما يجعل الحل العام في النهاية أرخص من المحفوظ.\nأعلى دقة تدريب 1.000 · أعلى دقة محجوزة 0.938 · الدقة النهائية 0.923\nحفظ عند 300 · عمّم عند 9200"
+    "text": "step      1  train 0.020  test 0.018  loss 3.98689      0s\nstep   1000  train 1.000  test 0.000  loss 0.16864     59s\nstep   2000  train 1.000  test 0.002  loss 0.04802    117s\nstep   3000  train 1.000  test 0.000  loss 0.08134    176s\nstep   4000  train 1.000  test 0.025  loss 0.06125    236s\nstep   5000  train 1.000  test 0.335  loss 0.05982    294s\nstep   6000  train 1.000  test 0.416  loss 0.07515    353s\nstep   7000  train 1.000  test 0.710  loss 0.06052    411s\nstep   8000  train 1.000  test 0.841  loss 0.02337    471s\nstep   9000  train 1.000  test 0.896  loss 0.04213    528s\nstep  10000  train 1.000  test 0.921  loss 0.03648    588s\nstep  11000  train 0.833  test 0.676  loss 0.57979    647s\nstep  12000  train 1.000  test 0.921  loss 0.02582    706s\nstep  13000  train 1.000  test 0.930  loss 0.02328    764s\nstep  14000  train 1.000  test 0.923  loss 0.01406    824s\n⁦weight decay⁩ — شدٌّ لكل معامل نحو الصفر يُطبَّق في كل خطوة. يسعّر التعقيد، وهو هنا ما يجعل الحل العام في النهاية أرخص من المحفوظ.\nأعلى دقة تدريب 1.000 · أعلى دقة محجوزة 0.938 · الدقة النهائية 0.923\nحفظ عند 300 · عمّم عند 9200"
    }
   ],
   "curves": [
