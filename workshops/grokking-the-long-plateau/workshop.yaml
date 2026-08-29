@@ -65,10 +65,10 @@ maintenance:
 
 estimate:
   gpuMinutes: 0
-  # From the first run's wall clock: 12000 steps took 737 s on a Colab CPU,
-  # about 61 s per 1000 steps including evaluation. The step budget below is
-  # now larger, so this scales with it. Confirm from the next run.
-  totalMinutes: 50
+  # Your Colab CPU ran 61 s per 1000 steps at a slightly larger modulus and a
+  # comparable number of training rows. At the budget below that is about
+  # fifteen minutes of training plus reading time.
+  totalMinutes: 25
 
 papers:
   # Only one slug is declared, because `content/papers/` is not in the
@@ -103,22 +103,33 @@ profiles:
     scale:
       # A smaller modulus than the paper's, because every step is full-batch
       # on a CPU. The delay is the phenomenon; the modulus sets its size.
-      modulus: 59
-      trainFrac: 0.4
+      # 47, not 59. Smaller is not a concession here: fewer classes and a
+      # correspondingly cheaper step buy the step budget that the delay needs,
+      # and the delay is the phenomenon.
+      modulus: 47
+      # 0.6, not 0.4. Splitting whole unordered pairs is the correct split,
+      # but it also cut the model's coverage of the pair space: a random split
+      # over rows at 0.4 leaves each unordered pair with two chances to land
+      # in training, so it informs the model about roughly 0.64 of them. This
+      # value restores that coverage honestly instead of through the leak.
+      trainFrac: 0.6
       dModel: 64
       nHeads: 4
       dFF: 256
-      # 12000 was not enough: the first run memorised at step 350 and had
-      # not generalised by the end. At 61 s per 1000 CPU steps this budget is
-      # about three quarters of an hour, which is the most a free-tier
-      # workshop can honestly ask for.
-      steps: 40000
-      evalEvery: 50
-      logEvery: 2000
+      # Measured: two seeds crossed the generalisation threshold at steps
+      # 8000 and 7400. This is a little under twice that, which covers seed
+      # variance without asking for an hour of anyone's afternoon.
+      steps: 14000
+      evalEvery: 100
+      logEvery: 1000
       learningRate: 0.001
-      # Load-bearing, not a detail. Without decay the plateau in this budget
-      # is just a plateau — see hint 2.
-      weightDecay: 1.0
+      # THE BINDING KNOB, and the one that cost two runs to find. At 1.0 —
+      # the value most reproductions quote — nothing generalised in 40000
+      # steps. At 2.0 both measured seeds grokked before step 8000. At 5.0 it
+      # arrives sooner but training accuracy starts falling out of
+      # memorisation, and at 10.0 the model never memorises at all, which
+      # leaves no plateau to be surprised by.
+      weightDecay: 2.0
       memoriseAt: 0.99
       generaliseAt: 0.9
       seed: 17
@@ -134,15 +145,17 @@ profiles:
       ramGb: 4
     scale:
       modulus: 97
-      trainFrac: 0.4
+      trainFrac: 0.6
       dModel: 128
       nHeads: 4
       dFF: 512
-      steps: 60000
+      # UNMEASURED. Nothing has been run at this modulus; the free profile is
+      # the one with numbers behind it.
+      steps: 25000
       evalEvery: 100
-      logEvery: 4000
+      logEvery: 2000
       learningRate: 0.001
-      weightDecay: 1.0
+      weightDecay: 2.0
       memoriseAt: 0.99
       generaliseAt: 0.9
       seed: 17
@@ -169,18 +182,20 @@ checks:
       ar: "أعلى دقة على أزواج التدريب"
   - id: generalises
     required: true
-    min: 0.8 # UNMEASURED placeholder — no run has generalised yet
+    # Measured: peaks of 0.937 and 0.917 across two seeds. Held against the
+    # PEAK rather than the final value because the run oscillates after it
+    # generalises — see the comment in code.py.
+    min: 0.85
     label:
-      en: "Final accuracy on the held-out pairs"
-      ar: "الدقة النهائية على الأزواج المحجوزة"
+      en: "Best accuracy reached on the held-out pairs"
+      ar: "أفضل دقة بلغتها الأزواج المحجوزة"
   - id: delay
     required: true
-    # Not a measured delay — no run has completed one. It is a floor derived
-    # from the first run, which memorised at step 350 and had not generalised
-    # by step 12000: any real grok here is separated by far more than this, so
-    # a smaller bar could be cleared by a fluke crossing rather than by the
-    # phenomenon. Replace it with a measured value.
-    min: 2000
+    # Measured: gaps of 7700 and 7000 steps across two seeds, memorising at
+    # steps 300 and 400. Set well below both, with room for a slower machine
+    # and an unlucky seed, but far enough above zero that a fluke crossing
+    # cannot clear it.
+    min: 4000
     label:
       en: "Optimizer steps between memorising and generalising"
       ar: "خطوات المحسِّن بين الحفظ والتعميم"
@@ -211,18 +226,19 @@ hints:
       ينبغي أن تبدو عليه ما دام لم يتعلم شيئاً قابلاً للنقل. ارسم ذلك المستوى
       على الشكل قبل أن تستنتج شيئاً عن هيئة المنحنى.
   - en: >-
-      Weight decay is doing the work. Training accuracy saturates and the
-      training loss keeps falling, and what keeps falling with it is the size
-      of the weights — the pressure that eventually makes a general solution
-      cheaper than a memorised one. Set the decay to zero and rerun if you
-      want to see the plateau stay a plateau; that is the control, and it
-      costs one more training run.
+      Weight decay is doing the work, and the amount of it decides whether you
+      ever see the jump rather than just how long you wait. Halve the profile's
+      decay and rerun: the training curve looks identical, the held-out curve
+      stays on the floor, and the run reads as a task the model simply cannot
+      do. Raise it far instead and the model stops memorising, which removes
+      the plateau from the other end. The window between those two failures is
+      narrower than the phenomenon's reputation suggests.
     ar: >-
-      اضمحلال الأوزان هو ما يقوم بالعمل. تتشبّع دقة التدريب وتواصل خسارة
-      التدريب الانخفاض، والذي يواصل الانخفاض معها هو حجم الأوزان — الضغط الذي
-      يجعل الحل العام في النهاية أرخص من الحل المحفوظ. اجعل الاضمحلال صفراً
-      وأعد التشغيل إن أردت أن ترى الهضبة تبقى هضبة؛ تلك هي التجربة الضابطة،
-      وثمنها تشغيلة تدريب واحدة إضافية.
+      اضمحلال الأوزان هو ما يقوم بالعمل، ومقداره هو ما يقرر هل ترى القفزة
+      أصلاً لا كم تنتظرها وحسب. انصف اضمحلال الملف وأعد التشغيل: يبدو منحنى
+      التدريب كما هو، ويبقى المنحنى المحجوز على الأرضية، وتُقرأ التشغيلة كمهمة
+      يعجز عنها النموذج. وارفعه كثيراً فيكفّ النموذج عن الحفظ، فتزول الهضبة من
+      طرفها الآخر. والنافذة بين هذين الفشلين أضيق مما تُوحي به سمعة الظاهرة.
   - en: >-
       Patience in an early-stopping rule is counted in EVALUATIONS, not in
       optimizer steps, and the conversion between them is where the mistake
@@ -371,13 +387,21 @@ body:
     captures: [peak_train_acc, final_test_acc, memorise_step, generalise_step]
     caption:
       en: >-
-        The long part. Watch the two printed accuracies diverge and then stay
-        diverged for far longer than feels reasonable, and watch the training
-        loss keep falling while they do.
+        The long part. Held-out accuracy will sit AT OR BELOW chance while
+        this runs — a memorising model is confidently wrong on what it has not
+        seen, not randomly wrong — so treat a figure under the chance line as
+        the expected reading rather than a bug. After the jump, expect the
+        occasional spike where training accuracy falls out of memorisation for
+        an evaluation or two and the held-out figure drops with it; that is
+        the decay and the loss trading places, and it is why the check below
+        reads a peak rather than a last value.
       ar: >-
-        الجزء الطويل. راقب الدقتين المطبوعتين تتباعدان ثم تبقيان متباعدتين
-        أطول بكثير مما يبدو معقولاً، وراقب خسارة التدريب تواصل الانخفاض في
-        أثناء ذلك.
+        الجزء الطويل. ستجلس الدقة المحجوزة عند مستوى الصدفة أو دونه ما دام هذا
+        يجري — فالنموذج الحافظ مخطئ بثقة فيما لم يره لا مخطئ عشوائياً — فاعتبر
+        رقماً تحت خط الصدفة القراءة المتوقَّعة لا خللاً. وبعد القفزة توقّع نتوءاً
+        بين الحين والآخر تسقط فيه دقة التدريب خارج الحفظ لتقييم أو اثنين وتسقط
+        معها الدقة المحجوزة؛ ذلك تبادلٌ بين الاضمحلال والخسارة، ولهذا يقرأ
+        الفحص أدناه قمةً لا قيمةً أخيرة.
 
   - type: cell
     id: curves
