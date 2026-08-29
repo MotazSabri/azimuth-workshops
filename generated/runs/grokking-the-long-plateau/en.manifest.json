@@ -1,0 +1,81 @@
+{
+ "schema": "run/v1",
+ "slug": "grokking-the-long-plateau",
+ "lang": "en",
+ "codeHash": "c757cdab1b2c78d0",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-08-29T08:02:26Z",
+  "device": "unknown",
+  "torch": "unknown",
+  "python": "3.13.5",
+  "shim": "unknown",
+  "elapsedSec": null,
+  "commit": "687507736c21ed3452197d5e15f79dff1f5ccec7",
+  "source": "imported"
+ },
+ "metrics": {},
+ "shapes": {},
+ "cells": {
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "Grokking: the plateau your stopping rule would have believed\nno GPU · 12.7 GB RAM · PyTorch 2.11.0+cpu\nprofile: free\nready · modulus=47, trainFrac=0.6, dModel=64, nHeads=4, dFF=256, steps=14000, evalEvery=100, logEvery=1000, learningRate=0.001, weightDecay=2.0, memoriseAt=0.99, generaliseAt=0.9, seed=17\ncode · c757cdab1b2c78d0"
+   }
+  ],
+  "data": [
+   {
+    "kind": "stream",
+    "text": "modulus 47 · 2209 possible pairs\ntrain 1323 · test 886\nchance level 0.0213"
+   }
+  ],
+  "leakage": [
+   {
+    "kind": "stream",
+    "text": "leakage — Information reaching the held-out set from the training set. Here it arrives through a symmetry of the task rather than through a duplicated row, which is why the split looked random and was not.\nheld-out pairs answerable by transposition: 0\na naive split over rows would have handed over 0.578 of them\n✓ Held-out pairs answerable by transposing a training pair: 0 (needs ≤ 0)"
+   }
+  ],
+  "model": [
+   {
+    "kind": "stream",
+    "text": "memorization — Fitting the training examples without learning a rule that covers unseen ones. Perfect on what it has seen, chance on everything else.\n56,256 parameters against 1323 training pairs"
+   }
+  ],
+  "train": [
+   {
+    "kind": "stream",
+    "text": "step      1  train 0.020  test 0.018  loss 3.98689      0s\nstep   1000  train 1.000  test 0.000  loss 0.16864     67s\nstep   2000  train 1.000  test 0.002  loss 0.04802    134s\nstep   3000  train 1.000  test 0.000  loss 0.08134    200s\nstep   4000  train 1.000  test 0.025  loss 0.06125    265s\nstep   5000  train 1.000  test 0.335  loss 0.05982    332s\nstep   6000  train 1.000  test 0.416  loss 0.07515    398s\nstep   7000  train 1.000  test 0.710  loss 0.06052    464s\nstep   8000  train 1.000  test 0.841  loss 0.02337    530s\nstep   9000  train 1.000  test 0.896  loss 0.04213    596s\nstep  10000  train 1.000  test 0.921  loss 0.03648    663s\nstep  11000  train 0.833  test 0.676  loss 0.57979    729s\nstep  12000  train 1.000  test 0.921  loss 0.02582    795s\nstep  13000  train 1.000  test 0.930  loss 0.02328    862s\nstep  14000  train 1.000  test 0.923  loss 0.01406    928s\nweight decay — A pull on every parameter toward zero, applied at each step. It prices complexity, and here it is what eventually makes the general solution cheaper than the memorised one.\npeak train 1.000 · peak unseen 0.938 · final unseen 0.923\nmemorised at 300 · generalised at 9200"
+   }
+  ],
+  "curves": [
+   {
+    "kind": "image",
+    "src": "grokking-the-long-plateau/curves.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "grokking — Generalization that arrives long after the training loss has stopped being interesting. A property of the training run, not of the final model.\ngap of 8900 steps between memorising and generalising"
+   }
+  ],
+  "choose-stopping-rule": [
+   {
+    "kind": "stream",
+    "text": "patience of 20 evaluations = 2000 steps\nthe rule would have stopped at step 2000, held-out 0.018\nsteps discarded before the jump: 7200"
+   }
+  ],
+  "verify": [
+   {
+    "kind": "stream",
+    "text": "✓ Peak accuracy on the training pairs: 1 (needs ≥ 0.99)\n✓ Best accuracy reached on the held-out pairs: 0.9379 (needs ≥ 0.85)\n✓ Optimizer steps between memorising and generalising: 8900 (needs ≥ 4000)"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "Workshop complete.\n\nCompletion code: AZ-██████████\nPaste it on the workshop's page on Azimuth to record it."
+   }
+  ]
+ }
+}

@@ -1,0 +1,81 @@
+{
+ "schema": "run/v1",
+ "slug": "grokking-the-long-plateau",
+ "lang": "ar",
+ "codeHash": "c757cdab1b2c78d0",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-08-29T08:02:26Z",
+  "device": "unknown",
+  "torch": "unknown",
+  "python": "3.13.5",
+  "shim": "unknown",
+  "elapsedSec": null,
+  "commit": "687507736c21ed3452197d5e15f79dff1f5ccec7",
+  "source": "imported"
+ },
+ "metrics": {},
+ "shapes": {},
+ "cells": {
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "الاستيعاب المتأخر: الهضبة التي كانت قاعدة التوقّف لتصدّقها\nبدون معالج رسوميات · ذاكرة 12.7 غ.ب · PyTorch 2.11.0+cpu\nالملف: ⁦free⁩\nجاهز · ⁦modulus=47, trainFrac=0.6, dModel=64, nHeads=4, dFF=256, steps=14000, evalEvery=100, logEvery=1000, learningRate=0.001, weightDecay=2.0, memoriseAt=0.99, generaliseAt=0.9, seed=17⁩\nالشيفرة · ⁦c757cdab1b2c78d0⁩"
+   }
+  ],
+  "data": [
+   {
+    "kind": "stream",
+    "text": "القياس 47 · 2209 زوجاً ممكناً\nتدريب 1323 · اختبار 886\nمستوى الصدفة 0.0213"
+   }
+  ],
+  "leakage": [
+   {
+    "kind": "stream",
+    "text": "⁦leakage⁩ — معلومات تصل إلى المجموعة المحجوزة من مجموعة التدريب. وهي تصل هنا عبر تناظر في المهمة لا عبر صف مكرَّر، ولذلك بدت القسمة عشوائية ولم تكن كذلك.\nأزواج محجوزة يمكن الإجابة عنها بالتبديل: 0\nالقسمة الساذجة على الصفوف كانت لتسلّم 0.578 منها\n✓ أزواج محجوزة يمكن الإجابة عنها بتبديل زوج تدريب: 0 (المطلوب ≤ 0)"
+   }
+  ],
+  "model": [
+   {
+    "kind": "stream",
+    "text": "⁦memorization⁩ — ملاءمة أمثلة التدريب دون تعلّم قاعدة تغطي ما لم يُرَ منها. كمال على ما رآه، وصدفة على كل ما عداه.\n56,256 معامل مقابل 1323 زوج تدريب"
+   }
+  ],
+  "train": [
+   {
+    "kind": "stream",
+    "text": "step      1  train 0.020  test 0.018  loss 3.98689      1s\nstep   1000  train 1.000  test 0.000  loss 0.16864     72s\nstep   2000  train 1.000  test 0.002  loss 0.04802    137s\nstep   3000  train 1.000  test 0.000  loss 0.08134    202s\nstep   4000  train 1.000  test 0.025  loss 0.06125    268s\nstep   5000  train 1.000  test 0.335  loss 0.05982    336s\nstep   6000  train 1.000  test 0.416  loss 0.07515    402s\nstep   7000  train 1.000  test 0.710  loss 0.06052    467s\nstep   8000  train 1.000  test 0.841  loss 0.02337    532s\nstep   9000  train 1.000  test 0.896  loss 0.04213    596s\nstep  10000  train 1.000  test 0.921  loss 0.03648    662s\nstep  11000  train 0.833  test 0.676  loss 0.57979    729s\nstep  12000  train 1.000  test 0.921  loss 0.02582    795s\nstep  13000  train 1.000  test 0.930  loss 0.02328    860s\nstep  14000  train 1.000  test 0.923  loss 0.01406    926s\n⁦weight decay⁩ — شدٌّ لكل معامل نحو الصفر يُطبَّق في كل خطوة. يسعّر التعقيد، وهو هنا ما يجعل الحل العام في النهاية أرخص من المحفوظ.\nأعلى دقة تدريب 1.000 · أعلى دقة محجوزة 0.938 · الدقة النهائية 0.923\nحفظ عند 300 · عمّم عند 9200"
+   }
+  ],
+  "curves": [
+   {
+    "kind": "image",
+    "src": "grokking-the-long-plateau/curves.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "⁦grokking⁩ — تعميم يصل بعد أن تكفّ خسارة التدريب عن كونها مثيرة للاهتمام بزمن طويل. صفة لمسار التدريب لا للنموذج النهائي.\nالفجوة 8900 خطوة بين الحفظ والتعميم"
+   }
+  ],
+  "choose-stopping-rule": [
+   {
+    "kind": "stream",
+    "text": "صبر 20 تقييماً = 2000 خطوة\nكانت القاعدة لتتوقف عند الخطوة 2000 بدقة محجوزة 0.018\nخطوات مهدورة قبل القفزة: 7200"
+   }
+  ],
+  "verify": [
+   {
+    "kind": "stream",
+    "text": "✓ أعلى دقة على أزواج التدريب: 1 (المطلوب ≥ 0.99)\n✓ أفضل دقة بلغتها الأزواج المحجوزة: 0.9379 (المطلوب ≥ 0.85)\n✓ خطوات المحسِّن بين الحفظ والتعميم: 8900 (المطلوب ≥ 4000)"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "اكتملت الورشة.\n\nرمز الإتمام: ⁦AZ-██████████⁩\nالصقه في صفحة الورشة على أزيموث لتسجيل إتمامها."
+   }
+  ]
+ }
+}
