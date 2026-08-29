@@ -39,12 +39,30 @@ inputs = np.stack([a_all, b_all, np.full_like(a_all, EQUALS)], axis=1)
 targets = (a_all + b_all) % p
 
 rng = np.random.default_rng(env.cfg["seed"])
-order = rng.permutation(len(inputs))
-inputs, targets = inputs[order], targets[order]
 
-split = int(env.cfg["trainFrac"] * len(inputs))
-train_in, test_in = inputs[:split], inputs[split:]
-train_out, test_out = targets[:split], targets[split:]
+# THE SPLIT IS OVER UNORDERED PAIRS, NOT OVER ROWS.
+#
+# Addition commutes, so (a, b) and (b, a) have the same answer. Splitting the
+# 3481 rows at random puts one ordering in training and the other in the
+# held-out set for a large fraction of them, and a model that has merely
+# MEMORISED the training row can answer its transpose. The first run of this
+# workshop did exactly that: the held-out curve rose immediately to a plateau
+# and sat there for thousands of steps, which read as partial generalization
+# and was not.
+#
+# Grouping by the unordered pair and assigning whole groups keeps both
+# orderings on the same side of the split. The `leakage` cell measures that it
+# worked rather than assuming it.
+lo, hi = np.minimum(a_all, b_all), np.maximum(a_all, b_all)
+group = lo * p + hi
+
+groups = rng.permutation(np.unique(group))
+n_train_groups = round(env.cfg["trainFrac"] * len(groups))
+train_groups = set(groups[:n_train_groups].tolist())
+is_train = np.array([g in train_groups for g in group.tolist()])
+
+train_in, test_in = inputs[is_train], inputs[~is_train]
+train_out, test_out = targets[is_train], targets[~is_train]
 
 n_train, n_test = len(train_in), len(test_in)
 
@@ -62,6 +80,46 @@ else:
     print(f"train {n_train} · test {n_test}")
     print(f"chance level {chance:.4f}")
 # --8<-- [end:data]
+
+
+# --8<-- [start:leakage]
+# What the split gave away. Set arithmetic only — nothing trains here.
+#
+# `leaked_pairs` is how many held-out rows could be answered by transposing a
+# row the model was trained on. It must be zero. `naive_leaked` is what a
+# random split over rows would have handed over instead, and it is the height
+# of the floor the held-out curve would have rested on: not chance, and not a
+# result.
+train_rows = set(zip(train_in[:, 0].tolist(), train_in[:, 1].tolist()))
+test_rows = list(zip(test_in[:, 0].tolist(), test_in[:, 1].tolist()))
+leaked_pairs = sum(1 for x, y in test_rows if (y, x) in train_rows)
+
+naive_order = np.random.default_rng(env.cfg["seed"]).permutation(len(inputs))
+naive_cut = int(env.cfg["trainFrac"] * len(inputs))
+naive_train = set(
+    zip(
+        inputs[naive_order[:naive_cut], 0].tolist(),
+        inputs[naive_order[:naive_cut], 1].tolist(),
+    )
+)
+naive_test = list(
+    zip(
+        inputs[naive_order[naive_cut:], 0].tolist(),
+        inputs[naive_order[naive_cut:], 1].tolist(),
+    )
+)
+naive_leaked = sum(1 for x, y in naive_test if (y, x) in naive_train) / len(naive_test)
+
+env.explain("leakage")
+if env.lang == "ar":
+    print(f"أزواج محجوزة يمكن الإجابة عنها بالتبديل: {leaked_pairs}")
+    print(f"القسمة الساذجة على الصفوف كانت لتسلّم {naive_leaked:.3f} منها")
+else:
+    print(f"held-out pairs answerable by transposition: {leaked_pairs}")
+    print(f"a naive split over rows would have handed over {naive_leaked:.3f} of them")
+
+split_ok = env.check("split-is-clean", leaked_pairs)
+# --8<-- [end:leakage]
 
 
 # --8<-- [start:model]

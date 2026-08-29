@@ -65,10 +65,10 @@ maintenance:
 
 estimate:
   gpuMinutes: 0
-  # PROVISIONAL — not measured. The free profile is a CPU run of a few
-  # thousand full-batch steps on a model of a few tens of thousands of
-  # parameters. Set this from the executed notebook's wall clock.
-  totalMinutes: 45
+  # From the first run's wall clock: 12000 steps took 737 s on a Colab CPU,
+  # about 61 s per 1000 steps including evaluation. The step budget below is
+  # now larger, so this scales with it. Confirm from the next run.
+  totalMinutes: 50
 
 papers:
   # Only one slug is declared, because `content/papers/` is not in the
@@ -108,9 +108,13 @@ profiles:
       dModel: 64
       nHeads: 4
       dFF: 256
-      steps: 12000
+      # 12000 was not enough: the first run memorised at step 350 and had
+      # not generalised by the end. At 61 s per 1000 CPU steps this budget is
+      # about three quarters of an hour, which is the most a free-tier
+      # workshop can honestly ask for.
+      steps: 40000
       evalEvery: 50
-      logEvery: 1000
+      logEvery: 2000
       learningRate: 0.001
       # Load-bearing, not a detail. Without decay the plateau in this budget
       # is just a plateau — see hint 2.
@@ -134,7 +138,7 @@ profiles:
       dModel: 128
       nHeads: 4
       dFF: 512
-      steps: 40000
+      steps: 60000
       evalEvery: 100
       logEvery: 4000
       learningRate: 0.001
@@ -144,30 +148,57 @@ profiles:
       seed: 17
 
 checks:
-  # ALL THREE `min` VALUES BELOW ARE UNMEASURED PLACEHOLDERS. They are what a
-  # run of this shape ought to produce, not what one did. Replace them from
-  # the executed notebooks, set below the measured value with room for
-  # hardware and seed variance.
+  # `split-is-clean` is max-only, which the validator warns about because a
+  # result of zero satisfies it. Here zero IS the target — it counts held-out
+  # pairs the training set gave away — and `memorises` is the required check
+  # that proves the run was not empty. This is the case the warning's own
+  # comment calls legitimate.
+  - id: split-is-clean
+    required: true
+    max: 0
+    label:
+      en: "Held-out pairs answerable by transposing a training pair"
+      ar: "أزواج محجوزة يمكن الإجابة عنها بتبديل زوج تدريب"
   - id: memorises
     required: true
-    min: 0.95 # UNMEASURED placeholder
+    # Measured: the first run reached perfect training accuracy at step 350
+    # and held it. Set just below, for seed variance.
+    min: 0.99
     label:
       en: "Peak accuracy on the training pairs"
       ar: "أعلى دقة على أزواج التدريب"
   - id: generalises
     required: true
-    min: 0.8 # UNMEASURED placeholder
+    min: 0.8 # UNMEASURED placeholder — no run has generalised yet
     label:
       en: "Final accuracy on the held-out pairs"
       ar: "الدقة النهائية على الأزواج المحجوزة"
   - id: delay
     required: true
-    min: 500 # UNMEASURED placeholder
+    # Not a measured delay — no run has completed one. It is a floor derived
+    # from the first run, which memorised at step 350 and had not generalised
+    # by step 12000: any real grok here is separated by far more than this, so
+    # a smaller bar could be cleared by a fluke crossing rather than by the
+    # phenomenon. Replace it with a measured value.
+    min: 2000
     label:
       en: "Optimizer steps between memorising and generalising"
       ar: "خطوات المحسِّن بين الحفظ والتعميم"
 
 hints:
+  - en: >-
+      A held-out curve that rises immediately to a flat, non-trivial level and
+      stays there is usually a split, not a partial result. Addition commutes,
+      so a random split over rows separates a pair from its own transpose and
+      hands a memorising model the answer for free. Check what fraction of the
+      held-out set the training set can reach by transposition before reading
+      anything into the height of a floor.
+    ar: >-
+      المنحنى المحجوز الذي يرتفع فوراً إلى مستوى مستوٍ غير تافه ويبقى عنده هو
+      في الغالب قسمةٌ لا نتيجةٌ جزئية. فالجمع تبديلي، والقسمة العشوائية على
+      الصفوف تفصل الزوج عن مبدوله فتسلّم النموذج الحافظ الجواب مجاناً. افحص أي
+      نسبة من المجموعة المحجوزة تبلغها مجموعة التدريب بالتبديل قبل أن تقرأ
+      شيئاً في ارتفاع الأرضية.
   - en: >-
       Chance on this task is one over the modulus, not zero — a held-out
       accuracy that looks like a flat line just above the axis is the model
@@ -218,6 +249,9 @@ terms:
   early stopping:
     en: "Ending training when a watched metric stops improving for a set number of evaluations. Usually correct, and on this task it is the thing that hides the result."
     ar: "إنهاء التدريب حين يكفّ مقياس مراقَب عن التحسّن لعدد محدّد من التقييمات. صائب في العادة، وهو في هذه المهمة ما يخفي النتيجة."
+  leakage:
+    en: "Information reaching the held-out set from the training set. Here it arrives through a symmetry of the task rather than through a duplicated row, which is why the split looked random and was not."
+    ar: "معلومات تصل إلى المجموعة المحجوزة من مجموعة التدريب. وهي تصل هنا عبر تناظر في المهمة لا عبر صف مكرَّر، ولذلك بدت القسمة عشوائية ولم تكن كذلك."
   modular arithmetic:
     en: "Arithmetic that wraps at a fixed modulus. A closed, finite task where every possible example can be enumerated, which is why it can be split cleanly into seen and unseen."
     ar: "حساب يلتفّ عند قياس ثابت. مهمة مغلقة منتهية يمكن تعداد كل أمثلتها الممكنة، ولذلك تُقسم بنظافة إلى مرئي وغير مرئي."
@@ -270,6 +304,22 @@ body:
         تُعدَّد كل الأزواج التي تسمح بها المهمة، ثم تُقسم مرة واحدة. لاحظ مستوى
         الصدفة المطبوع هنا واحفظه: فهو الأرضية التي سيجلس عليها المنحنى
         المحجوز، وهو ليس صفراً.
+
+  - type: cell
+    id: leakage
+    ref: leakage
+    captures: [leaked_pairs, naive_leaked]
+    caption:
+      en: >-
+        Set arithmetic, no training. The first number must be zero. The second
+        is what a random split over rows would have given away instead — and
+        that fraction, not chance, is the height of the floor the held-out
+        curve would have rested on while looking like slow progress.
+      ar: >-
+        حساب مجموعات، بلا تدريب. الرقم الأول يجب أن يكون صفراً. والثاني هو ما
+        كانت قسمة عشوائية على الصفوف لتسلّمه بدلاً من ذلك — وتلك النسبة، لا
+        مستوى الصدفة، هي ارتفاع الأرضية التي كان المنحنى المحجوز ليستقر عليها
+        وهو يبدو تقدماً بطيئاً.
 
   - type: cell
     id: model
@@ -370,7 +420,7 @@ body:
         التي ينطلق عندها والخطوات بينها وبين القفزة. ثم اسأل السؤال الأصعب: ما
         الذي كان عليك مراقبته بدلاً من ذلك لتنجو القاعدة؟ ثمة مقياس ظل يتحرك
         خلال الهضبة في هذه التشغيلة، وهو على اللوحة السفلى.
-    hint: 3
+    hint: 4
 
   - type: cell
     id: verify
