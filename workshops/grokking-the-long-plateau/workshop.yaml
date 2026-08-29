@@ -1,0 +1,389 @@
+schema: workshop/v1
+id: grokking-the-long-plateau
+constellation: neural-networks
+
+title:
+  en: "Grokking: the plateau your stopping rule would have believed"
+  ar: "الاستيعاب المتأخر: الهضبة التي كانت قاعدة التوقّف لتصدّقها"
+
+concept:
+  en: "The delay is a number you can measure, and early stopping fires inside it"
+  ar: "التأخير رقم يمكن قياسه، والتوقّف المبكر يقع داخله"
+
+scenario:
+  en: >-
+    You are training a small model on a task it can certainly learn. Training
+    accuracy climbs to perfect within a few hundred steps and then stops
+    moving. Test accuracy sits at chance and stays there. Every instinct says
+    the same thing: it has memorised the training pairs, nothing is improving,
+    kill the run and change something.
+
+
+    Grokking is what happens if you do not. Thousands of steps later — long
+    past the point where a careful practitioner would have stopped — test
+    accuracy leaves chance and climbs to near-perfect. That it happens is the
+    paper's finding, and reading the paper is enough to learn it. What reading
+    cannot give you is the size of the gap on your own machine, or the fact
+    that an ordinary early-stopping rule, applied to your own logged curve,
+    fires inside it and throws the result away.
+  ar: >-
+    تدرّب نموذجاً صغيراً على مهمة يقدر على تعلّمها قطعاً. تصعد دقة التدريب إلى
+    الكمال خلال بضع مئات من الخطوات ثم تتوقف عن الحركة. وتبقى دقة الاختبار عند
+    مستوى الصدفة ولا تبرحه. وكل حدس يقول الشيء ذاته: حفظ النموذج أزواج
+    التدريب، ولا شيء يتحسّن، فأوقف التشغيل وغيّر شيئاً.
+
+
+    والاستيعاب المتأخر هو ما يحدث إن لم تفعل. فبعد آلاف الخطوات — بعد النقطة
+    التي كان ممارس متيقّظ ليتوقف عندها بكثير — تغادر دقة الاختبار مستوى الصدفة
+    وتصعد إلى ما يقارب الكمال. أما أن ذلك يحدث فهو نتيجة الورقة، وقراءتها تكفي
+    لتعلّمه. وما لا تمنحك إياه القراءة هو حجم الفجوة على جهازك أنت، ولا أن
+    قاعدة توقّف مبكر عادية، مطبَّقة على منحناك المسجَّل، تنطلق داخل الفجوة
+    فترمي النتيجة.
+
+goal:
+  en: >-
+    Train a tiny transformer on modular addition until it memorises, keep
+    training well past that point, and measure three things: the step at which
+    it memorised, the step at which it generalised, and the distance between
+    them. Then apply an ordinary early-stopping rule to your own logged curve
+    and count the steps it would have discarded.
+  ar: >-
+    درّب محوّلاً صغيراً على الجمع القياسي حتى يحفظ، وواصل التدريب إلى ما بعد
+    تلك النقطة بكثير، وقِس ثلاثة أشياء: الخطوة التي حفظ عندها، والخطوة التي
+    عمّم عندها، والمسافة بينهما. ثم طبّق قاعدة توقّف مبكر عادية على منحناك
+    المسجَّل واحسب الخطوات التي كانت لترميها.
+
+difficulty: intermediate
+status: draft
+publishedAt: null
+
+maintenance:
+  # stable: torch, numpy, matplotlib and the standard library. The dataset is
+  # generated arithmetic, so there is nothing to download and nothing to rot.
+  tier: stable
+  cadence: quarterly
+
+estimate:
+  gpuMinutes: 0
+  # PROVISIONAL — not measured. The free profile is a CPU run of a few
+  # thousand full-batch steps on a model of a few tens of thousands of
+  # parameters. Set this from the executed notebook's wall clock.
+  totalMinutes: 45
+
+papers:
+  # Only one slug is declared, because `content/papers/` is not in the
+  # repository this was authored against and the site is the only place the
+  # slugs could have been verified. `grokking` was given; the rest would have
+  # been guesses, and a guessed slug fails as a silent warning at content
+  # build rather than as an error. Candidates worth adding once their real
+  # slugs are confirmed: the transformer architecture paper, the
+  # rethinking-generalization paper on memorisation capacity, double descent,
+  # and the lottery-ticket paper.
+  - slug: grokking
+    role: core
+    label:
+      en: "generalization arriving long after overfitting, on small algorithmic datasets — Power et al., 2022"
+      ar: "تعميم يصل بعد فرط التخصيص بزمن طويل، على مجموعات خوارزمية صغيرة — باور وزملاؤه، 2022"
+
+assets: []
+
+profiles:
+  - id: free
+    default: true
+    name:
+      en: "Free tier (CPU)"
+      ar: "المستوى المجاني (معالج مركزي)"
+    requires:
+      # Honestly false. The model is tens of thousands of parameters and the
+      # whole training set is a few thousand rows of three tokens. Claiming a
+      # GPU here would send CI to an accelerated runner to do arithmetic.
+      gpu: false
+      vramGb: 0
+      ramGb: 2
+    scale:
+      # A smaller modulus than the paper's, because every step is full-batch
+      # on a CPU. The delay is the phenomenon; the modulus sets its size.
+      modulus: 59
+      trainFrac: 0.4
+      dModel: 64
+      nHeads: 4
+      dFF: 256
+      steps: 12000
+      evalEvery: 50
+      logEvery: 1000
+      learningRate: 0.001
+      # Load-bearing, not a detail. Without decay the plateau in this budget
+      # is just a plateau — see hint 2.
+      weightDecay: 1.0
+      memoriseAt: 0.99
+      generaliseAt: 0.9
+      seed: 17
+  - id: paper
+    name:
+      en: "Closer to the paper (GPU)"
+      ar: "أقرب إلى الورقة (معالج رسوميات)"
+    requires:
+      gpu: true
+      # PROVISIONAL — not measured. Report what the run allocates and declare
+      # that, never the capacity of whichever card was nearby.
+      vramGb: 2
+      ramGb: 4
+    scale:
+      modulus: 97
+      trainFrac: 0.4
+      dModel: 128
+      nHeads: 4
+      dFF: 512
+      steps: 40000
+      evalEvery: 100
+      logEvery: 4000
+      learningRate: 0.001
+      weightDecay: 1.0
+      memoriseAt: 0.99
+      generaliseAt: 0.9
+      seed: 17
+
+checks:
+  # ALL THREE `min` VALUES BELOW ARE UNMEASURED PLACEHOLDERS. They are what a
+  # run of this shape ought to produce, not what one did. Replace them from
+  # the executed notebooks, set below the measured value with room for
+  # hardware and seed variance.
+  - id: memorises
+    required: true
+    min: 0.95 # UNMEASURED placeholder
+    label:
+      en: "Peak accuracy on the training pairs"
+      ar: "أعلى دقة على أزواج التدريب"
+  - id: generalises
+    required: true
+    min: 0.8 # UNMEASURED placeholder
+    label:
+      en: "Final accuracy on the held-out pairs"
+      ar: "الدقة النهائية على الأزواج المحجوزة"
+  - id: delay
+    required: true
+    min: 500 # UNMEASURED placeholder
+    label:
+      en: "Optimizer steps between memorising and generalising"
+      ar: "خطوات المحسِّن بين الحفظ والتعميم"
+
+hints:
+  - en: >-
+      Chance on this task is one over the modulus, not zero — a held-out
+      accuracy that looks like a flat line just above the axis is the model
+      guessing uniformly, which is exactly what it should look like while it
+      has learned nothing transferable. Draw that level on the plot before
+      concluding anything about the shape of the curve.
+    ar: >-
+      مستوى الصدفة في هذه المهمة هو واحد على القياس لا صفر — فدقة محجوزة تبدو
+      خطاً مستوياً فوق المحور بقليل هي تخمين منتظم من النموذج، وهذا تماماً ما
+      ينبغي أن تبدو عليه ما دام لم يتعلم شيئاً قابلاً للنقل. ارسم ذلك المستوى
+      على الشكل قبل أن تستنتج شيئاً عن هيئة المنحنى.
+  - en: >-
+      Weight decay is doing the work. Training accuracy saturates and the
+      training loss keeps falling, and what keeps falling with it is the size
+      of the weights — the pressure that eventually makes a general solution
+      cheaper than a memorised one. Set the decay to zero and rerun if you
+      want to see the plateau stay a plateau; that is the control, and it
+      costs one more training run.
+    ar: >-
+      اضمحلال الأوزان هو ما يقوم بالعمل. تتشبّع دقة التدريب وتواصل خسارة
+      التدريب الانخفاض، والذي يواصل الانخفاض معها هو حجم الأوزان — الضغط الذي
+      يجعل الحل العام في النهاية أرخص من الحل المحفوظ. اجعل الاضمحلال صفراً
+      وأعد التشغيل إن أردت أن ترى الهضبة تبقى هضبة؛ تلك هي التجربة الضابطة،
+      وثمنها تشغيلة تدريب واحدة إضافية.
+  - en: >-
+      Patience in an early-stopping rule is counted in EVALUATIONS, not in
+      optimizer steps, and the conversion between them is where the mistake
+      usually lives. A patience that sounds generous can be a small number of
+      steps if you evaluate often, and the plateau here is long enough that
+      almost any reasonable patience lands inside it. Convert your patience to
+      steps before you decide it was reasonable.
+    ar: >-
+      الصبر في قاعدة التوقّف المبكر يُعدّ بالتقييمات لا بخطوات المحسِّن، وفي
+      التحويل بينهما يسكن الخطأ عادةً. فصبرٌ يبدو سخياً قد يكون عدداً صغيراً من
+      الخطوات إن كنت تقيّم كثيراً، والهضبة هنا أطول من أن ينجو منها صبر معقول
+      تقريباً. حوّل صبرك إلى خطوات قبل أن تحكم بأنه كان معقولاً.
+
+terms:
+  grokking:
+    en: "Generalization that arrives long after the training loss has stopped being interesting. A property of the training run, not of the final model."
+    ar: "تعميم يصل بعد أن تكفّ خسارة التدريب عن كونها مثيرة للاهتمام بزمن طويل. صفة لمسار التدريب لا للنموذج النهائي."
+  memorization:
+    en: "Fitting the training examples without learning a rule that covers unseen ones. Perfect on what it has seen, chance on everything else."
+    ar: "ملاءمة أمثلة التدريب دون تعلّم قاعدة تغطي ما لم يُرَ منها. كمال على ما رآه، وصدفة على كل ما عداه."
+  weight decay:
+    en: "A pull on every parameter toward zero, applied at each step. It prices complexity, and here it is what eventually makes the general solution cheaper than the memorised one."
+    ar: "شدٌّ لكل معامل نحو الصفر يُطبَّق في كل خطوة. يسعّر التعقيد، وهو هنا ما يجعل الحل العام في النهاية أرخص من المحفوظ."
+  early stopping:
+    en: "Ending training when a watched metric stops improving for a set number of evaluations. Usually correct, and on this task it is the thing that hides the result."
+    ar: "إنهاء التدريب حين يكفّ مقياس مراقَب عن التحسّن لعدد محدّد من التقييمات. صائب في العادة، وهو في هذه المهمة ما يخفي النتيجة."
+  modular arithmetic:
+    en: "Arithmetic that wraps at a fixed modulus. A closed, finite task where every possible example can be enumerated, which is why it can be split cleanly into seen and unseen."
+    ar: "حساب يلتفّ عند قياس ثابت. مهمة مغلقة منتهية يمكن تعداد كل أمثلتها الممكنة، ولذلك تُقسم بنظافة إلى مرئي وغير مرئي."
+
+body:
+  - type: prose
+    text:
+      en: >-
+        Nothing here is exotic. The task is addition modulo a prime, the model
+        is one transformer block, and the optimizer is AdamW with a decay term
+        you would not think twice about. The whole workshop is one training
+        run, watched for longer than a training run is usually watched.
+
+
+        Read the curve in three parts. Training accuracy rises and saturates,
+        and that is memorisation. Held-out accuracy sits at chance for a long
+        time, and that is the part that reads as failure. Then it moves. What
+        you should look at while it is flat is the training LOSS, which is
+        still falling the entire time — the run is not finished, it just
+        stopped reporting anything on the axis you were watching.
+      ar: >-
+        لا شيء هنا غريب. المهمة جمعٌ بقياس عدد أوّلي، والنموذج كتلة محوّل
+        واحدة، والمحسِّن AdamW بحدّ اضمحلال لن تتردد فيه. والورشة كلها تشغيلة
+        تدريب واحدة، تُراقَب أطول مما تُراقَب تشغيلة تدريب عادةً.
+
+
+        اقرأ المنحنى في ثلاثة أجزاء. ترتفع دقة التدريب وتتشبّع، وذلك هو الحفظ.
+        وتجلس الدقة المحجوزة عند مستوى الصدفة زمناً طويلاً، وذلك هو الجزء الذي
+        يُقرأ على أنه فشل. ثم تتحرك. والذي ينبغي أن تنظر إليه وهي مستوية هو
+        خسارة التدريب، فهي تواصل الانخفاض طوال الوقت — التشغيلة لم تنتهِ، بل
+        كفّت عن الإبلاغ عن شيء على المحور الذي كنت تراقبه.
+
+  - type: cell
+    id: setup
+    ref: setup
+    caption:
+      en: "Preflight. No accelerator is requested — this one is small enough that asking for a GPU would be theatre."
+      ar: "فحص مسبق. لا يُطلب أي مسرّع — فهذه صغيرة بما يكفي ليكون طلب معالج رسوميات تمثيلاً."
+
+  - type: cell
+    id: data
+    ref: data
+    captures: [n_train, n_test, chance]
+    caption:
+      en: >-
+        Every pair the task admits is enumerated, then split once. Note the
+        chance level printed here and keep it in mind: it is the floor the
+        held-out curve will sit on, and it is not zero.
+      ar: >-
+        تُعدَّد كل الأزواج التي تسمح بها المهمة، ثم تُقسم مرة واحدة. لاحظ مستوى
+        الصدفة المطبوع هنا واحفظه: فهو الأرضية التي سيجلس عليها المنحنى
+        المحجوز، وهو ليس صفراً.
+
+  - type: cell
+    id: model
+    ref: model
+    captures: [param_count]
+    caption:
+      en: >-
+        One block, and small enough to read in full. Compare the parameter
+        count against the number of training pairs above — memorising them is
+        well within reach, which is the whole reason the first plateau happens.
+      ar: >-
+        كتلة واحدة، صغيرة بما يكفي لقراءتها كاملة. قارن عدد المعاملات بعدد
+        أزواج التدريب أعلاه — فحفظها في المتناول تماماً، وهذا كل سبب حدوث
+        الهضبة الأولى.
+
+  - type: paperRef
+    slug: grokking
+    note:
+      en: >-
+        Power and colleagues chose small algorithmic datasets precisely
+        because every example can be enumerated, so the split between seen and
+        unseen is exact and questions about memorisation stop being
+        approximate. The delayed jump was found in that setting first, and it
+        is the setting reproduced below at a smaller modulus.
+      ar: >-
+        اختار باور وزملاؤه مجموعات خوارزمية صغيرة تحديداً لأن كل مثال فيها
+        قابل للتعداد، فيكون الفصل بين المرئي وغير المرئي دقيقاً وتكفّ الأسئلة
+        عن الحفظ عن كونها تقريبية. وفي ذلك الإطار وُجدت القفزة المتأخرة أولاً،
+        وهو الإطار المُعاد أدناه بقياس أصغر.
+
+  - type: scaleNote
+    text:
+      en: >-
+        The free profile works modulo {{scale.modulus}}, trains on
+        {{scale.trainFrac}} of the pairs, and runs for {{scale.steps}}
+        full-batch steps on a CPU. The paper profile raises the modulus and
+        the step budget. Raising the modulus makes the task harder and the
+        delay longer — the shape transfers, the step counts do not.
+      ar: >-
+        يعمل الملف المجاني بقياس {{scale.modulus}}، ويتدرب على
+        {{scale.trainFrac}} من الأزواج، ويجري {{scale.steps}} خطوة كاملة
+        الدفعة على معالج مركزي. ويرفع ملف الورقة القياس وميزانية الخطوات. ورفع
+        القياس يجعل المهمة أصعب والتأخير أطول — الهيئة تنتقل، وأعداد الخطوات
+        لا تنتقل.
+
+  - type: cell
+    id: train
+    ref: train
+    captures: [peak_train_acc, final_test_acc, memorise_step, generalise_step]
+    caption:
+      en: >-
+        The long part. Watch the two printed accuracies diverge and then stay
+        diverged for far longer than feels reasonable, and watch the training
+        loss keep falling while they do.
+      ar: >-
+        الجزء الطويل. راقب الدقتين المطبوعتين تتباعدان ثم تبقيان متباعدتين
+        أطول بكثير مما يبدو معقولاً، وراقب خسارة التدريب تواصل الانخفاض في
+        أثناء ذلك.
+
+  - type: cell
+    id: curves
+    ref: curves
+    captures: [grok_gap]
+    thumbnail: true
+    caption:
+      en: >-
+        The accuracy axis is zero-based so that flat looks flat, and the step
+        axis is logarithmic because the delay spans orders of magnitude. Look
+        at the lower panel while the upper one is doing nothing.
+      ar: >-
+        محور الدقة يبدأ من الصفر ليبدو المستوي مستوياً، ومحور الخطوات لوغاريتمي
+        لأن التأخير يمتد على رتب من المقدار. انظر إلى اللوحة السفلى بينما لا
+        تفعل العليا شيئاً.
+
+  - type: exercise
+    id: choose-stopping-rule
+    ref: choose_stopping_rule
+    prompt:
+      en: >-
+        Pick a patience and see what it costs you. The rule below is the
+        ordinary one: watch held-out accuracy, and stop when it has not
+        improved for a given number of evaluations. Nothing retrains — it
+        replays the curve you already have.
+
+
+        Choose the patience you would actually have used before you saw this
+        plot, then read off the step it fires at and the steps between there
+        and the jump. Then ask the harder question: what would you have had to
+        watch instead for the rule to survive? A metric that was still moving
+        during the plateau exists in this run, and it is on the lower panel.
+      ar: >-
+        اختر صبراً وانظر ما يكلّفك. القاعدة أدناه هي القاعدة العادية: راقب
+        الدقة المحجوزة، وتوقّف حين لا تتحسّن لعدد معطى من التقييمات. ولا شيء
+        يُعاد تدريبه — إنما يُعاد تشغيل المنحنى الذي بين يديك.
+
+
+        اختر الصبر الذي كنت لتستخدمه فعلاً قبل رؤية هذا الشكل، ثم اقرأ الخطوة
+        التي ينطلق عندها والخطوات بينها وبين القفزة. ثم اسأل السؤال الأصعب: ما
+        الذي كان عليك مراقبته بدلاً من ذلك لتنجو القاعدة؟ ثمة مقياس ظل يتحرك
+        خلال الهضبة في هذه التشغيلة، وهو على اللوحة السفلى.
+    hint: 3
+
+  - type: cell
+    id: verify
+    ref: verify
+    caption:
+      en: >-
+        Memorisation is checked first and on purpose: without it there is no
+        plateau to be surprised by, and a delay measured on a run that never
+        learned anything would be a number about nothing.
+      ar: >-
+        يُفحص الحفظ أولاً وعن قصد: فمن دونه لا هضبة تُدهش منها، وتأخيرٌ مقيسٌ
+        على تشغيلة لم تتعلم شيئاً رقمٌ عن لا شيء.
+
+  - type: cell
+    id: finish
+    ref: finish
