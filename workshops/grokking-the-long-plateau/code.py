@@ -33,7 +33,7 @@ a_all, b_all = a_all.ravel(), b_all.ravel()
 
 # Token p is the "=" that separates the operands from the answer position.
 # Vocabulary is p operand tokens plus that one; the output layer predicts over
-# the p possible answers only.
+# the p possible answers only .
 EQUALS = p
 inputs = np.stack([a_all, b_all, np.full_like(a_all, EQUALS)], axis=1)
 targets = (a_all + b_all) % p
