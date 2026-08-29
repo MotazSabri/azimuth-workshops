@@ -77,6 +77,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 _SESSIONS: dict[tuple[str, str, str], Env] = {}
 
+#: Marks the machine-readable receipt line in a cell's output, so a run
+#: executed anywhere — Colab included — can be imported with its provenance
+#: intact. Stripped from captured output by the capture step.
+RECEIPT_TAG = "__azimuth_receipt__"
+
 
 # ── the environment handed to the notebook ──────────────────────────────────
 
@@ -224,6 +229,21 @@ class Env:
         if write:
             out = Path("azimuth-receipt.json")
             out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+        # A machine-readable copy in the CELL OUTPUT, not only on disk.
+        #
+        # tools/execute.py collects provenance through a capture cell it
+        # injects. A notebook run on Colab has no such cell, so an imported
+        # run lost the device, the torch version and the elapsed time — the
+        # page's verification footer read "unknown · PyTorch unknown", which
+        # is worse than no footer: it displays a provenance claim it cannot
+        # support.
+        #
+        # The completion code is stripped here. This line is published twice
+        # over — into a public repo and onto the page — and the code is the
+        # one field that must not travel.
+        travelling = {k: v for k, v in payload.items() if k != "code"}
+        print(f"{RECEIPT_TAG}{json.dumps(travelling, default=str)}")
 
         if complete:
             if self.lang == "ar":

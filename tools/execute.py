@@ -60,6 +60,9 @@ NOTEBOOKS = ROOT / "generated" / "notebooks"
 RUNS = ROOT / "generated" / "runs"
 
 CAPTURE_TAG = "__azimuth_capture__"
+#: env.receipt() prints this, so provenance survives a run executed outside
+#: this tool. Must mirror azimuth_nb.RECEIPT_TAG.
+RECEIPT_TAG = "__azimuth_receipt__"
 
 # Cells the BUILDER injects, which no workshop.yaml declares and none should.
 # They carry cellIds so the executor can find and rewrite them, but they are
@@ -264,6 +267,11 @@ def normalize_outputs(cell_id: str, outputs: list, out_dir: Path, slug: str) -> 
             text = "".join(output.get("text", []))
             if CAPTURE_TAG in text:  # the injected cell's payload, not content
                 continue
+            # Drop only the tagged LINE, not the whole stream: the receipt is
+            # printed alongside "Workshop complete." and the completion code,
+            # which the reader is meant to see.
+            if RECEIPT_TAG in text:
+                text = "\n".join(ln for ln in text.split("\n") if RECEIPT_TAG not in ln)
             text = strip_noise(text)
             if text.strip():
                 captured.append(
@@ -326,6 +334,26 @@ def normalize_outputs(cell_id: str, outputs: list, out_dir: Path, slug: str) -> 
     return merged
 
 
+def extract_receipt(nb: dict) -> dict:
+    """The receipt env.receipt() printed, from anywhere in the notebook.
+
+    This is the only route by which a Colab run carries its device, torch
+    version and timing into a manifest — the injected capture cell does not
+    exist in a notebook someone ran in a browser.
+    """
+    for cell in nb.get("cells", []):
+        for output in cell.get("outputs", []):
+            if output.get("output_type") != "stream":
+                continue
+            for line in "".join(output.get("text", [])).split("\n"):
+                if RECEIPT_TAG in line:
+                    try:
+                        return json.loads(line.split(RECEIPT_TAG, 1)[1].strip())
+                    except json.JSONDecodeError:
+                        return {}
+    return {}
+
+
 def extract_payload(nb: dict) -> dict:
     for cell in nb["cells"]:
         if cell.get("metadata", {}).get("azimuth", {}).get("cellId") != "__capture__":
@@ -354,6 +382,10 @@ def capture(slug: str, lang: str, nb: dict, elapsed: float) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     payload = extract_payload(nb)
+    # The injected cell wins when present (it also carries metrics); the
+    # printed line is the fallback for an imported run.
+    if not payload.get("receipt"):
+        payload = {**payload, "receipt": extract_receipt(nb)}
     cells: dict = {}
     failed = False
 
