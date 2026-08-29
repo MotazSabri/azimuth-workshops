@@ -66,8 +66,8 @@ goal:
     حدّاً أعلى، فهو كذلك.
 
 difficulty: advanced
-status: draft
-publishedAt: null
+status: stable
+publishedAt: "2026-08-29"
 
 maintenance:
   # volatile: transformers moves fast, the workshop downloads a checkpoint and a
