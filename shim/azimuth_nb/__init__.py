@@ -52,6 +52,7 @@ workshop, not to the harness.
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import os
 import platform
@@ -187,6 +188,44 @@ class Env:
         return passed
 
     # ── clause 8: the receipt ───────────────────────────────────────────────
+    def _declared_captures(self) -> dict[str, Any]:
+        """The values the workshop declared as `captures:`, read from the
+        caller's namespace.
+
+        tools/execute.py collects these through a cell it injects — but a
+        notebook run on Colab has no such cell, so an imported run reached the
+        site with `"metrics": {}` and every {{run.metrics.x}} in the prose
+        rendered as an em dash. The page read "the two rates measured here
+        are, at —, and ... at —", which is worse than omitting the sentence.
+
+        receipt() runs in the finish cell, at module level, so the caller's
+        globals ARE the notebook's namespace. Only scalars become metrics:
+        a captured list is recorded by shape, because a metric is something a
+        sentence can quote.
+        """
+        names: list[str] = []
+        for block in self.spec.get("body") or []:
+            names.extend(block.get("captures") or [])
+
+        frame = inspect.currentframe()
+        caller = frame.f_back.f_back if frame and frame.f_back else None
+        scope = caller.f_globals if caller else {}
+
+        metrics: dict[str, Any] = {}
+        shapes: dict[str, str] = {}
+        for name in names:
+            if name not in scope:
+                continue
+            value = scope[name]
+            if isinstance(value, (bool, int, float, str)):
+                metrics[name] = value
+            else:
+                try:
+                    shapes[name] = f"{type(value).__name__}[{len(value)}]"
+                except TypeError:
+                    shapes[name] = type(value).__name__
+        return {"metrics": metrics, "shapes": shapes}
+
     def receipt(self, write: bool = True) -> dict[str, Any]:
         """Emit proof of a completed run.
 
@@ -243,6 +282,7 @@ class Env:
         # over — into a public repo and onto the page — and the code is the
         # one field that must not travel.
         travelling = {k: v for k, v in payload.items() if k != "code"}
+        travelling.update(self._declared_captures())
         print(f"{RECEIPT_TAG}{json.dumps(travelling, default=str)}")
 
         if complete:

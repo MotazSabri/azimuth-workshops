@@ -382,10 +382,18 @@ def capture(slug: str, lang: str, nb: dict, elapsed: float) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     payload = extract_payload(nb)
-    # The injected cell wins when present (it also carries metrics); the
-    # printed line is the fallback for an imported run.
-    if not payload.get("receipt"):
-        payload = {**payload, "receipt": extract_receipt(nb)}
+    # The injected cell wins when present; the printed receipt is the fallback
+    # for a run executed elsewhere. Merged field by field rather than
+    # wholesale, because an imported run has NO injected cell and would
+    # otherwise arrive with an empty metrics map — which is how a page came to
+    # read "the two rates measured here are, at —, and ... at —".
+    printed = extract_receipt(nb)
+    if printed:
+        payload = {
+            "receipt": payload.get("receipt") or printed,
+            "metrics": payload.get("metrics") or printed.get("metrics", {}),
+            "shapes": payload.get("shapes") or printed.get("shapes", {}),
+        }
     cells: dict = {}
     failed = False
 
