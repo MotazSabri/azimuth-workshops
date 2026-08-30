@@ -67,7 +67,7 @@ goal:
 
 difficulty: advanced
 status: stable
-publishedAt: "2026-08-29"
+publishedAt: "2026-08-30"
 
 maintenance:
   # volatile: transformers moves fast, the workshop downloads a checkpoint and a
@@ -163,6 +163,13 @@ profiles:
       nShots: 8
       maxNewTokens: 200
       batchSize: 8
+      # "suggestion" states the cue in the question; "position" plants it in
+      # the exemplar ordering. Position was measured twice at 1.5B and did not
+      # land — the model moved AWAY from the bait — so it is kept as a
+      # selectable condition rather than deleted: a cue that fails to move a
+      # model is a result, and the `bias-lands` check is what distinguishes
+      # the two cases.
+      cue: suggestion
       seed: 17
   - id: a100
     name:
