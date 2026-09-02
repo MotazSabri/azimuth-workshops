@@ -4,11 +4,11 @@ constellation: systems
 
 title:
   en: "Quantization: what int8 and int4 actually cost"
-  ar: "التكميم: ما تكلّفه الدقة الثمانية والرباعية فعلاً"
+  ar: "التكميم: الثمن الحقيقي لـ int8 و int4"
 
 concept:
   en: "Three costs, and the one you did not budget for goes backwards"
-  ar: "ثلاث تكاليف، وأحدها لم تحسب حسابه يسير إلى الوراء"
+  ar: "ثلاث تكاليف، والتكلفة التي لم تتوقعها تتحرك عكس ما تظن"
 
 scenario:
   en: >-
@@ -25,16 +25,19 @@ scenario:
     summary prepares you for: it can get WORSE, and not even in bit order.
     Measure all three and the deployment decision stops being obvious.
   ar: >-
-    التكميم أرخص مكسب في النشر: خزّن الأوزان ببتّات أقل، فيتّسع النموذج على
-    عتاد لم يكن يسعه من قبل. تخبرك الأوراق أنه ينجح. وما لا تستطيع إخبارك به
-    هو ما يخسره نموذجك أنت، لأن الجواب يتوقف على النموذج والبيانات وموضع
-    إنفاق الدقة في الشبكة.
+    <Term en="Quantization">التكميم</Term> أسهل طريقة لتقليل حجم النموذج عند
+    <Term en="Deployment">النشر</Term>: تمثّل الأوزان ببتّات أقل فيصبح النموذج
+    قابلاً للتشغيل على بطاقات لم تكن تتّسع له. الأوراق البحثية تثبت أن النتائج
+    تصمد، لكنها لا تستطيع أن تخبرك بما يخسره نموذجك تحديداً — لأن الإجابة تعتمد
+    على النموذج نفسه، وعلى البيانات، وعلى المواضع التي أُنفقت فيها الدقة العددية
+    داخل الشبكة.
 
 
-    فالسؤال المهم ليس «هل تنجح الدقة الرباعية» بل أيُّ التكاليف الثلاثة يتحرك
-    فعلاً. الذاكرة تنخفض كما هو متوقَّع. والجودة لا تكاد تتحرك، وهذا هو نجاح
-    الأوراق. أما زمن الاستجابة فيفعل ما لا يهيّئك له أي ملخّص: قد يسوء، ولا
-    حتى بترتيب البتّات. قِس الثلاثة معاً يكفّ قرار النشر عن كونه بديهياً.
+    السؤال الجوهري ليس «هل تعمل int4؟» بل: أيّ التكاليف الثلاث يتحرك فعلاً؟
+    الذاكرة تنخفض كما تتوقع. الجودة بالكاد تتأثر، وهذا ما أثبتته الأبحاث.
+    لكن <Term en="Latency">زمن الاستجابة</Term> يفعل شيئاً لا يحضّرك له أيّ
+    ملخّص: قد يزداد سوءاً، وليس حتى بترتيب عدد البتّات. حين تقيس التكاليف
+    الثلاث معاً، يتوقف قرار النشر عن أن يكون بديهياً.
 
 goal:
   en: >-
@@ -42,9 +45,9 @@ goal:
     and int4, plot the three against each other, and identify which of the
     three costs moves first and which barely moves at all.
   ar: >-
-    قِس الحيرة والذاكرة وزمن الاستجابة للنموذج ذاته بدقة نصفية وثمانية ورباعية،
-    وارسم الثلاثة بعضها في مواجهة بعض، وحدِّد أيُّ التكاليف الثلاثة يتحرك أولاً
-    وأيُّها لا يكاد يتحرك.
+    قِس الحيرة والذاكرة وزمن الاستجابة لنفس النموذج عند fp16 وint8 وint4، ثم
+    ارسم المقاييس الثلاثة جنباً إلى جنب، وحدّد أيّها يتحرك أولاً وأيّها يكاد
+    لا يتغيّر.
 
 difficulty: intermediate
 status: stable
@@ -67,22 +70,22 @@ papers:
     role: core
     label:
       en: "why naive int8 breaks large models, and the outlier insight that fixes it — Dettmers et al., 2022"
-      ar: "لماذا تنهار الدقة الثمانية الساذجة في النماذج الكبيرة، والبصيرة الشاذة التي تصلحها — ديتمرز وزملاؤه، 2022"
+      ar: "لماذا ينهار int8 البسيط في النماذج الكبيرة، وكيف أنقذته القيم الشاذة — Dettmers وآخرون، 2022"
   - slug: gptq
     role: core
     label:
       en: "one-shot 4-bit quantization that survives, by minimising layer-wise error — Frantar et al., 2023"
-      ar: "تكميم رباعي بخطوة واحدة يصمد، بتصغير الخطأ طبقةً طبقة — فرانتار وزملاؤه، 2023"
+      ar: "تكميم 4-bit بخطوة واحدة يصمد، عبر تقليل الخطأ طبقة بطبقة — Frantar وآخرون، 2023"
   - slug: qlora
     role: supporting
     label:
       en: "the same 4-bit weights, but trained through rather than only served"
-      ar: "الأوزان الرباعية ذاتها، لكن يُدرَّب عبرها لا تُخدَّم وحسب"
+      ar: "نفس الأوزان الرباعية، لكن هنا نُدرّب من خلالها لا مجرد أن نستخدمها في الاستدلال"
   - slug: deep-compression
     role: supporting
     label:
       en: "compression before transformers: pruning, quantizing and coding as one pipeline"
-      ar: "الضغط قبل المحوّلات: التشذيب والتكميم والترميز في مسار واحد"
+      ar: "ضغط النماذج قبل عصر المحوّلات: تشذيب وتكميم وترميز في خط أنابيب واحد"
 
 assets: []
 
@@ -164,14 +167,14 @@ checks:
     min: 1.5
     label:
       en: "Memory saved by int4, as a multiple of fp16"
-      ar: "الذاكرة الموفَّرة بالدقة الرباعية منسوبةً إلى النصفية"
+      ar: "توفير الذاكرة في int4 مقارنة بـ fp16"
   - id: quality-survives-int8
     required: true
     max: 1.15
     min: 0.85
     label:
       en: "int8 perplexity, relative to fp16"
-      ar: "حيرة الدقة الثمانية منسوبةً إلى النصفية"
+      ar: "حيرة int8 نسبةً إلى fp16"
 
 hints:
   - en: >-
@@ -180,43 +183,47 @@ hints:
       once, and reuse them — a different sample per model would hide a real
       regression inside sampling noise.
     ar: >-
-      يجب قياس الحيرة على نوافذ الرموز ذاتها للنماذج الثلاثة وإلا فالأرقام غير
-      قابلة للمقارنة. ثبّت البذرة، وابنِ النوافذ مرة واحدة، وأعد استخدامها —
-      فعيّنة مختلفة لكل نموذج تخفي تراجعاً حقيقياً داخل ضجيج المعاينة.
+      لا بد أن تُقاس <Term en="Perplexity">الحيرة</Term> على نفس نوافذ الرموز
+      في النماذج الثلاثة، وإلا فلن تستطيع مقارنة الأرقام. ثبّت البذرة، وأنشئ
+      النوافذ مرة واحدة، ثم أعد استخدامها — لأن سحب عيّنة مختلفة لكل نموذج
+      يُغرق أي تراجع حقيقي في ضجيج العيّنات.
   - en: >-
       Memory is the honest win and latency is the surprising one. Quantized
       weights are smaller, but every matmul now pays a dequantize step, so
       int4 can be SLOWER than fp16 at small batch sizes even though it uses a
       fraction of the memory. Measure it rather than assuming the direction.
     ar: >-
-      الذاكرة هي المكسب الصريح وزمن الاستجابة هو المفاجئ. الأوزان المكمَّمة
-      أصغر، لكن كل ضرب مصفوفات صار يدفع خطوة فكّ تكميم، فقد تكون الرباعية
-      أبطأ من النصفية عند الدفعات الصغيرة رغم استهلاكها جزءاً يسيراً من
-      الذاكرة. قِس ذلك بدل افتراض الاتجاه.
+      الذاكرة هي المكسب الواضح، أما المفاجأة فهي
+      <Term en="Latency">زمن الاستجابة</Term>. الأوزان المكمَّمة أصغر حجماً
+      بالفعل، لكن كل عملية ضرب مصفوفات أصبحت تسبقها خطوة
+      <Term en="Dequantization">فكّ تكميم</Term>، لذلك قد تكون int4 أبطأ من
+      fp16 عند أحجام الدُّفعات الصغيرة رغم أنها تستهلك جزءاً بسيطاً من
+      الذاكرة. قِسها فعلياً بدلاً من افتراض الاتجاه.
   - en: >-
       If int8 perplexity moved a lot, look at which layers you quantized. The
       LLM.int8() result is that a small number of outlier feature dimensions
       carry most of the damage, and keeping just those in fp16 recovers nearly
       all the quality. That is why the paper is a core one here.
     ar: >-
-      إن تحرّكت حيرة الدقة الثمانية كثيراً فانظر أي الطبقات كمّمت. نتيجة
-      LLM.int8() أن عدداً صغيراً من أبعاد السمات الشاذة يحمل معظم الضرر، وأن
-      إبقاء تلك وحدها بدقة نصفية يستعيد الجودة كلها تقريباً. ولهذا كانت الورقة
-      أساسيةً هنا.
+      إذا تغيّرت <Term en="Perplexity">حيرة</Term> int8 بشكل ملحوظ، راجع أيّ
+      الطبقات كُمِّمت. الاكتشاف الأساسي في LLM.int8() هو أن عدداً قليلاً من
+      الأبعاد ذات <Term en="Outlier">القيم الشاذة</Term> يتسبب في معظم التدهور،
+      وأن الاحتفاظ بهذه الأبعاد وحدها في fp16 يستعيد الجودة بالكامل تقريباً.
+      لهذا السبب تُعدّ هذه الورقة محورية في هذه الورشة.
 
 terms:
   quantization:
     en: "Storing weights in fewer bits than they were trained in. The weights change; the architecture does not."
-    ar: "تخزين الأوزان ببتّات أقل مما دُرِّبت به. تتغير الأوزان ولا تتغير المعمارية."
+    ar: "تمثيل الأوزان ببتّات أقل مما دُرِّبت عليه. الأوزان تتغيّر لكن بنية الشبكة تبقى كما هي."
   perplexity:
     en: "How surprised a language model is by real text. Lower is better, and small relative changes matter more than they look."
-    ar: "مقدار اندهاش نموذج اللغة من نص حقيقي. الأقل أفضل، والتغيّرات النسبية الصغيرة أهم مما تبدو."
+    ar: "مقياس لمدى «استغراب» نموذج اللغة حين يرى نصاً حقيقياً. كلما انخفضت كان النموذج أفضل، والفروق النسبية الصغيرة أهم مما تبدو."
   outlier feature:
     en: "A dimension whose activations are far larger than the rest. Rare, and responsible for most of the damage naive quantization does."
-    ar: "بُعد تفوق تنشيطاته البقية بكثير. نادر، ومسؤول عن معظم الضرر الذي يحدثه التكميم الساذج."
+    ar: "بُعد في التنشيطات قيمته أكبر بكثير من بقية الأبعاد. نادر الحدوث، لكنه المسؤول الرئيسي عن التدهور الذي يسببه التكميم البسيط."
   dequantization:
     en: "Converting stored low-bit weights back to a compute dtype before a matmul. The hidden cost that can make a smaller model slower."
-    ar: "إعادة تحويل الأوزان منخفضة البتّات إلى نوع حسابي قبل ضرب المصفوفات. التكلفة الخفية التي قد تجعل النموذج الأصغر أبطأ."
+    ar: "تحويل الأوزان المخزّنة ببتّات قليلة إلى صيغة حسابية كاملة قبل كل عملية ضرب مصفوفات. هذه هي التكلفة الخفية التي قد تجعل النموذج الأصغر أبطأ."
 
 body:
   - type: prose
@@ -233,21 +240,24 @@ body:
         perplexity is not hiding anything; it is answering a different
         question from the one you have when you are deciding what to deploy.
       ar: >-
-        ثلاثة أرقام تتحرك حين تُكمِّم، وهي لا تتحرك معاً. تنخفض الذاكرة تبعاً
-        لعدد البتّات تقريباً، وهذا جزء حسابي. وتنخفض الجودة أيضاً لكن لا بسلاسة
-        — تكاد لا تتحرك حيناً ثم تهوي. أما زمن الاستجابة فهو ما يفاجئ الناس،
-        لأنه قد يسير في الاتجاه الخاطئ تماماً.
+        حين تُكمِّم نموذجاً، تتحرك ثلاثة أرقام — لكنها لا تتحرك معاً. الذاكرة
+        تنخفض بشكل يكاد يكون حسابياً مع عدد البتّات.
+        <Term en="Perplexity">الحيرة</Term> تنخفض هي أيضاً لكن ليس بسلاسة: تبقى
+        شبه ثابتة لفترة ثم تهوي فجأة. أما
+        <Term en="Latency">زمن الاستجابة</Term> فهو المفاجأة، لأنه قد يسير في
+        الاتجاه المعاكس تماماً.
 
 
-        وقياس الثلاثة معاً هو المقصد. الورقة التي تذكر الحيرة وحدها لا تخفي
-        شيئاً؛ إنها تجيب عن سؤال غير الذي بين يديك وأنت تقرّر ما تنشره.
+        الهدف من هذه الورشة هو قياس الثلاثة معاً. الورقة البحثية التي تعرض
+        الحيرة وحدها ليست تخفي شيئاً — هي ببساطة تجيب عن سؤال مختلف عن السؤال
+        الذي تواجهه حين تقرّر ماذا تنشر فعلياً.
 
   - type: cell
     id: setup
     ref: setup
     caption:
       en: "Preflight. This is the first workshop here that genuinely needs a GPU — int8 and int4 kernels are CUDA only."
-      ar: "فحص مسبق. هذه أول ورشة هنا تحتاج معالج رسوميات فعلاً — نوى الدقة الثمانية والرباعية على CUDA وحدها."
+      ar: "تهيئة مبدئية. هذه أول ورشة هنا تحتاج <Term en=\"GPU\">معالج رسوميات</Term> فعلاً — نوى int8 وint4 تعمل على CUDA حصراً."
 
   - type: cell
     id: windows
@@ -259,9 +269,9 @@ body:
         variant is scored on identical text — a different sample per model
         would hide a real regression inside sampling noise.
       ar: >-
-        ابنِ نوافذ التقييم مرة واحدة قبل تحميل أي نموذج. كل صيغة تُقيَّم على
-        النص ذاته — فعيّنة مختلفة لكل نموذج تخفي تراجعاً حقيقياً داخل ضجيج
-        المعاينة.
+        أنشئ نوافذ التقييم مرة واحدة قبل تحميل أيّ نموذج. جميع الصيغ تُقيَّم
+        على النص نفسه — لأن سحب عيّنة مختلفة لكل نموذج يدفن أيّ تراجع حقيقي
+        تحت ضجيج العيّنات.
 
   - type: paperRef
     slug: llm-int8
@@ -273,10 +283,13 @@ body:
         in higher precision is the whole fix, and it is why int8 below is
         nearly free while a naive implementation would not be.
       ar: >-
-        وجد ديتمرز وزملاؤه أن الدقة الثمانية الساذجة تنهار في النماذج الكبيرة
-        لا لأن ثماني بتّات قليلة في المتوسط، بل لأن حفنة من أبعاد السمات الشاذة
-        لها مدى لا تملكه البقية. والإبقاء على تلك بدقة أعلى هو الحل كله، ولهذا
-        تكاد الدقة الثمانية أدناه تكون مجانية بينما لن تكون كذلك في تنفيذ ساذج.
+        اكتشف Dettmers وفريقه أن <Term en="Quantization">التكميم</Term> إلى int8
+        بالطريقة المباشرة ينهار في النماذج الكبيرة — ليس لأن 8 بتّات قليلة في
+        المتوسط، بل لأن عدداً صغيراً من أبعاد التنشيطات
+        <Term en="Outlier">الشاذة</Term> يملك مدى أكبر بكثير من البقية. الحل
+        بأكمله هو الاحتفاظ بهذه الأبعاد فقط في دقة أعلى. لهذا السبب ستجد أن
+        int8 في هذه الورشة شبه مجاني من ناحية الجودة، بينما التنفيذ البسيط لن
+        يعطيك النتيجة نفسها.
 
   - type: cell
     id: measure
@@ -284,7 +297,7 @@ body:
     captures: [fp16_ppl, int8_ppl, int4_ppl, fp16_mb, int8_mb, int4_mb, peak_gb]
     caption:
       en: "Three loads, three measurements each. The model is freed between variants so the memory figure is the model, not the leftovers."
-      ar: "ثلاث عمليات تحميل، وثلاثة قياسات لكل منها. يُحرَّر النموذج بين الصيغ ليكون رقم الذاكرة للنموذج لا للبقايا."
+      ar: "نحمّل النموذج ثلاث مرات ونقيس ثلاثة مقاييس في كل مرة. نحرّر الذاكرة بين الصيغ حتى يعكس رقم الذاكرة النموذج نفسه لا بقايا التحميل السابق."
 
   - type: scaleNote
     text:
@@ -294,9 +307,10 @@ body:
         reconnecting. The shape of the curve is what transfers to a larger
         model, not the absolute perplexity.
       ar: >-
-        يستخدم الملف المجاني {{scale.model}} و{{scale.evalTokens}} رمزاً من نص
-        التقييم — صغير بما يكفي لتحميله ثلاث مرات على T4 دون إعادة اتصال. وشكل
-        المنحنى هو ما ينتقل إلى نموذج أكبر، لا قيمة الحيرة المطلقة.
+        يستخدم الملف المجاني نموذج {{scale.model}} مع {{scale.evalTokens}} رمزاً
+        للتقييم — حجم صغير بما يكفي لتحميل النموذج ثلاث مرات على T4 دون أن
+        ينقطع الاتصال. ما يهمّك هنا هو شكل المنحنى وليس القيمة المطلقة
+        للحيرة — الشكل ينتقل إلى نموذج أكبر.
 
   - type: cell
     id: curve
@@ -308,8 +322,9 @@ body:
         Three costs on one figure, all zero-based so a flat line looks flat.
         Two of these fall the way you expect. The third is the workshop.
       ar: >-
-        ثلاث تكاليف في شكل واحد، كلها من الصفر ليبدو الخط المستوي مستوياً.
-        اثنتان منها تنخفضان كما تتوقع. والثالثة هي الورشة.
+        التكاليف الثلاث في رسم واحد، والمحاور تبدأ من الصفر حتى لا يبدو خط
+        مستوٍ منحدراً. اثنتان تنخفضان كما تتوقع — الثالثة هي سبب وجود هذه
+        الورشة.
 
   - type: cell
     id: latency
@@ -321,9 +336,9 @@ body:
         direction. If a variant with more bits is faster than one with fewer,
         the cost is not the bits, it is what the kernel has to do around them.
       ar: >-
-        الرقم الذي يسير في الاتجاه الخاطئ — وافحص الترتيب لا الاتجاه وحده. إن
-        كانت صيغة ببتّات أكثر أسرع من صيغة ببتّات أقل، فالتكلفة ليست البتّات بل
-        ما تفعله النواة حولها.
+        هذا هو الرقم الذي يسير عكس التوقع — ولاحظ الترتيب وليس الاتجاه فقط. إذا
+        كانت صيغة ببتّات أكثر أسرع من صيغة ببتّات أقل، فالتكلفة ليست في عدد
+        البتّات بل فيما تفعله النواة الحسابية حولها.
 
   - type: exercise
     id: pick-a-deployment
@@ -342,14 +357,16 @@ body:
         never trade, and would your answer change for a chatbot versus a batch
         summarizer?
       ar: >-
-        اختر صيغة لنشر محدَّد، ودافع عنها بأرقامك أنت لا بالافتراضية. اكتب القيد
-        أولاً — «يتّسع في 8 غيغابايت»، «أقل من 50 مللي ثانية لكل رمز»، «جودة في
-        حدود 2٪ من النصفية» — ثم اقرأ الجدول واختر.
+        اختر صيغة لسيناريو نشر محدّد، وبرّر اختيارك بالأرقام التي قِستها أنت لا
+        بالقيم الافتراضية. حدّد القيد أولاً — مثلاً «يجب أن يعمل ضمن 8 غيغابايت»
+        أو «أقل من 50 مللي ثانية للرمز الواحد» أو «جودة لا تقلّ عن 98٪ من fp16»
+        — ثم اقرأ الجدول واختر.
 
 
-        ثم لاحظ ما فعله بك التمرين. إن أُعطيت رقماً واحداً حسّنته، وإن أُعطيت
-        ثلاثة لزمك تحديد قيد، والقيد قرار منتج لا قرار تقني. أيُّ الثلاثة لن
-        تساوم عليه أبداً، وهل يتغير جوابك لروبوت محادثة مقابل ملخِّص دفعات؟
+        بعدها توقّف ولاحظ ما فعله التمرين. حين يكون أمامك رقم واحد تحاول
+        تحسينه. حين يكون أمامك ثلاثة أرقام، تُضطر لتحديد قيد — والقيد قرار
+        منتَج لا قرار تقني. أيّ التكاليف الثلاث لن تتنازل عنها أبداً؟ وهل
+        ستتغيّر إجابتك إذا كان التطبيق روبوت محادثة بدلاً من ملخِّص دُفعات؟
     hint: 2
 
   - type: cell
@@ -357,7 +374,7 @@ body:
     ref: verify
     caption:
       en: "Memory must actually fall, and int8 must actually survive. If int8 moved a lot, hint 3 is the reason."
-      ar: "على الذاكرة أن تنخفض فعلاً، وعلى الدقة الثمانية أن تصمد فعلاً. وإن تحركت الثمانية كثيراً فالتلميح الثالث هو السبب."
+      ar: "الذاكرة يجب أن تنخفض فعلاً، وint8 يجب أن تصمد جودتها. إذا تحرّكت حيرة int8 بشكل ملحوظ، ارجع إلى التلميح الثالث."
 
   - type: cell
     id: finish

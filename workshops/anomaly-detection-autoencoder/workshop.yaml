@@ -28,11 +28,12 @@ scenario:
     on normal alone, and let its failure to reconstruct the unfamiliar be the
     signal.
   ar: >-
-    لديك خمسة آلاف تسجيل لنبضات القلب، ولا تكاد تملك تسميات للحالات الشاذة، لأن
-    الشذوذ هو بالضبط ما لم يجمع أحد ما يكفي منه. هذه هي الصورة المعتادة لكشف
-    الشذوذ: الفئة النادرة نادرة في بيانات التدريب أيضاً، فلا يجد المصنّف ما
-    يتعلمه. درّب نموذجاً على الحالة الطبيعية وحدها، ودع عجزه عن إعادة بناء ما
-    لم يألفه يكون هو الإشارة.
+    لديك خمسة آلاف تسجيل لنبضات القلب، لكن بالكاد تملك تسميات للحالات غير
+    الطبيعية — لأن الحالات الشاذة نادرة بطبيعتها ولم يجمع أحد منها ما يكفي.
+    هذا هو التحدّي الجوهري في كشف الشذوذ: الفئة التي تبحث عنها نادرة في بيانات
+    التدريب أيضاً، فلا يملك المصنّف أمثلة كافية ليتعلّم منها. الحل: درّب
+    نموذجاً على الحالة الطبيعية فقط، وحين يعجز عن إعادة بناء شيء لم يره من
+    قبل، اعتبر ذلك العجز نفسه إشارة إنذار.
 
 goal:
   en: >-
@@ -40,9 +41,9 @@ goal:
     reconstruction-error distribution rather than by guessing, and reach at
     least 0.90 F1 on a held-out set that contains both classes.
   ar: >-
-    درّب مرمّزاً ذاتياً على النبضات الطبيعية وحدها، واختر عتبة من توزيع خطأ
-    إعادة البناء لا بالتخمين، وحقّق 0.90 على الأقل في مقياس F1 على مجموعة
-    اختبار تضمّ الفئتين.
+    درّب مُرمِّزاً ذاتياً على النبضات الطبيعية فقط، ثم اختر عتبة مبنية على
+    توزيع خطأ إعادة البناء بدلاً من التخمين، وحقّق F1 لا يقل عن 0.90 على
+    مجموعة اختبار تحتوي الفئتين معاً.
 
 difficulty: intermediate # foundational | beginner | intermediate | advanced (PaperMeta)
 status: stable # stable | draft (PaperMeta) — 'published' is not a value
@@ -76,22 +77,22 @@ papers:
     role: core
     label:
       en: "the idea that a narrow layer forces a model to keep only what matters — Hinton & Salakhutdinov, 2006"
-      ar: "الفكرة القائلة إن طبقة ضيقة تُجبر النموذج على الاحتفاظ بما يهم فقط — هينتون وسالاخوتدينوف، 2006"
+      ar: "فكرة أن الطبقة الضيقة تُجبر النموذج على الاحتفاظ فقط بما يهم — هينتون وسالاخوتدينوف، 2006"
   - slug: isolation-forest
     role: core
     label:
       en: "the baseline that isolates anomalies instead of modelling normality — Liu, Ting & Zhou, 2008"
-      ar: "الأساس المرجعي الذي يعزل الشذوذ بدل أن ينمذج الحالة الطبيعية — ليو وتينغ وتشو، 2008"
+      ar: "خط الأساس الذي يعزل الشذوذ مباشرة بدل نمذجة الحالة الطبيعية — ليو وتينغ وتشو، 2008"
   - slug: pca
     role: supporting
     label:
       en: "the linear ancestor: reconstruction error is an old idea with a new encoder"
-      ar: "السلف الخطّي: خطأ إعادة البناء فكرة قديمة بمُرمّز جديد"
+      ar: "الجذر الخطّي: خطأ إعادة البناء ليس فكرة جديدة، الجديد هو المُرمِّز"
   - slug: denoising-autoencoders
     role: supporting
     label:
       en: "why a bottleneck alone is not the only way to force a useful code"
-      ar: "لماذا ليس عنق الزجاجة وحده السبيل الوحيد لفرض ترميز مفيد"
+      ar: "عنق الزجاجة ليس الطريقة الوحيدة لإجبار النموذج على تعلّم تمثيل مفيد"
 
 # ── assets ──────────────────────────────────────────────────────────────────
 # Sources are tried in order. The hash is checked before anything parses the
@@ -124,7 +125,7 @@ assets:
       - "https://raw.githubusercontent.com/MotazSabri/azimuth-workshops/main/mirror/ecg5000.csv"
     description:
       en: "5,000 ECG traces, 140 samples each. Column 141 is the label: 1 normal, 0 abnormal."
-      ar: "خمسة آلاف أثر لتخطيط القلب، 140 عيّنة لكل منها. العمود 141 هو التسمية: 1 طبيعي، 0 شاذ."
+      ar: "خمسة آلاف تسجيل لتخطيط القلب، كل منها 140 عيّنة. العمود 141 هو التسمية: 1 = طبيعي، 0 = شاذ."
 
 # ── profiles: scale is DATA ─────────────────────────────────────────────────
 # The free profile is the default and must stay inside Colab's free envelope.
@@ -189,7 +190,7 @@ checks:
     # stale the moment the bar moves — as it just did.
     label:
       en: "Abnormal error, as a multiple of normal error"
-      ar: "خطأ الشاذ منسوباً إلى خطأ الطبيعي"
+      ar: "نسبة خطأ الحالات الشاذة إلى خطأ الحالات الطبيعية"
   - id: f1
     required: true
     min: 0.90
@@ -204,27 +205,28 @@ hints:
       in, the model learns to reconstruct them too and the whole signal
       disappears — check what you filtered on before you touch the model.
     ar: >-
-      يجب أن تحتوي مجموعة التدريب على الآثار الطبيعية وحدها. إن تسرّبت إليها
-      آثار شاذة تعلّم النموذج إعادة بنائها أيضاً واختفت الإشارة كلها — تحقّق مما
-      رشّحت عليه قبل أن تمسّ النموذج.
+      مجموعة التدريب يجب أن تحتوي فقط على التسجيلات الطبيعية. إذا تسرّبت إليها
+      حالات شاذة، سيتعلّم النموذج إعادة بنائها هي أيضاً وتختفي الإشارة بالكامل —
+      راجع خطوة الترشيح قبل أن تلمس أي شيء في النموذج.
   - en: >-
       The threshold does not need a label to choose it. A high percentile of
       the error on the TRAINING set — the errors of traces the model has
       already seen — is a threshold you could set on the day you deploy, with
       no abnormal examples in hand at all.
     ar: >-
-      لا تحتاج العتبة إلى تسمية لاختيارها. مئينٌ مرتفع من الخطأ على مجموعة
-      التدريب — أخطاء آثار رآها النموذج فعلاً — هو عتبة يمكنك ضبطها يوم النشر
-      دون أن تملك أي مثال شاذ.
+      لا تحتاج إلى أمثلة شاذة لاختيار العتبة. خذ مئيناً مرتفعاً من أخطاء
+      التدريب — أي أخطاء تسجيلات رآها النموذج من قبل — وستحصل على عتبة يمكنك
+      ضبطها يوم النشر دون أي بيانات شاذة في يدك.
   - en: >-
       If the two error distributions overlap almost completely, the bottleneck
       is probably too wide: an autoencoder with enough capacity learns the
       identity function and reconstructs everything, including what it should
       not.
     ar: >-
-      إن تداخل توزيعا الخطأ تداخلاً شبه تام فالأرجح أن عنق الزجاجة واسع أكثر
-      مما ينبغي: المرمّز الذاتي ذو السعة الكافية يتعلم دالة الهوية فيعيد بناء
-      كل شيء، بما في ذلك ما لا ينبغي له.
+      إذا كان توزيعا الخطأ يتداخلان بشكل شبه كامل، فالسبب غالباً أن عنق الزجاجة
+      واسع أكثر من اللازم: حين تكون سعة المُرمِّز الذاتي كافية، يتعلّم ببساطة
+      نسخ المدخل كما هو ويعيد بناء كل شيء — بما فيه الحالات الشاذة التي يُفترض
+      أن يفشل فيها.
 
 # ── terms: the glossary, carried into the notebook ──────────────────────────
 # Written into the file rather than fetched from the site: a notebook must work
@@ -233,16 +235,16 @@ hints:
 terms:
   bottleneck:
     en: "The narrowest layer of an autoencoder. Its width is the budget: the model must describe the whole input in this many numbers."
-    ar: "أضيق طبقة في المرمّز الذاتي. عرضها هو الميزانية: على النموذج أن يصف المدخل كله بهذا العدد من الأرقام."
+    ar: "أضيق طبقة في المُرمِّز الذاتي. عدد أبعادها هو الميزانية المتاحة: على النموذج أن يختصر المدخل بأكمله في هذا العدد من الأرقام فقط."
   reconstruction error:
     en: "How far the output is from the input. On data the model was trained on it is small; on unfamiliar data it is not, and that gap is the detector."
-    ar: "مقدار بُعد المخرج عن المدخل. يكون صغيراً على البيانات التي دُرّب عليها النموذج، وكبيراً على ما لم يألفه، وهذه الفجوة هي الكاشف."
+    ar: "الفرق بين ما أدخلته وما أخرجه النموذج. على البيانات المألوفة يكون صغيراً، وعلى ما لم يره من قبل يرتفع — وهذا الفارق هو ما نستخدمه للكشف."
   threshold:
     en: "The error above which a trace is called abnormal. Chosen from a distribution, not guessed — and choosable without ever seeing an anomaly."
-    ar: "الخطأ الذي يُعدّ الأثر فوقه شاذاً. يُختار من توزيع لا بالتخمين، ويمكن اختياره دون رؤية أي حالة شاذة."
+    ar: "حد الخطأ الذي نعتبر أي تسجيل يتجاوزه شاذاً. نحدّده من توزيع الأخطاء لا بالتخمين، والأهم أنه لا يحتاج أي أمثلة شاذة لاختياره."
   latent space:
     en: "The compressed representation the bottleneck produces — what the model decided was worth keeping."
-    ar: "التمثيل المضغوط الذي ينتجه عنق الزجاجة — ما قرّر النموذج أنه يستحق الاحتفاظ به."
+    ar: "التمثيل المُختصر الذي تنتجه الطبقة الضيقة — خلاصة ما قرّر النموذج أنه يستحق الحفظ من المدخل الأصلي."
 
 # ── the notebook, as an ordered list of blocks ──────────────────────────────
 # `cell` blocks carry a `ref` into code.py's region markers and an `id` that
@@ -261,19 +263,22 @@ body:
         everything. It will spend that budget on whatever is common. Then feed
         it something uncommon, and watch it fail.
       ar: >-
-        يحتاج المصنّف إلى أمثلة من كل فئة سيقابلها. وكشف الشذوذ هو الحالة التي
-        لا يمكنك فيها امتلاكها: الفئة المهمة نادرة بحكم التعريف، والأمثلة التي
-        بحوزتك لا تمثّل تلك التي لم ترها بعد.
-        لذا نقلب المسألة. درّب نموذجاً على مهمة سهلة — أن ينسخ مدخله إلى مخرجه —
-        لكن أجبره على المرور بطبقة أضيق من أن تنسخ كل شيء. سينفق تلك الميزانية
-        على ما هو شائع. ثم أطعمه ما ليس شائعاً، وراقب فشله.
+        في <Term en="Classification">التصنيف</Term> العادي تحتاج أمثلة من كل فئة
+        حتى يتعلّم النموذج التمييز بينها. لكن في
+        <Term en="Anomaly Detection">كشف الشذوذ</Term> لا تملك هذا الترف: الحالات
+        الشاذة نادرة أصلاً، والقليل المتاح منها لا يغطّي كل ما قد تواجهه لاحقاً.
+        لذلك نقلب الفكرة. بدل أن نعلّم النموذج شكل الشذوذ، نعلّمه شكل الوضع
+        الطبيعي. نبني <Term en="Autoencoder">مُرمِّزاً ذاتياً</Term> مهمّته إعادة
+        بناء مدخلاته، لكن نُمرّره عبر طبقة ضيقة تُجبره على الاختصار. سيُتقن هذا
+        الاختصار على ما تدرّب عليه فقط. أعطه بعد ذلك شيئاً مختلفاً — وسيفشل في
+        إعادة بنائه. ذلك الفشل تحديداً هو إشارة الإنذار.
 
   - type: cell
     id: setup
     ref: setup
     caption:
       en: "Preflight: the runtime is checked and the dataset verified before anything trains."
-      ar: "فحص مسبق: تُفحص البيئة ويُتحقق من البيانات قبل أي تدريب."
+      ar: "تهيئة أوّلية: نتأكد من جاهزية البيئة وسلامة البيانات قبل بدء التدريب."
 
   - type: paperRef
     slug: deep-autoencoders
@@ -283,9 +288,9 @@ body:
         being a compression trick and becomes a representation-learning one.
         The autoencoder below is the same argument at a much smaller scale.
       ar: >-
-        ورقة هينتون وسالاخوتدينوف لعام 2006 هي الموضع الذي تكفّ فيه الطبقة
-        الضيقة عن كونها حيلة ضغط وتصير أداة لتعلّم التمثيل. والمرمّز أدناه هو
-        الحجة ذاتها على نطاق أصغر بكثير.
+        في ورقة هينتون وسالاخوتدينوف (2006) تحوّلت الطبقة الضيقة من مجرد أداة
+        ضغط إلى وسيلة لتعلّم التمثيلات. ما نبنيه هنا هو تطبيق للفكرة نفسها
+        على نطاق أصغر بكثير.
 
   - type: cell
     id: load-data
@@ -293,7 +298,7 @@ body:
     captures: [class_balance]
     caption:
       en: "Note the split: the training set is normal traces only. That is the whole method."
-      ar: "لاحظ التقسيم: مجموعة التدريب آثار طبيعية فقط. وهذه هي الطريقة كلها."
+      ar: "انتبه للتقسيم: مجموعة التدريب لا تحتوي إلا على تسجيلات طبيعية. هذا هو جوهر الطريقة بالكامل."
 
   - type: scaleNote
     text:
@@ -303,9 +308,9 @@ body:
         {{scale.epochs}} epochs and a {{scale.latentDim}}-dimensional
         bottleneck — enough to separate the classes cleanly.
       ar: >-
-        كل ما يلي يقرأ أحجامه من `env.cfg` الآتية من الملف الذي اخترته في
-        الأعلى. في المستوى المجاني هذا يعني {{scale.epochs}} دورة وعنق زجاجة
-        بـ{{scale.latentDim}} أبعاد — وهو ما يكفي لفصل الفئتين فصلاً نظيفاً.
+        جميع الخلايا التالية تقرأ إعداداتها من `env.cfg` حسب الملف الذي اخترته
+        في الأعلى. في المستوى المجاني يعني ذلك {{scale.epochs}} حقبة تدريبية
+        وعنق زجاجة بـ{{scale.latentDim}} أبعاد — وهذا كافٍ لفصل الفئتين بوضوح.
 
   - type: cell
     id: model
@@ -324,10 +329,11 @@ body:
         fitting the parts it had been averaging over. Stop it on the plateau
         and you ship a half-trained detector that looks converged.
       ar: >-
-        راقب الشكل لا الرقم الأخير وحده. تهبط الخسارة بحدة ثم تستقر على هضبة
-        لعشرين أو ثلاثين دورة ثم تعاود الهبوط — عند تلك النقطة يكون النموذج قد
-        كفّ عن تحسين الأثر المتوسط وبدأ يلائم التفاصيل التي كان يعمّمها. أوقفه
-        عند الهضبة تشحن كاشفاً نصف مدرَّب يبدو وكأنه اكتمل."
+        ركّز على شكل المنحنى لا على الرقم الأخير فقط. الخسارة تهبط بسرعة في
+        البداية، ثم تستقر على هضبة لعشرين أو ثلاثين حقبة، ثم تعاود الانخفاض —
+        وذلك لأن النموذج انتهى من تعلّم الشكل العام وبدأ يلتقط التفاصيل الدقيقة.
+        لو أوقفته عند الهضبة، ستحصل على كاشف نصف مُدرَّب يبدو متقارباً لكنه
+        ليس كذلك.
 
   - type: cell
     id: error-distributions
@@ -336,7 +342,7 @@ body:
     thumbnail: true
     caption:
       en: "The picture the whole workshop is for: two distributions, and the gap between them."
-      ar: "الصورة التي وُجدت الورشة كلها من أجلها: توزيعان والفجوة بينهما."
+      ar: "هذا هو الرسم الذي تدور حوله الورشة بأكملها: توزيعان متمايزان، والمسافة بينهما هي ما يجعل الكشف ممكناً."
 
   - type: exercise
     id: choose-threshold
@@ -357,17 +363,19 @@ body:
         cell. Find a threshold that beats 0.949, and notice that you did it
         without retraining anything.
       ar: >-
-        اختر العتبة. الحركة البديهية أن تجرّب القيم حتى تبلغ F1 ذروتها — لكن هذا
-        يستخدم تسميات الشذوذ التي لن تملكها يوم النشر. استخدم أخطاء التدريب
-        بدلاً من ذلك: اختر مئيناً من الأخطاء على بيانات رآها النموذج فعلاً،
-        وبرّر الرقم الذي اخترته.
+        حدّد العتبة بنفسك. التصرّف الأول الذي يخطر بالبال هو تجريب قيم مختلفة حتى
+        يصل F1 إلى أعلى قيمة — لكن هذا يعني أنك تستعمل تسميات الشذوذ، وهي شيء لن
+        يكون متاحاً لك يوم تنشر النموذج فعلياً. بدلاً من ذلك، استخدم أخطاء
+        التدريب: اختر مئيناً معيّناً من توزيع الأخطاء على بيانات سبق أن رآها
+        النموذج، واشرح لماذا اخترت هذا الرقم.
 
 
-        ثم تأمّل ما تقوله الأرقام أعلاه. تدريب هذا النموذج 160 دورة بدل 60 رفع
-        الفصل من 2.5 إلى 3.1 ضعف — أي أن التوزيعين تباعدا فعلياً — ولم تتحرك
-        F1 إطلاقاً، لأن الدقة ارتفعت بقدر ما انخفض الاستدعاء. لم يعد الكاشف
-        مقيّداً بالنموذج، بل صار مقيّداً بهذه الخلية. جِد عتبة تتجاوز 0.949،
-        ولاحظ أنك فعلت ذلك دون إعادة تدريب أي شيء.
+        بعد ذلك تأمّل ما تخبرك به الأرقام أعلاه. تدريب النموذج {{scale.epochs}}
+        حقبة بدل 60 رفع نسبة الفصل من 2.5× إلى 3.1× — التوزيعان تباعدا فعلاً —
+        ومع ذلك لم يتحرّك F1، لأن ما كسبناه في الدقة خسرناه في الاستدعاء.
+        هذا يعني أن الكاشف لم يعد محدوداً بجودة النموذج، بل بخيار العتبة في هذه
+        الخلية تحديداً. جِد عتبة تتجاوز 0.949، ولاحظ أنك حقّقت ذلك دون إعادة
+        تدريب أي شيء.
     hint: 2
     ref: choose_threshold
 
@@ -385,10 +393,11 @@ body:
         theory that anomalies take fewer cuts to separate. On this dataset it is
         close. On data where "normal" has structure worth learning, it is not.
       ar: >-
-        من المفيد أن تعرف بمن تقارن. غابة العزل لا تنمذج الحالة الطبيعية أصلاً —
-        بل تعزل النقاط بتقسيم عشوائي، على أساس أن الشذوذ يحتاج قطوعاً أقل
-        لفصله. على هذه البيانات تقترب من نتيجتنا. أما حين يكون لـ«الطبيعي» بنية
-        تستحق التعلّم، فلا.
+        من المهم أن تعرف ما الذي تقارن به. <Term en="Isolation Forest">غابة
+        العزل</Term> لا تحاول نمذجة الحالة الطبيعية أصلاً — بل تعزل النقاط عبر
+        تقسيمات عشوائية، انطلاقاً من أن الشذوذ يحتاج عدداً أقل من القطوع
+        لفصله. على هذه البيانات تحديداً النتائج متقاربة. لكن حين يكون للبيانات
+        الطبيعية بنية داخلية تستحق التعلّم، يتفوّق المُرمِّز الذاتي بوضوح.
 
   - type: cell
     id: baseline
@@ -400,12 +409,13 @@ body:
         autoencoder's {{run.metrics.f1}}. The comparison is the point, not the
         win — read which one you would actually ship.
       ar: >-
-        تبلغ غابة العزل {{run.metrics.baseline_f1}} مقابل {{run.metrics.f1}}
-        للمرمّز الذاتي. المقارنة هي المقصد لا الفوز — اقرأ أيهما كنت ستشحن فعلاً.
+        غابة العزل حقّقت {{run.metrics.baseline_f1}} مقابل {{run.metrics.f1}}
+        للمُرمِّز الذاتي. الهدف من المقارنة ليس إثبات التفوّق، بل أن تسأل
+        نفسك: أيهما كنت ستنشر فعلاً في بيئة إنتاج؟
 
   - type: cell
     id: finish
     ref: finish
     caption:
       en: "The receipt: your completion code, and the numbers it was derived from."
-      ar: "الإيصال: رمز إتمامك والأرقام التي اشتُقّ منها."
+      ar: "الإيصال: رمز الإتمام والأرقام التي بُني عليها."

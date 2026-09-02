@@ -4,11 +4,11 @@ constellation: agents
 
 title:
   en: "Reward shaping, and how it goes wrong"
-  ar: "تشكيل المكافأة وكيف ينحرف"
+  ar: "تشكيل المكافأة — وكيف يخرج عن السيطرة"
 
 concept:
   en: "The agent optimises what you wrote, not what you meant"
-  ar: "الوكيل يُحسِّن ما كتبتَه لا ما قصدتَه"
+  ar: "الوكيل يُحسِّن ما كتبتَه، لا ما قصدتَه"
 
 scenario:
   en: >-
@@ -24,15 +24,18 @@ scenario:
     than the behaviour you wanted, it will find that behaviour, and it will
     look like success on your own metric while doing the opposite of the job.
   ar: >-
-    المكافآت المتفرّقة صعبة التعلّم: الوكيل الذي لا يُكافأ إلا عند النجاح يقضي
-    معظم التدريب دون أن يرى شيئاً. فتساعده. تضيف حدّاً للتقدّم — مسافة قُطعت،
-    وقود وُفِّر، ارتفاع حُوفظ عليه — فيتسارع التعلّم فوراً. ذلك الحدّ هو مكافأة
-    التشكيل، وهو أشيع تدخّل في التعلّم المعزز التطبيقي.
+    حين لا تصل <Term en="Sparse Reward">المكافأة المتفرّقة</Term> إلا لحظة النجاح،
+    يقضي <Term en="Agent">الوكيل</Term> معظم <Term en="Training">التدريب</Term>
+    يتخبّط دون أي إشارة تدلّه. فتحاول مساعدته: تضيف حدًّا يكافئ التقدّم — مسافة
+    اقتربها من الهدف، وقود وفّره، ارتفاع حافظ عليه — ويتسارع التعلّم فورًا. هذا
+    الحدّ هو ما يُسمّى <Term en="Reward Shaping">تشكيل المكافأة</Term>، وهو أكثر
+    تدخّل شائع في <Term en="Reinforcement Learning">التعلّم المعزّز</Term> التطبيقي.
 
 
-    وهو أيضاً حيث تسكن الإخفاقات. الوكيل لا يقرأ نيّتك، بل يقرأ المجموع. فإن
-    كان سلوكٌ لم يخطر لك يسجّل أعلى من السلوك الذي أردته، فسيجده، وسيبدو
-    نجاحاً على مقياسك أنت بينما يفعل نقيض المطلوب.
+    لكنه أيضًا حيث تقع أخطر الأخطاء. <Term en="Agent">الوكيل</Term> لا يقرأ نيّتك
+    بل يقرأ المعادلة كما كتبتَها. فإن وجد سلوكًا لم يخطر لك يُحقّق درجة أعلى
+    ممّا أردتَه، سيتبنّاه — وستبدو النتيجة ناجحة بمقياسك أنت، وهي تفعل عكس
+    المطلوب تمامًا.
 
 goal:
   en: >-
@@ -41,9 +44,11 @@ goal:
     then show that the mis-specified agent scores best on the shaped reward
     and worst on the thing you actually wanted.
   ar: >-
-    درِّب الوكيل ذاته على ثلاث دوال مكافأة — دالة البيئة الأصلية، وتشكيل صحيح
-    قائم على الجهد، وسوء تحديد واحد معقول — ثم بيِّن أن الوكيل سيئ التحديد
-    يسجّل الأعلى في المكافأة المُشكَّلة والأسوأ فيما أردته فعلاً.
+    ندرّب <Term en="Agent">الوكيل</Term> نفسه على ثلاث دوال مكافأة: مكافأة
+    <Term en="Environment">البيئة</Term> الأصلية،
+    و<Term en="Reward Shaping">تشكيل</Term> صحيح قائم على الجهد، وصياغة ثالثة تبدو
+    معقولة لكنها خاطئة — ثم نُثبت أن الوكيل الذي تدرّب على الصياغة الخاطئة
+    يتفوّق في الدرجة المُشكَّلة ويُخفق فيما أردناه فعلًا.
 
 difficulty: intermediate
 status: stable
@@ -64,22 +69,22 @@ papers:
     role: core
     label:
       en: "the policy-gradient method almost every applied RL system reaches for — Schulman et al., 2017"
-      ar: "طريقة تدرّج السياسة التي يلجأ إليها كل نظام تعلّم معزز تطبيقي تقريباً — شولمان وزملاؤه، 2017"
+      ar: "طريقة <Term en=\"Policy Gradient\">تدرّج السياسة</Term> التي يكاد كل نظام <Term en=\"Reinforcement Learning\">تعلّم معزّز</Term> تطبيقي يبدأ بها — شولمان وزملاؤه، 2017"
   - slug: concrete-problems
     role: core
     label:
       en: "reward hacking named as a research problem, nine years before it was a headline — Amodei et al., 2016"
-      ar: "اختراق المكافأة مُسمّى كمسألة بحثية قبل تسع سنوات من صيرورته عنواناً — أمودي وزملاؤه، 2016"
+      ar: "<Term en=\"Reward Hacking\">اختراق المكافأة</Term> طُرح بوصفه مسألة بحثية قبل تسع سنوات من أن يصير عنوانًا إخباريًّا — أمودي وزملاؤه، 2016"
   - slug: reinforce
     role: supporting
     label:
       en: "the gradient estimator underneath, and why reward variance matters so much"
-      ar: "مُقدِّر التدرّج تحته، ولماذا يهمّ تباين المكافأة إلى هذا الحد"
+      ar: "مُقدِّر <Term en=\"Gradient\">التدرّج</Term> الذي يقوم عليه كل شيء هنا، وسبب الأثر الكبير لـ<Term en=\"Variance\">تباين</Term> المكافأة"
   - slug: deep-rl-human-preferences
     role: supporting
     label:
       en: "one answer to a reward you cannot write down: learn it from comparisons instead"
-      ar: "جواب واحد عن مكافأة يتعذّر كتابتها: تعلّمها من المقارنات بدلاً من ذلك"
+      ar: "حلّ لمشكلة المكافأة التي لا تستطيع صياغتها يدويًّا: تعلّمها من مقارنات بشرية بدلًا من ذلك"
 
 assets: []
 
@@ -151,7 +156,7 @@ checks:
     min: 0.3
     label:
       en: "Landing rate of the control agent, before any comparison is meaningful"
-      ar: "معدّل هبوط الوكيل الشاهد، قبل أن تكون أي مقارنة ذات معنى"
+      ar: "نسبة هبوط الوكيل الشاهد — لا معنى لأي مقارنة قبل أن ينجح هو أولًا"
 
   - id: hacked-scores-higher
     # A DIFFERENCE in return, not a ratio. These returns are negative, and a
@@ -163,13 +168,13 @@ checks:
     min: 50
     label:
       en: "How far the mis-specified agent out-scores the honest one, on the written objective"
-      ar: "بكم يتفوّق الوكيل سيئ التحديد على الأمين في الهدف كما كُتب"
+      ar: "الفارق بين درجة الوكيل المُختلّ ودرجة الأمين على الهدف المكتوب"
   - id: hacked-lands-less
     required: true
     max: 0.5
     label:
       en: "Mis-specified agent's landing rate, relative to the honest agent's"
-      ar: "معدّل هبوط الوكيل سيئ التحديد منسوباً إلى الوكيل الأمين"
+      ar: "نسبة هبوط الوكيل المُختلّ مقارنةً بالأمين"
 
 hints:
   - en: >-
@@ -179,19 +184,22 @@ hints:
       unchanged. Anything else — including the obvious "give points for being
       close" — can and does change what is optimal.
     ar: >-
-      التشكيل آمن حين يكون قائماً على الجهد: كافئ التغيّر في دالة جهد ما،
-      γ·Φ(s′) − Φ(s)، لا الحالة نفسها. وقد أثبت نغ وهارادا وراسل أن هذه الصورة
-      تترك السياسة المثلى دون تغيير. أما ما عداها — بما في ذلك البديهي «امنح
-      نقاطاً للقرب» — فيمكنه أن يغيّر ما هو أمثل، وهو يفعل.
+      <Term en="Reward Shaping">التشكيل</Term> لا يكون آمنًا إلا حين يعتمد على
+      الجهد: أي أن تكافئ التغيُّر في دالة جهد معيّنة، γ·Φ(s′) − Φ(s)، وليس
+      الحالة بذاتها. أثبت نغ وهارادا وراسل أن هذه الصيغة وحدها تضمن بقاء
+      <Term en="Optimal Policy">السياسة المثلى</Term> كما هي. أي صيغة أخرى — بما
+      فيها الفكرة البديهية «أعطه نقاطًا كلّما اقترب» — قد تغيّر السياسة المثلى،
+      وهي تفعل ذلك فعلًا.
   - en: >-
       Watch what the hacked agent actually does, not just its score. Hovering
       close to the pad collects the proximity bonus every single step and
       never risks the crash penalty. It is not confused; it found a better
       policy for the reward you wrote.
     ar: >-
-      راقب ما يفعله الوكيل المخترِق فعلاً لا درجته وحدها. فالتحويم قرب المنصّة
-      يجمع مكافأة القرب في كل خطوة ولا يخاطر قط بعقوبة التحطّم. إنه ليس
-      مرتبكاً — بل وجد سياسة أفضل للمكافأة التي كتبتَها أنت.
+      لا تنظر إلى الدرجة فقط — راقب ما يفعله <Term en="Agent">الوكيل</Term>
+      المُختلّ خطوةً بخطوة. التحويم قرب المنصّة يجمع مكافأة القرب كل خطوة من دون
+      أن يخاطر بعقوبة التحطّم. هذا الوكيل ليس مرتبكًا، بل وجد
+      <Term en="Policy">سياسة</Term> أفضل للمكافأة التي كتبتَها أنت.
   - en: >-
       If the mis-specified agent is not out-scoring the honest one, your bonus
       is probably too small to compete with the environment's own terms. Raise
@@ -199,23 +207,24 @@ hints:
       has a price, and that the price is a number you chose, is itself the
       lesson.
     ar: >-
-      إن لم يكن الوكيل سيئ التحديد يتفوّق على الأمين، فالأرجح أن مكافأتك أصغر
-      من أن تنافس حدود البيئة نفسها. ارفعها حتى تصير الثغرة أثمن من الهبوط.
-      وكون الثغرة لها ثمن، وكون هذا الثمن رقماً اخترتَه أنت، هو الدرس ذاته.
+      إن لم يتفوّق الوكيل المُختلّ على الأمين، فعلى الأرجح أن مكافأتك الإضافية
+      أضعف من أن تنافس مكافأة <Term en="Environment">البيئة</Term> الأصلية. ارفع
+      المُعامل حتى تصير الثغرة أثمن من الهبوط ذاته. وانتبه: كون هذه الثغرة لها
+      ثمن، وكون هذا الثمن رقمًا اخترتَه أنت — هذا هو الدرس بعينه.
 
 terms:
   reward shaping:
     en: "Adding terms to a reward to make it easier to learn from. Safe only in a specific form; otherwise it changes what the agent is optimising."
-    ar: "إضافة حدود إلى المكافأة لتسهيل التعلّم منها. آمنة في صورة بعينها فقط، وإلا غيّرت ما يُحسِّنه الوكيل."
+    ar: "إضافة حدود مساعدة إلى دالة المكافأة كي يتعلّم منها الوكيل أسرع. لا تكون آمنة إلا في صيغة واحدة محدّدة، وأي صيغة أخرى قد تُغيّر ما يُحسِّنه الوكيل فعليًّا."
   reward hacking:
     en: "Scoring highly on the written objective while failing the intended one. Not a malfunction — the agent solved the problem you actually posed."
-    ar: "تحقيق درجة عالية في الهدف المكتوب مع الإخفاق في الهدف المقصود. ليس عطلاً — بل الوكيل حلّ المسألة التي طرحتَها فعلاً."
+    ar: "أن يحصد الوكيل درجة عالية وفق الهدف المكتوب بينما يُخفق في الهدف الذي قصدتَه. ليس خللًا تقنيًّا — الوكيل حلّ المسألة التي طرحتَها حرفيًّا."
   policy:
     en: "The rule mapping what the agent sees to what it does. Training changes the rule; the reward decides which rules are good."
-    ar: "القاعدة التي تربط ما يراه الوكيل بما يفعله. التدريب يغيّر القاعدة، والمكافأة تقرّر أي القواعد جيّد."
+    ar: "القاعدة التي تحدّد كيف يتصرّف الوكيل بناءً على ما يراه. التدريب يُعدّل هذه القاعدة، والمكافأة هي التي تقرّر أيّ القواعد أفضل."
   return:
     en: "The discounted sum of rewards over an episode. What the agent maximises, and the only thing it maximises."
-    ar: "مجموع المكافآت المخصوم عبر حلقة كاملة. وهو ما يعظّمه الوكيل، وهو الشيء الوحيد الذي يعظّمه."
+    ar: "مجموع المكافآت المخصوم على مدى حلقة كاملة. هذا هو ما يسعى الوكيل لتعظيمه — وهو الشيء الوحيد الذي يعظّمه."
 
 body:
   - type: prose
@@ -236,25 +245,27 @@ body:
         it. One is provably safe. The other is the kind of thing a reasonable
         engineer writes on a Tuesday afternoon.
       ar: >-
-        الثغرة التي أنت على وشك رؤيتها ليست ما يتوقعه أكثر الناس. اسأل نفسك قبل
-        أن تشغّل شيئاً: ماذا يفعل وكيلٌ حين تكون المكافأة التي أضفتَها سالبةً في
-        كل نقطة من فضاء الحالات؟
+        الثغرة التي ستراها هنا ليست ما يتوقّعه معظم الناس. قبل أن تشغّل أي شيء،
+        اسأل نفسك: ماذا يحدث حين تكون المكافأة التي أضفتَها سالبة في كل نقطة من
+        فضاء الحالات؟
 
 
-        تمنحك «هابط القمر» حالة نظيفة لتكسرها. فمكافأتها الأصلية توازن أموراً
-        عدة أساساً — المسافة إلى المنصّة، والوقود المُنفَق، ومكافأة كبيرة
-        للهبوط، وعقوبة كبيرة للتحطّم — والوكيل المُدرَّب عليها يتعلّم الهبوط.
+        بيئة LunarLander تمنحك حالة تجريبية مثالية. مكافأتها الأصلية توازن عدّة
+        عوامل — المسافة إلى منصّة الهبوط، والوقود المستهلَك، ومكافأة كبيرة عند
+        الهبوط، وعقوبة كبيرة عند التحطّم — و<Term en="Agent">الوكيل</Term>
+        المُدرَّب عليها يتعلّم الهبوط بنجاح.
 
 
-        سنُبقي ذلك الوكيل شاهداً، ثم نضيف إليه حدَّي تشكيل. أحدهما آمن
-        بالبرهان. والآخر من النوع الذي يكتبه مهندس معقول بعد ظهر يوم ثلاثاء.
+        سنُبقي هذا <Term en="Agent">الوكيل</Term> شاهدًا للمقارنة، ثم نضيف حدَّي
+        <Term en="Reward Shaping">تشكيل</Term> اثنين. أحدهما آمن رياضيًّا بالبرهان،
+        والآخر من النوع الذي يكتبه مهندس كفء ظهيرة ثلاثاء عادية.
 
   - type: cell
     id: setup
     ref: setup
     caption:
       en: "Preflight. No GPU, no downloads — the environment is generated, not fetched."
-      ar: "فحص مسبق. لا معالج رسوميات ولا تنزيلات — البيئة مُولَّدة لا مجلوبة."
+      ar: "تهيئة أوّلية. لا حاجة لمعالج رسوميّات ولا لتنزيل شيء — البيئة تُولَّد محليًّا."
 
   - type: cell
     id: rewards
@@ -264,8 +275,8 @@ body:
         Read the three functions before you run anything. Decide now which one
         you think will land most often — the point is partly to be wrong.
       ar: >-
-        اقرأ الدوال الثلاث قبل أن تشغّل شيئاً. قرّر الآن أيّها تظنّه سيهبط أكثر —
-        فجزء من المقصد أن تُخطئ.
+        اقرأ الدوال الثلاث قبل أن تُشغّل أي خليّة. قرّر الآن: أيّها سيهبط أكثر؟
+        جزء من الهدف هنا أن يفاجئك الجواب.
 
   - type: paperRef
     slug: concrete-problems
@@ -276,9 +287,10 @@ body:
         time. The exploit you are about to train is the same failure at a
         scale you can watch in four minutes.
       ar: >-
-        أدرج أمودي وزملاؤه اختراق المكافأة عام 2016 ضمن خمس مسائل ملموسة، بأمثلة
-        بدت افتراضية حينها. والثغرة التي أنت على وشك تدريبها هي الإخفاق ذاته على
-        نطاق يمكنك مشاهدته في أربع دقائق.
+        عام 2016 صنّف أمودي وزملاؤه <Term en="Reward Hacking">اختراق المكافأة</Term>
+        واحدةً من خمس مسائل بحثية ملموسة، وكانت أمثلتهم تبدو نظرية حينها. الثغرة
+        التي ستدرّبها هنا هي الإخفاق نفسه — لكن على نطاق يمكنك مشاهدته في أربع
+        دقائق.
 
   - type: cell
     id: train
@@ -286,7 +298,7 @@ body:
     captures: [episodes_run]
     caption:
       en: "Three agents, one architecture, one seed. Only the reward differs."
-      ar: "ثلاثة وكلاء، معمارية واحدة، بذرة واحدة. المكافأة وحدها تختلف."
+      ar: "ثلاثة وكلاء، معمارية واحدة، بذرة عشوائية واحدة. ما يختلف هو دالة المكافأة فقط."
 
   - type: scaleNote
     text:
@@ -296,10 +308,11 @@ body:
         land for any of this to mean anything — that is the first check, and if
         it fails the answer is more episodes, never a lower bar.
       ar: >-
-        يدرّب الملف المجاني {{scale.episodes}} حلقة لكل وكيل ويقيّم على
-        {{scale.evalEpisodes}} حلقة. وعلى الوكيل الشاهد أن يهبط فعلاً كي يكون
-        لأي من هذا معنى — وذلك هو الفحص الأول، وإن أخفق فالجواب مزيد من
-        الحلقات، لا خفض السقف.
+        في الإعداد المجاني يتدرّب كل <Term en="Agent">وكيل</Term> على
+        {{scale.episodes}} <Term en="Episode">حلقة</Term> ويُقيَّم على
+        {{scale.evalEpisodes}} حلقة. الشرط الأوّل هو أن ينجح الوكيل الشاهد في
+        الهبوط فعلًا — من دون ذلك لا معنى لأي مقارنة. وإن أخفق، فالحلّ هو زيادة
+        عدد الحلقات، لا تخفيف معيار النجاح.
 
   - type: cell
     id: scoreboard
@@ -312,8 +325,9 @@ body:
         the training loop saw; the landing column is what you wanted. Read
         them against each other.
       ar: >-
-        عمودان وحُكمان مختلفان. عمود الدرجة المُشكَّلة هو ما رآه حلقة التدريب،
-        وعمود الهبوط هو ما أردتَه أنت. اقرأ كلاً منهما في ضوء الآخر.
+        عمودان يحكيان قصّتين مختلفتين. عمود الدرجة المُشكَّلة هو ما رأته
+        <Term en="Training loop">حلقة التدريب</Term>، وعمود الهبوط هو ما أردتَه
+        أنت. اقرأهما معًا — التناقض بينهما هو الدرس.
 
   - type: cell
     id: watch
@@ -323,8 +337,8 @@ body:
         One trajectory each, compared. Episode LENGTH is the tell — read it
         before you read anything else.
       ar: >-
-        مسار واحد لكلٍّ منهما، مقارنَين. طول الحلقة هو الدليل — اقرأه قبل أي شيء
-        آخر.
+        <Term en="Trajectory">مسار</Term> واحد من كل وكيل، جنبًا إلى جنب. طول
+        <Term en="Episode">الحلقة</Term> هو المفتاح — انظر إليه قبل أي رقم آخر.
 
   - type: exercise
     id: fix-it
@@ -341,15 +355,17 @@ body:
         by adding it? Compare not just the final landing rate but how many
         episodes each agent needed to get there.
       ar: >-
-        أصلِح المكافأة سيئة التحديد دون حذفها. التشكيل القائم على الجهد هو
-        الصورة الآمنة المعروفة: كافئ γ·Φ(s′) − Φ(s) لا Φ(s) ذاتها. حوِّل مكافأة
-        القرب إلى تلك الصورة وأعد التدريب.
+        أصلِح المكافأة المُختلّة من غير أن تحذفها.
+        <Term en="Reward Shaping">التشكيل</Term> القائم على الجهد هو الصيغة الآمنة
+        الوحيدة المعروفة: كافئ التغيُّر γ·Φ(s′) − Φ(s) بدلًا من Φ(s) نفسها.
+        حوِّل مكافأة القرب إلى هذه الصيغة وأعِد التدريب.
 
 
-        ثم أجب عن السؤال الذي يطرحه الإصلاح. إن كان التشكيل القائم على الجهد
-        لا يمكنه بالبرهان تغيير السياسة المثلى، فما الذي اشتريتَه فعلاً
-        بإضافته؟ قارن لا معدّل الهبوط النهائي وحده، بل عدد الحلقات التي احتاجها
-        كل وكيل ليبلغه.
+        ثم فكّر في السؤال الذي يطرحه الإصلاح: إن كان التشكيل القائم على الجهد
+        لا يستطيع — بالبرهان — تغيير <Term en="Optimal Policy">السياسة المثلى</Term>،
+        فما الفائدة الفعلية من إضافته؟ لا تقارن نسبة الهبوط النهائية فحسب، بل
+        قارن أيضًا عدد <Term en="Episode">الحلقات</Term> التي احتاجها كل وكيل
+        للوصول إلى تلك النسبة.
     hint: 1
 
   - type: cell
@@ -357,7 +373,7 @@ body:
     ref: verify
     caption:
       en: "Both checks. The second is a MAXIMUM: the exploit must land less, or nothing was demonstrated."
-      ar: "الفحصان معاً. والثاني حدٌّ أقصى: على الثغرة أن تهبط أقل، وإلا فلم يُثبَت شيء."
+      ar: "الفحصان معًا. الثاني حدّ أقصى: يجب أن يهبط الوكيل المُختلّ أقل من الأمين — وإلّا لم نُثبت شيئًا."
 
   - type: cell
     id: finish
