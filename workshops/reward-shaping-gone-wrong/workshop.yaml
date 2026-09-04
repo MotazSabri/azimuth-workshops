@@ -44,9 +44,9 @@ goal:
     then show that the mis-specified agent scores best on the shaped reward
     and worst on the thing you actually wanted.
   ar: >-
-    ندرّب <Term en="Agent">الوكيل</Term> نفسه على ثلاث دوال مكافأة: مكافأة
-    <Term en="Environment">البيئة</Term> الأصلية،
-    و<Term en="Reward Shaping">تشكيل</Term> صحيح قائم على الجهد، وصياغة ثالثة تبدو
+    ندرّب الوكيل نفسه على ثلاث دوال مكافأة: مكافأة
+    البيئة الأصلية،
+    و تشكيل صحيح قائم على الجهد، وصياغة ثالثة تبدو
     معقولة لكنها خاطئة — ثم نُثبت أن الوكيل الذي تدرّب على الصياغة الخاطئة
     يتفوّق في الدرجة المُشكَّلة ويُخفق فيما أردناه فعلًا.
 
@@ -69,17 +69,17 @@ papers:
     role: core
     label:
       en: "the policy-gradient method almost every applied RL system reaches for — Schulman et al., 2017"
-      ar: "طريقة <Term en=\"Policy Gradient\">تدرّج السياسة</Term> التي يكاد كل نظام <Term en=\"Reinforcement Learning\">تعلّم معزّز</Term> تطبيقي يبدأ بها — شولمان وزملاؤه، 2017"
+      ar: "طريقة تدرّج السياسة التي يكاد كل نظام تعلّم معزّز تطبيقي يبدأ بها — شولمان وزملاؤه، 2017"
   - slug: concrete-problems
     role: core
     label:
       en: "reward hacking named as a research problem, nine years before it was a headline — Amodei et al., 2016"
-      ar: "<Term en=\"Reward Hacking\">اختراق المكافأة</Term> طُرح بوصفه مسألة بحثية قبل تسع سنوات من أن يصير عنوانًا إخباريًّا — أمودي وزملاؤه، 2016"
+      ar: "اختراق المكافأة طُرح بوصفه مسألة بحثية قبل تسع سنوات من أن يصير عنوانًا إخباريًّا — أمودي وزملاؤه، 2016"
   - slug: reinforce
     role: supporting
     label:
       en: "the gradient estimator underneath, and why reward variance matters so much"
-      ar: "مُقدِّر <Term en=\"Gradient\">التدرّج</Term> الذي يقوم عليه كل شيء هنا، وسبب الأثر الكبير لـ<Term en=\"Variance\">تباين</Term> المكافأة"
+      ar: "مُقدِّر التدرّج الذي يقوم عليه كل شيء هنا، وسبب الأثر الكبير لتباين المكافأة"
   - slug: deep-rl-human-preferences
     role: supporting
     label:
@@ -337,8 +337,8 @@ body:
         One trajectory each, compared. Episode LENGTH is the tell — read it
         before you read anything else.
       ar: >-
-        <Term en="Trajectory">مسار</Term> واحد من كل وكيل، جنبًا إلى جنب. طول
-        <Term en="Episode">الحلقة</Term> هو المفتاح — انظر إليه قبل أي رقم آخر.
+        مسار واحد من كل وكيل، جنبًا إلى جنب. طول
+        الحلقة هو المفتاح — انظر إليه قبل أي رقم آخر.
 
   - type: exercise
     id: fix-it

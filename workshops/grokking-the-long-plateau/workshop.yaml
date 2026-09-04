@@ -52,10 +52,10 @@ goal:
     them. Then apply an ordinary early-stopping rule to your own logged curve
     and count the steps it would have discarded.
   ar: >-
-    درّب <Term en="Transformer">محوّلاً</Term> صغيراً على الجمع القياسي إلى أن
+    درّب محوّلاً صغيراً على الجمع القياسي إلى أن
     يحفظ البيانات، ثم واصل التدريب لفترة أطول بكثير. قِس ثلاثة أشياء: متى حفظ
     النموذج، ومتى بدأ يعمّم، وكم خطوة فصلت بين الحدثين. بعد ذلك طبّق قاعدة
-    <Term en="Early Stopping">توقّف مبكر</Term> اعتيادية على المنحنى الذي سجّلته
+    توقّف مبكر اعتيادية على المنحنى الذي سجّلته
     واحسب كم خطوة كانت ستضيع.
 
 difficulty: intermediate
@@ -368,7 +368,7 @@ body:
         count against the number of training pairs above — memorising them is
         well within reach, which is the whole reason the first plateau happens.
       ar: >-
-        كتلة <Term en="Transformer">محوّل</Term> واحدة، صغيرة بما يكفي لقراءة
+        كتلة محوّل واحدة، صغيرة بما يكفي لقراءة
         بنيتها كاملة. قارن عدد المعاملات بعدد أزواج التدريب أعلاه — النموذج قادر
         تماماً على حفظها جميعاً، وهذا بالتحديد سبب حدوث الهضبة الأولى.
 
