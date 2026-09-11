@@ -1,0 +1,605 @@
+schema: workshop/v1
+id: growing-neural-cellular-automata
+constellation: neural-networks
+
+title:
+  en: "Growing neural cellular automata: the target is a waypoint, not a fixed point"
+  ar: "أوتومات خلوية عصبية تنمو: الهدف محطة عبور لا نقطة استقرار"
+
+concept:
+  en: "Persistence is bought by which states you train from, not by what the loss asks for"
+  ar: "الثبات تشتريه بالحالات التي تدرّب منها، لا بما تطلبه دالة الخسارة"
+
+scenario:
+  en: >-
+    A single cell sits at the centre of an empty grid. One small convolutional
+    rule — a few thousand parameters, shared by every cell, seeing nothing but
+    its own channels and a three-by-three neighbourhood — is applied to the
+    whole grid, over and over. Nothing is told where the edges of the shape
+    should be. Nothing counts steps. Nothing holds a plan. After a few dozen
+    applications there is a flower.
+
+
+    That much is the paper's result, and reading it is enough to learn it. What
+    reading does not tell you is what happens on step one hundred. Train the
+    obvious way — start from the seed, run the rule for a few dozen steps, ask
+    the output to look like the target — and you get a rule that arrives at the
+    flower and then keeps going, because nothing in that objective ever
+    mentioned staying. The target was a waypoint the trajectory passed through.
+
+
+    This workshop trains two rules that differ in exactly one respect: which
+    states each training batch starts from. Same architecture, same initial
+    weights, same optimizer, same budget, same loss, character for character.
+    One starts every batch from the seed. The other starts from states it
+    produced earlier, some of which have had a hole punched in them. At the
+    horizon they were trained through, the two are hard to tell apart. Four
+    times further out they are separated by a match of
+    {{run.metrics.persistence_gap}} — and only one of them, cut in half, comes
+    back.
+  ar: >-
+    خلية واحدة في مركز شبكة فارغة. قاعدة <Term en="Convolution">التفافية</Term>
+    صغيرة — بضعة آلاف من المعاملات، تشترك فيها كل خلية، ولا ترى سوى قنواتها
+    الذاتية وجوارٍ بمقاس ثلاثة في ثلاثة — تُطبَّق على الشبكة كلها مرّة بعد
+    مرّة. لا أحد يخبر النظام أين ينبغي أن تنتهي حواف الشكل، ولا شيء يعدّ
+    الخطوات، ولا خطة مركزية في أي مكان. وبعد بضع عشرات من التطبيقات تظهر زهرة.
+
+
+    هذا القدر هو نتيجة الورقة البحثية، وقراءتها كافية لمعرفته. لكن ما لا تخبرك
+    به القراءة هو ما يحدث عند الخطوة المئة. درّب بالطريقة البديهية — ابدأ من
+    البذرة، شغّل القاعدة بضع عشرات من الخطوات، واطلب أن يشبه الناتج الهدف —
+    فتحصل على قاعدة تصل إلى الزهرة ثم تواصل السير، لأن لا شيء في ذلك الهدف
+    التدريبي ذكر البقاء أصلاً. كان الهدف محطة عبرها المسار لا أكثر.
+
+
+    تدرّب هذه الورشة قاعدتين تختلفان في أمر واحد فقط: الحالات التي تبدأ منها كل
+    دفعة تدريب. البنية نفسها، والأوزان الابتدائية نفسها، والمحسِّن نفسه،
+    والميزانية نفسها، ودالة الخسارة نفسها حرفاً بحرف. إحداهما تبدأ كل دفعة من
+    البذرة، والأخرى تبدأ من حالات أنتجتها هي بنفسها سابقاً، وبعضها قد ثُقب فيه
+    ثقب. عند الأفق الذي دُرِّبتا عبره يصعب التمييز بينهما. وعند أربعة أضعاف
+    ذلك المدى يفصل بينهما تطابق مقداره {{run.metrics.persistence_gap}} — وواحدة
+    منهما فقط، إذا قُطعت نصفين، تعود.
+
+goal:
+  en: >-
+    Train both rules, watch the flower grow from one cell, then measure three
+    things the loss never asked for: how well each rule matches the target far
+    past the horizon it was trained through, the gap between them there, and
+    how much of the target a grown flower recovers after half the grid is
+    erased.
+  ar: >-
+    درّب القاعدتين، وشاهد الزهرة تنمو من خلية واحدة، ثم قِس ثلاثة أشياء لم
+    تطلبها دالة الخسارة قط: مدى مطابقة كل قاعدة للهدف بعد الأفق الذي دُرِّبت
+    عبره بكثير، والفارق بينهما عند ذلك المدى، وكم تستعيد زهرة مكتملة من هدفها
+    بعد محو نصف الشبكة.
+
+difficulty: intermediate
+status: draft
+publishedAt: null
+
+maintenance:
+  # stable: torch, numpy, matplotlib and the standard library. The target is
+  # drawn procedurally rather than downloaded, so there is no asset to pin, no
+  # licence to track and no URL that can start returning a login page.
+  tier: stable
+  cadence: quarterly
+
+estimate:
+  gpuMinutes: 0
+  # PROJECTION, NOT A MEASUREMENT. Sized from a numpy proxy of the forward
+  # pass on one core — the 1x1 convolutions are the dominant term and are
+  # matmuls either way — scaled by three for backward and doubled for the two
+  # rules. That lands around fifteen minutes of training on a free Colab CPU,
+  # plus reading. Replace this with the real figure from `train_seconds`.
+  totalMinutes: 30
+
+papers:
+  # Only the slug the workshop was commissioned with is declared. The papers
+  # corpus (`content/papers/`) is not part of the repository this was authored
+  # against, so no slug here could be verified — and a guessed slug fails as a
+  # silent warning at content build rather than as an error, which is the
+  # worst way for it to fail. Candidates worth adding once their real slugs
+  # can be confirmed: the residual-network paper (the update is a residual),
+  # the batch-normalization-era work on training through long unrolled
+  # computations, and anything in the corpus on self-organization or Turing
+  # morphogenesis.
+  - slug: growing-neural-cellular-automata
+    role: core
+    label:
+      en: "a differentiable update rule trained through its own iteration, growing and regenerating a target pattern from a single cell — Mordvintsev et al., 2020"
+      ar: "قاعدة تحديث قابلة للاشتقاق تُدرَّب عبر تكرارها الذاتي فتنمّي نمطاً هدفاً من خلية واحدة وتعيد ترميمه — Mordvintsev et al., 2020"
+
+assets: []
+
+profiles:
+  - id: free
+    default: true
+    name:
+      en: "Free tier (CPU)"
+      ar: "المستوى المجاني (CPU)"
+    requires:
+      # Honestly false. The rule is a few thousand parameters over a grid of
+      # under a thousand cells. A GPU would cut the training time to a couple
+      # of minutes, but claiming one here would send CI to an accelerated
+      # runner and would lock the workshop away from readers who have no GPU
+      # to give it — for a model smaller than most notebooks' first example.
+      gpu: false
+      vramGb: 0
+      ramGb: 2
+    scale:
+      # Large enough that the six petals stay distinct and the leaf is a
+      # recognisable object rather than three pixels — the damage panel is the
+      # point of the workshop and it has to be legible. Smaller was tried and
+      # the petals blur together.
+      grid: 28
+      # 12, not the paper's 16. Four are RGBA and the remaining eight are the
+      # rule's own scratch space, which is where anything resembling
+      # coordination between neighbours has to live.
+      channels: 12
+      hidden: 96
+      batch: 5
+      poolSize: 128
+      # The rollout length is sampled in this range every training step, so
+      # the rule never learns to count. The floor is set by geometry: a signal
+      # leaving the centre cell moves at most one cell per step, so it needs
+      # roughly half the grid width to reach a corner at all.
+      minSteps: 32
+      maxSteps: 44
+      # UNMEASURED, and the number most likely to move after the first real
+      # run. The paper trains for thousands of steps at a larger grid with a
+      # detailed emoji; a flat-coloured flower at this size should need far
+      # fewer, but "should" is doing a lot of work in that sentence. If the
+      # `naive-grows` control fails, this is the knob — raise it rather than
+      # lowering the bar.
+      trainSteps: 600
+      learningRate: 0.002
+      # Each cell updates independently with this probability. At 1.0 the grid
+      # steps in lockstep, which is a global clock, which is precisely the
+      # coordination the model is supposed to manage without.
+      fireRate: 0.5
+      aliveThreshold: 0.1
+      damageRadius: 0.18
+      damagePerBatch: 2
+      growSteps: 48
+      # Four times the longest rollout either rule was ever trained through.
+      # Far enough out that a rule which has not learned to stay has visibly
+      # stopped being a flower.
+      persistSteps: 200
+      healSteps: 48
+      logEvery: 50
+      stripFrames: 8
+      seed: 17
+
+  - id: paper
+    name:
+      en: "Closer to the paper (GPU)"
+      ar: "أقرب للورقة البحثية (GPU)"
+    requires:
+      gpu: true
+      # PROVISIONAL — not measured. Report what the run actually allocates
+      # with torch.cuda.max_memory_allocated() and declare that, never the
+      # capacity of whichever card happened to be attached.
+      vramGb: 2
+      ramGb: 4
+    scale:
+      grid: 40
+      channels: 16
+      hidden: 128
+      batch: 8
+      poolSize: 512
+      minSteps: 64
+      maxSteps: 96
+      # UNMEASURED. Nothing has been run at this size; the free profile is the
+      # one with any reasoning behind it at all.
+      trainSteps: 4000
+      learningRate: 0.002
+      fireRate: 0.5
+      aliveThreshold: 0.1
+      damageRadius: 0.18
+      damagePerBatch: 3
+      growSteps: 96
+      persistSteps: 400
+      healSteps: 96
+      logEvery: 200
+      stripFrames: 8
+      seed: 17
+
+checks:
+  # EVERY THRESHOLD BELOW IS A PLACEHOLDER AND NONE OF THEM HAS BEEN MEASURED.
+  # They are shaped correctly — every one is a minimum over a quantity where
+  # zero means "nothing happened" — but the values are guesses and must be
+  # replaced from the executed notebooks before this workshop goes stable.
+  # Until then a pass certifies nothing.
+  #
+  # The scores these read are not raw losses. A raw pixel error is a bad bar
+  # here because the target is mostly transparent background, so a rule that
+  # dies on step two scores well on it. Every score below is instead the error
+  # divided by the error an EMPTY GRID makes, subtracted from one: zero is
+  # exactly "no better than nothing", one is perfect, and negative is worse
+  # than having never grown at all. That makes a minimum the right direction
+  # and makes a vacuous run fail rather than pass.
+  - id: naive-grows
+    required: true
+    # PLACEHOLDER, UNMEASURED. The control, and the reason it is listed first:
+    # the whole comparison is "the seed-only rule arrives and then leaves". If
+    # it never arrived, it never left, and the other three numbers are about
+    # two rules that both failed. Raise trainSteps if this fails; do not lower
+    # this.
+    min: 0.5
+    label:
+      en: "Seed-only rule's match to the target at the horizon it was trained through"
+      ar: "تطابق قاعدة البذرة مع الهدف عند الأفق الذي دُرِّبت عبره"
+  - id: target-match
+    required: true
+    # PLACEHOLDER, UNMEASURED. The pool rule's match after growing from one
+    # cell. This is the "did it grow the flower at all" bar.
+    min: 0.5
+    label:
+      en: "Pool-trained rule's match to the target, grown from a single cell"
+      ar: "تطابق القاعدة المدرَّبة بالمجمّع مع الهدف بعد النمو من خلية واحدة"
+  - id: persists
+    required: true
+    # PLACEHOLDER, UNMEASURED. A DIFFERENCE, not a ratio: both scores can go
+    # negative when a rule overshoots into noise, and a ratio over signed
+    # quantities reads as failure exactly when the gap is widest. This is the
+    # workshop's finding in one number.
+    min: 0.2
+    label:
+      en: "Match remaining to the pool rule beyond the seed-only rule, far past the trained horizon"
+      ar: "ما يتبقّى للقاعدة المدرَّبة بالمجمّع من تطابق زيادةً على قاعدة البذرة، بعد الأفق المدرَّب بكثير"
+  - id: recovers
+    required: true
+    # PLACEHOLDER, UNMEASURED. Also a difference — match after healing minus
+    # match immediately after the cut — and deliberately not the healed match
+    # on its own. A shallow wound leaves a high absolute match without any
+    # healing having occurred, so the absolute number would pass on a run
+    # where the rule did nothing at all.
+    min: 0.2
+    label:
+      en: "Match regained after half the grid is erased"
+      ar: "التطابق المستعاد بعد محو نصف الشبكة"
+
+hints:
+  - en: >-
+      Read the match scores against the right zero. The target is mostly empty
+      background, so a rule that dies immediately gets most of the pixels
+      right, and a plain pixel error would call that a decent result. Every
+      score here is divided by the error an empty grid makes, which pins doing
+      nothing at exactly zero — so a negative score is not a bug, it is a rule
+      that has filled the grid with something worse than nothing.
+    ar: >-
+      اقرأ درجات التطابق مقابل الصفر الصحيح. الهدف في معظمه خلفية فارغة، لذا
+      فإن قاعدة تموت فوراً تصيب معظم البكسلات، وخطأ بكسلي بسيط كان سيعتبر ذلك
+      نتيجة لا بأس بها. كل درجة هنا مقسومة على الخطأ الذي تنتجه شبكة فارغة، وهو
+      ما يثبّت "ألّا تفعل شيئاً" عند الصفر تماماً. فالدرجة السالبة ليست خللاً،
+      بل تعني قاعدة ملأت الشبكة بشيء أسوأ من لا شيء.
+  - en: >-
+      Compare the two training runs line by line before looking for the cause
+      anywhere clever. The loss is the same expression, the architecture is the
+      same class, the initial weights come from the same seed and the optimizer
+      and step budget are identical. The only line that differs is where each
+      batch comes from. Whatever separates the two rules at the horizon has to
+      have entered through that one difference, which means it entered through
+      the distribution of states the rule was asked about — never through
+      anything the objective said.
+    ar: >-
+      قارن التشغيلتين سطراً بسطر قبل أن تبحث عن السبب في أي مكان أذكى. دالة
+      الخسارة هي التعبير نفسه، والبنية هي الصنف نفسه، والأوزان الابتدائية من
+      البذرة نفسها، والمحسِّن وميزانية الخطوات متطابقان. السطر الوحيد المختلف
+      هو من أين تأتي كل دفعة. إذن أي فارق يفصل القاعدتين عند الأفق لا بدّ أنه
+      دخل عبر ذلك الاختلاف الوحيد — أي عبر توزيع الحالات التي سُئلت عنها
+      القاعدة، لا عبر أي شيء نطقت به دالة الهدف.
+  - en: >-
+      A cell only stays alive if it or a neighbour already has meaningful
+      alpha, so an erased region cannot start repairing itself from the inside.
+      Everything has to re-enter across the boundary of the cut, one cell per
+      step. That makes where you cut matter more than how much you cut: a
+      wound that leaves a long, healthy border heals from all along it, and a
+      cut that isolates a piece of the shape from the rest leaves that piece
+      with nothing to grow back from.
+    ar: >-
+      لا تبقى الخلية حيّة إلا إذا كان لديها أو لدى جارٍ لها قيمة ألفا ذات معنى،
+      ولذلك لا تستطيع منطقة ممحوّة أن تبدأ إصلاح نفسها من الداخل. كل شيء عليه
+      أن يعود عبر حدود القطع، خليةً واحدة في كل خطوة. وهذا يجعل موضع القطع أهم
+      من حجمه: جرح يترك حدوداً سليمة طويلة يلتئم من طولها كله، أما قطع يعزل
+      جزءاً من الشكل عن بقيته فيترك ذلك الجزء بلا شيء ينمو منه.
+  - en: >-
+      Healing is not faster than growing, and expecting it to be is the usual
+      reason a damage run looks like a failure. The rule has one speed — one
+      cell per step — and rebuilding half a shape means covering half the grid
+      again. If the healed panel looks like an arrested half-flower, try giving
+      it the same number of steps the original growth took before concluding
+      that the rule cannot do it.
+    ar: >-
+      الترميم ليس أسرع من النمو، وتوقّع العكس هو السبب المعتاد في أن تبدو
+      تشغيلة المحو فاشلة. للقاعدة سرعة واحدة — خلية واحدة في كل خطوة — وإعادة
+      بناء نصف شكل تعني تغطية نصف الشبكة من جديد. فإذا بدت لوحة الترميم كزهرة
+      نصفية متوقّفة، جرّب أن تمنحها العدد نفسه من الخطوات الذي استغرقه النمو
+      الأصلي قبل أن تستنتج أن القاعدة عاجزة.
+
+terms:
+  cellular automaton:
+    en: "A grid of cells updated in parallel by one rule that reads only a local neighbourhood. No cell sees the whole grid, and there is no step anywhere that considers it."
+    ar: "شبكة من الخلايا تُحدَّث بالتوازي بقاعدة واحدة لا تقرأ إلا جواراً محلياً. لا خلية ترى الشبكة كاملة، ولا توجد خطوة في أي موضع تنظر إليها ككل."
+  morphogenesis:
+    en: "The process by which a structure takes shape from local interactions rather than from a blueprint. The question is not what the shape is but what rule makes it appear."
+    ar: "العملية التي يتشكّل بها بناء ما من تفاعلات محلية لا من مخطّط مرسوم مسبقاً. السؤال ليس ما هو الشكل بل ما القاعدة التي تجعله يظهر."
+  update rule:
+    en: "The function applied to every cell at every step. Here it is a small convolutional network, and it is the only thing that is learned — everything the grid does over time is this one function repeated."
+    ar: "الدالة التي تُطبَّق على كل خلية في كل خطوة. وهي هنا شبكة التفافية صغيرة، وهي الشيء الوحيد الذي يُتعلَّم — فكل ما تفعله الشبكة عبر الزمن هو تكرار هذه الدالة وحدها."
+  sample pool:
+    en: "A store of states produced by the rule on earlier training steps, sampled from instead of always restarting at the seed. It changes which situations the rule is asked about, and nothing else."
+    ar: "مخزن من الحالات التي أنتجتها القاعدة في خطوات تدريب سابقة، تُسحب منه الدفعات بدل البدء دائماً من البذرة. يغيّر المواقف التي تُسأل عنها القاعدة، ولا يغيّر شيئاً آخر."
+  alive masking:
+    en: "Zeroing any cell with no meaningful alpha in its neighbourhood, so growth can only spread outward from cells that are already alive. It is what makes an erased region have to be re-entered from its boundary."
+    ar: "تصفير أي خلية لا توجد في جوارها قيمة ألفا ذات معنى، بحيث لا ينتشر النمو إلا من خلايا حيّة بالفعل. وهو ما يجعل المنطقة الممحوّة لا تُستعاد إلا عبر حدودها."
+  regeneration:
+    en: "Returning to the target after part of the state is destroyed. Distinct from growth, and — as this run shows — not something a rule acquires just by being good at growing."
+    ar: "العودة إلى الهدف بعد إتلاف جزء من الحالة. وهو مختلف عن النمو، ولا تكتسبه القاعدة — كما تُظهر هذه التشغيلة — لمجرد كونها بارعة في النمو."
+
+body:
+  - type: prose
+    text:
+      en: >-
+        The model is small enough to hold in your head. Each cell carries a
+        handful of numbers, four of which are drawn on the screen as colour and
+        transparency and the rest of which mean nothing in particular — the
+        rule decides what to keep there. At every step, each cell looks at
+        itself and its eight neighbours through three fixed filters, passes the
+        result through two layers, and adds the output to its own state. That
+        is the entire model. The same weights run on every cell.
+
+
+        Two things in it are worth pausing on, because both are load-bearing
+        and neither is obvious. The output layer starts at exactly zero, so the
+        untrained rule is the identity and growth has to be learned rather than
+        rescued from an explosion. And cells fire independently at random
+        rather than all at once, because a grid that steps in lockstep has a
+        global clock, and a global clock is the coordination this model is
+        supposed to do without.
+      ar: >-
+        النموذج أصغر من أن يحتاج إلى ورقة. كل خلية تحمل حفنة أرقام، أربعة منها
+        تُرسم على الشاشة لوناً وشفافية، وبقيتها لا تعني شيئاً محدّداً — القاعدة
+        هي التي تقرّر ما تحتفظ به هناك. وفي كل خطوة تنظر كل خلية إلى نفسها
+        وإلى جيرانها الثمانية عبر ثلاثة مرشّحات ثابتة، ثم تمرّر النتيجة عبر
+        طبقتين وتضيف المخرَج إلى حالتها. هذا هو النموذج بكامله. والأوزان نفسها
+        تعمل على كل خلية.
+
+
+        أمران فيه يستحقّان التوقّف، لأن كليهما حامل للبناء وليس أيّهما بديهياً.
+        الأول أن طبقة المخرَج تبدأ من الصفر تماماً، فتكون القاعدة غير المدرَّبة
+        هي دالة الهوية، وبذلك يصبح النمو شيئاً يُتعلَّم لا شيئاً يُنتشل من
+        انفجار عددي. والثاني أن الخلايا تُحدَّث عشوائياً كلٌّ على حدة لا دفعةً
+        واحدة، لأن شبكة تخطو في انتظام تام تملك ساعة مركزية — والساعة المركزية
+        هي بالضبط التنسيق الذي يُفترض بهذا النموذج أن يستغني عنه.
+
+  - type: cell
+    id: setup
+    ref: setup
+    caption:
+      en: "Preflight. No accelerator is requested — a few thousand parameters over a few hundred cells does not need one, and asking would be theatre."
+      ar: "تهيئة مبدئية. لا نطلب مسرّعاً — بضعة آلاف من المعاملات على بضع مئات من الخلايا لا تحتاج إليه، وطلبه سيكون مسرحية."
+
+  - type: cell
+    id: target
+    ref: target
+    captures: [alive_fraction, empty_error]
+    caption:
+      en: >-
+        The shape is drawn, not downloaded, so nothing here can rot. Note that
+        it is asymmetric: the leaf sits on one side of the stem and nowhere
+        else. A symmetric target would let the damage run at the end succeed by
+        mirroring instead of rebuilding, and the number would look the same.
+        Keep the empty-grid error printed below — every score in this workshop
+        is measured against it.
+      ar: >-
+        الشكل مرسوم لا مُنزَّل، فلا شيء هنا يمكن أن يتعفّن. ولاحظ أنه غير
+        متماثل: الورقة على جانب واحد من الساق وليست في أي مكان آخر. الهدف
+        المتماثل كان سيسمح لتشغيلة المحو في النهاية بأن تنجح عبر المرآة بدل
+        إعادة البناء، والرقم كان سيبدو كما هو. واحتفظ بخطأ الشبكة الفارغة
+        المطبوع أدناه — فكل درجة في هذه الورشة تُقاس مقابله.
+
+  - type: cell
+    id: rule
+    ref: rule
+    captures: [param_count]
+    caption:
+      en: >-
+        Compare the parameter count against the number of cells on the grid.
+        There are not enough parameters here to store a picture, and in any
+        case the rule never sees a coordinate — so whatever tells a cell it
+        belongs to a petal rather than to the stem is being computed locally,
+        every step, from its neighbours.
+      ar: >-
+        قارن عدد المعاملات بعدد خلايا الشبكة. لا توجد هنا معاملات كافية لتخزين
+        صورة، وعلى أي حال لا ترى القاعدة أي إحداثي على الإطلاق — إذن فإن ما
+        يخبر الخلية بأنها تنتمي إلى بتلة لا إلى الساق يُحسَب محلياً، في كل
+        خطوة، انطلاقاً من جيرانها.
+
+  - type: paperRef
+    slug: growing-neural-cellular-automata
+    note:
+      en: >-
+        Mordvintsev and colleagues framed this as a model of morphogenesis
+        rather than as an image generator, which is why the interesting
+        question in their paper is not whether the pattern appears but whether
+        it stays and whether it comes back. The sample pool and the injected
+        damage are their answers to those two questions, and this workshop
+        isolates the first of them by removing it.
+      ar: >-
+        صاغ Mordvintsev وزملاؤه هذا العمل باعتباره نموذجاً للتخلّق لا مولِّداً
+        للصور، ولذلك فإن السؤال المثير في ورقتهم ليس هل يظهر النمط، بل هل يبقى
+        وهل يعود. ومجمّع العيّنات والتلف المحقون هما جوابهما عن هذين السؤالين،
+        وهذه الورشة تعزل الأول منهما بأن تنزعه.
+
+  - type: scaleNote
+    text:
+      en: >-
+        The free profile works on a {{scale.grid}}-square grid with
+        {{scale.channels}} channels per cell, and trains each rule for
+        {{scale.trainSteps}} steps with rollouts sampled between
+        {{scale.minSteps}} and {{scale.maxSteps}} applications. Persistence is
+        then probed out to {{scale.persistSteps}} steps — several times
+        anything either rule was trained through. The paper profile raises the
+        grid, the channel count and the budget together; the shape of the
+        finding transfers, the step counts do not.
+      ar: >-
+        يعمل المستوى المجاني على شبكة ضلعها {{scale.grid}} بعدد
+        {{scale.channels}} قناة لكل خلية، ويدرّب كل قاعدة {{scale.trainSteps}}
+        خطوة بجولات تُسحب أطوالها بين {{scale.minSteps}} و{{scale.maxSteps}}
+        تطبيقاً. ثم يُختبر الثبات حتى {{scale.persistSteps}} خطوة — أي أضعاف ما
+        دُرِّبت عبره أيّ من القاعدتين. أما مستوى الورقة فيرفع الشبكة وعدد
+        القنوات والميزانية معاً؛ شكل النتيجة ينتقل، وأعداد الخطوات لا تنتقل.
+
+  - type: cell
+    id: train
+    ref: train
+    captures: [naive_final_loss, pool_final_loss, train_seconds]
+    caption:
+      en: >-
+        The long cell, and the only one that trains anything. Two rules, run
+        back to back. Watch the two final losses: they are expected to land
+        close together, and that closeness is the setup for everything after
+        it. Both rules learn to draw the flower about equally well at the
+        horizon they were asked about, which is precisely why a loss curve is
+        not enough to tell them apart.
+      ar: >-
+        الخلية الطويلة، وهي الوحيدة التي تدرّب شيئاً. قاعدتان، الواحدة تلو
+        الأخرى. راقب الخسارتين النهائيتين: من المتوقّع أن تتقاربا، وهذا التقارب
+        نفسه هو التمهيد لكل ما يليه. فكلتا القاعدتين تتعلّم رسم الزهرة بالقدر
+        نفسه تقريباً عند الأفق الذي سُئلت عنه — ولهذا بالذات لا يكفي منحنى
+        الخسارة للتفريق بينهما.
+
+  - type: cell
+    id: growth
+    ref: growth
+    captures: [pool_match]
+    thumbnail: true
+    caption:
+      en: >-
+        One cell, then a few dozen applications of one rule, left to right. The
+        thing to watch is the boundary: growth only ever happens at the edge of
+        what is already alive, because a cell with no living neighbour is
+        switched off before it can do anything. The flower is not drawn
+        outward from a plan — it is the only stable thing this local rule
+        knows how to build.
+      ar: >-
+        خلية واحدة، ثم بضع عشرات من تطبيقات قاعدة واحدة، من اليسار إلى اليمين.
+        وما يستحق المراقبة هو الحدّ: لا يحدث النمو إلا عند حافة ما هو حيّ
+        بالفعل، لأن أي خلية بلا جار حيّ تُطفأ قبل أن تفعل شيئاً. الزهرة ليست
+        مرسومة من الداخل إلى الخارج وفق خطة — بل هي الشيء الوحيد الثابت الذي
+        تعرف هذه القاعدة المحلية كيف تبنيه.
+
+  - type: cell
+    id: persistence
+    ref: persistence
+    captures: [naive_match_trained, naive_match_long, pool_match_long, persistence_gap]
+    caption:
+      en: >-
+        The shaded band on the left is the range either rule was ever trained
+        through; everything to the right of it is a question neither was asked.
+        Look at where the two curves separate rather than at where they end —
+        the seed-only rule does not fail gradually, it reaches the flower on
+        schedule and then walks out the other side of it, because arriving was
+        the whole of what it was rewarded for.
+      ar: >-
+        الشريط المظلّل على اليسار هو المدى الذي دُرِّبت عبره أيّ من القاعدتين،
+        وكل ما يقع يمينه سؤال لم تُسأله أيٌّ منهما. وانظر إلى موضع افتراق
+        المنحنيين لا إلى موضع انتهائهما — فقاعدة البذرة لا تفشل تدريجياً، بل
+        تصل إلى الزهرة في موعدها ثم تخرج من الجهة الأخرى منها، لأن الوصول كان
+        كل ما كوفئت عليه.
+
+  - type: prose
+    text:
+      en: >-
+        So one rule stays and the other does not, and nothing in either
+        objective ever mentioned staying. That is worth being precise about,
+        because the tempting summary — that robustness comes along for free
+        with growth — is the one thing this run rules out. Both rules grew. One
+        of them was additionally trained on states that were already grown, and
+        on a few that had holes in them, and that is where persistence came
+        from.
+
+
+        Which sets up the last question. A rule that holds its shape is not
+        obviously a rule that can rebuild it: staying still and coming back are
+        different behaviours, and only one of them was ever in the training
+        distribution. Cut the flower in half and find out.
+      ar: >-
+        إذن قاعدة تبقى وأخرى لا تبقى، ولم تذكر أيٌّ من دالتَي الهدف البقاء
+        إطلاقاً. ويستحق هذا دقّة في الصياغة، لأن الخلاصة المغرية — أن المتانة
+        تأتي مجاناً مع النمو — هي بالضبط ما تستبعده هذه التشغيلة. فكلتا
+        القاعدتين نمت. لكن إحداهما دُرِّبت إضافةً إلى ذلك على حالات نمت
+        بالفعل، وعلى قليل منها كانت مثقوبة، ومن هناك جاء الثبات.
+
+
+        وهذا يهيّئ للسؤال الأخير. القاعدة التي تحافظ على شكلها ليست بالضرورة
+        قاعدة قادرة على إعادة بنائه: الثبات والعودة سلوكان مختلفان، وواحد منهما
+        فقط كان يوماً ضمن توزيع التدريب. اقطع الزهرة نصفين واعرف الجواب.
+
+  - type: cell
+    id: damage
+    ref: damage
+    captures: [stable_match, damaged_match, healed_match, recovery]
+    caption:
+      en: >-
+        Four panels: the target, the grown flower, the flower with half the
+        grid zeroed, and the same state left to run. Every channel is erased in
+        the cut, hidden ones included, so there is no surviving scaffold to
+        rebuild from — the region has to be re-entered across the boundary, one
+        cell per step. Check the leaf specifically. It was only ever on the
+        erased side, so it cannot be mirrored back from anywhere; if it returns
+        on the correct side, the rule reconstructed it rather than copying it.
+      ar: >-
+        أربع لوحات: الهدف، والزهرة بعد النمو، والزهرة وقد صُفِّر نصف شبكتها،
+        ثم الحالة نفسها وقد تُركت لتعمل. والمحو يشمل كل القنوات بما فيها
+        المخفية، فلا يبقى هيكل ناجٍ يُبنى عليه — على المنطقة أن تُستعاد عبر
+        حدودها، خليةً واحدة في كل خطوة. وتفقّد الورقة تحديداً: لم تكن قط إلا في
+        الجهة الممحوّة، فلا يمكن استنساخها من أي مكان. فإن عادت في جهتها
+        الصحيحة، فالقاعدة أعادت بناءها ولم تنسخها.
+
+  - type: exercise
+    id: choose-damage
+    ref: choose_damage
+    prompt:
+      en: >-
+        Nothing retrains here. The rule is fixed and you are choosing what to
+        do to a finished flower.
+
+
+        Pick a side to erase and a number of steps to allow. Then look for the
+        boundary of what this rule can do, which is more interesting than the
+        recovery number: find a cut it comes back from completely, and a cut it
+        cannot come back from at all. The second one exists. When you find it,
+        the question to answer is not whether the rule is weak but what the cut
+        took away — the rule only ever moves information one cell per step,
+        outward from something already alive.
+      ar: >-
+        لا شيء يُعاد تدريبه هنا. القاعدة ثابتة، وأنت تختار ما تفعله بزهرة
+        مكتملة.
+
+
+        اختر جهةً تمحوها وعدداً من الخطوات تسمح بها. ثم ابحث عن حدود ما تقدر
+        عليه هذه القاعدة، فذلك أطرف من رقم الاستعادة نفسه: جد قطعاً تعود منه
+        تماماً، وقطعاً لا تعود منه أبداً. والثاني موجود. وحين تجده، فالسؤال
+        ليس هل القاعدة ضعيفة، بل ماذا أخذ منها ذلك القطع — فهي لا تنقل
+        المعلومة إلا خليةً واحدة في كل خطوة، خارجةً من شيء حيّ بالفعل.
+    hint: 3
+
+  - type: cell
+    id: verify
+    ref: verify
+    caption:
+      en: >-
+        The control is checked first and deliberately. The finding is that the
+        seed-only rule arrives and then leaves, and a rule that never arrived
+        never left — so without that check the other three numbers could be
+        describing two rules that simply both failed to learn the task.
+      ar: >-
+        يُفحص الضابط أولاً وعن قصد. فالنتيجة هي أن قاعدة البذرة تصل ثم تغادر،
+        والقاعدة التي لم تصل قط لم تغادر قط — فبدون ذلك الفحص قد تكون الأرقام
+        الثلاثة الأخرى وصفاً لقاعدتين أخفقتا كلتاهما في تعلّم المهمة أصلاً.
+
+  - type: cell
+    id: finish
+    ref: finish
