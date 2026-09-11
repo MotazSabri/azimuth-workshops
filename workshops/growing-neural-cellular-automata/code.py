@@ -295,6 +295,13 @@ def train_rule(use_pool: bool, tag: str) -> tuple[CellRule, list[float]]:
 
 
 started = time.time()
+# Peak allocation is measured rather than guessed. A profile's vramGb should
+# be what the run actually uses, never the capacity of whichever card was
+# attached — preflight is a hard refusal, so an over-declared requirement
+# locks out every smaller card for no reason.
+if device.type == "cuda":
+    torch.cuda.reset_peak_memory_stats()
+
 # The tag is what distinguishes the two runs in a log that scrolls for
 # minutes, so it is localized like everything else the reader looks at.
 if env.lang == "ar":
@@ -309,6 +316,7 @@ pool_rule, pool_losses = train_rule(use_pool=True, tag=POOL_TAG)
 naive_final_loss = float(np.mean(naive_losses[-20:]))
 pool_final_loss = float(np.mean(pool_losses[-20:]))
 train_seconds = round(time.time() - started, 1)
+peak_vram_mb = round(torch.cuda.max_memory_allocated() / 1e6, 1) if device.type == "cuda" else 0.0
 
 env.explain("sample pool")
 if env.lang == "ar":
@@ -316,9 +324,13 @@ if env.lang == "ar":
         f"\nالخسارة النهائية · من البذرة {naive_final_loss:.5f} · من المجمّع {pool_final_loss:.5f}"
     )
     print(f"استغرق تدريب القاعدتين معاً {train_seconds:.0f} ثانية")
+    if peak_vram_mb:
+        print(f"ذروة ذاكرة المعالج الرسومي {peak_vram_mb:.0f} ميغابايت")
 else:
     print(f"\nfinal loss — seed-only {naive_final_loss:.5f} · pool {pool_final_loss:.5f}")
     print(f"{train_seconds:.0f}s to train both rules")
+    if peak_vram_mb:
+        print(f"peak VRAM {peak_vram_mb:.0f} MB")
 # --8<-- [end:train]
 
 
@@ -545,7 +557,12 @@ else:
 # training steps, never a lower bar.
 naive_grows_ok = env.check("naive-grows", naive_match_trained)
 target_match_ok = env.check("target-match", pool_match)
-persists_ok = env.check("persists", persistence_gap)
+# Keyed on the pool rule's OWN match at the horizon, not on the gap between
+# the two rules. Across two runs the gap moved 8.45 -> 0.63 while this number
+# moved 0.81 -> 0.86: the gap's magnitude is mostly a measure of how badly the
+# loser happens to fail on a given seed, which is not what the check is for.
+# The gap is still captured and still quoted, as evidence rather than as a bar.
+persists_ok = env.check("persists", pool_match_long)
 recovers_ok = env.check("recovers", recovery)
 # --8<-- [end:verify]
 
