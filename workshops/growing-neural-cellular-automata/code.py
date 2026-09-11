@@ -116,7 +116,7 @@ plt.show()
 env.explain("morphogenesis")
 if env.lang == "ar":
     print(f"الهدف {GRID}×{GRID} · {alive_fraction:.2f} من الخلايا حيّة")
-    print(f"خطأ الشبكة الفارغة {empty_error:.4f} — وهو مقام كل درجة تطابق لاحقة")
+    print(f"خطأ الشبكة الفارغة {empty_error:.4f} · عليه تُقسم كل درجات التطابق التالية")
 else:
     print(f"target {GRID}x{GRID} · {alive_fraction:.2f} of cells alive")
     print(f"empty-grid error {empty_error:.4f} — the denominator of every match score below")
@@ -195,8 +195,11 @@ param_count = sum(w.numel() for w in reference.parameters())
 
 env.explain("update rule")
 if env.lang == "ar":
-    print(f"{param_count:,} معامل — قاعدة واحدة تشترك فيها كل خلية")
-    print(f"{CHANNELS} قناة لكل خلية: 4 منها RGBA و{HIDDEN_CHANNELS} قنوات حرة")
+    # Arabic number agreement changes between 3-10 and 11+, and both profiles
+    # are in play here, so the counts are phrased to sidestep it entirely
+    # rather than being correct on the free tier and wrong on the paper one.
+    print(f"{param_count:,} معامل · قاعدة واحدة تشترك فيها كل خلية")
+    print(f"لكل خلية {CHANNELS} قناة: أربع منها RGBA، وبقيتها حرّة")
 else:
     print(f"{param_count:,} parameters — one rule, shared by every cell")
     print(f"{CHANNELS} channels per cell: 4 are RGBA, {HIDDEN_CHANNELS} are unconstrained")
@@ -279,15 +282,29 @@ def train_rule(use_pool: bool, tag: str) -> tuple[CellRule, list[float]]:
 
         losses.append(float(loss.detach()))
         if step == 1 or step % env.cfg["logEvery"] == 0:
-            print(f"{tag}  step {step:5d}  loss {losses[-1]:.5f}  {time.time() - started:5.0f}s")
+            # Localized rather than left in English. This is the longest-running
+            # cell in the workshop, so its log is most of what an Arabic reader
+            # actually watches while the run is in progress.
+            elapsed = time.time() - started
+            if env.lang == "ar":
+                print(f"{tag} · خطوة {step:5d} · خسارة {losses[-1]:.5f} · {elapsed:5.0f}ث")
+            else:
+                print(f"{tag}  step {step:5d}  loss {losses[-1]:.5f}  {elapsed:5.0f}s")
 
     return model, losses
 
 
 started = time.time()
+# The tag is what distinguishes the two runs in a log that scrolls for
+# minutes, so it is localized like everything else the reader looks at.
+if env.lang == "ar":
+    NAIVE_TAG, POOL_TAG = "من البذرة", "من المجمّع"
+else:
+    NAIVE_TAG, POOL_TAG = "seed-only", "pool     "
+
 # The naive rule first, so its log lines cannot be mistaken for the other's.
-naive_rule, naive_losses = train_rule(use_pool=False, tag="seed-only")
-pool_rule, pool_losses = train_rule(use_pool=True, tag="pool     ")
+naive_rule, naive_losses = train_rule(use_pool=False, tag=NAIVE_TAG)
+pool_rule, pool_losses = train_rule(use_pool=True, tag=POOL_TAG)
 
 naive_final_loss = float(np.mean(naive_losses[-20:]))
 pool_final_loss = float(np.mean(pool_losses[-20:]))
@@ -295,8 +312,10 @@ train_seconds = round(time.time() - started, 1)
 
 env.explain("sample pool")
 if env.lang == "ar":
-    print(f"\nخسارة نهائية — بذرة فقط {naive_final_loss:.5f} · مجمّع {pool_final_loss:.5f}")
-    print(f"زمن التدريب {train_seconds:.0f} ثانية للقاعدتين معاً")
+    print(
+        f"\nالخسارة النهائية · من البذرة {naive_final_loss:.5f} · من المجمّع {pool_final_loss:.5f}"
+    )
+    print(f"استغرق تدريب القاعدتين معاً {train_seconds:.0f} ثانية")
 else:
     print(f"\nfinal loss — seed-only {naive_final_loss:.5f} · pool {pool_final_loss:.5f}")
     print(f"{train_seconds:.0f}s to train both rules")
@@ -399,9 +418,10 @@ plt.show()
 env.explain("cellular automaton")
 if env.lang == "ar":
     print(
-        f"عند الخطوة {PERSIST_STEPS}: بذرة فقط {naive_match_long:.3f} · مجمّع {pool_match_long:.3f}"
+        f"عند الخطوة {PERSIST_STEPS} · من البذرة {naive_match_long:.3f} "
+        f"· من المجمّع {pool_match_long:.3f}"
     )
-    print(f"الفارق {persistence_gap:.3f}")
+    print(f"الفارق بينهما {persistence_gap:.3f}")
 else:
     print(f"at step {PERSIST_STEPS}: seed-only {naive_match_long:.3f} · pool {pool_match_long:.3f}")
     print(f"gap of {persistence_gap:.3f}")
@@ -462,9 +482,10 @@ plt.show()
 env.explain("regeneration")
 if env.lang == "ar":
     print(
-        f"بعد النمو {stable_match:.3f} · بعد المحو {damaged_match:.3f} · بعد الترميم {healed_match:.3f}"
+        f"بعد النمو {stable_match:.3f} · بعد المحو {damaged_match:.3f} "
+        f"· بعد الترميم {healed_match:.3f}"
     )
-    print(f"المُستعاد {recovery:.3f} خلال {HEAL_STEPS} خطوة")
+    print(f"استعادت {recovery:.3f} خلال {HEAL_STEPS} خطوة")
 else:
     print(f"grown {stable_match:.3f} · erased {damaged_match:.3f} · healed {healed_match:.3f}")
     print(f"recovered {recovery:.3f} in {HEAL_STEPS} steps")
@@ -502,8 +523,12 @@ fig.tight_layout()
 plt.show()
 
 if env.lang == "ar":
+    # SIDE stays an ASCII identifier value, but dropping it raw into Arabic
+    # prose reverses the reading order around it. Named here instead.
+    sides_ar = {"left": "اليسار", "right": "اليمين", "top": "الأعلى", "bottom": "الأسفل"}
     print(
-        f"محو {SIDE} · بعد المحو {match(your_wounded):.3f} · بعد {STEPS} خطوة {match(your_healed):.3f}"
+        f"محو {sides_ar.get(SIDE, SIDE)} · بعد المحو {match(your_wounded):.3f} "
+        f"· بعد {STEPS} خطوة {match(your_healed):.3f}"
     )
 else:
     print(
