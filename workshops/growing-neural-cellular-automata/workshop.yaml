@@ -81,8 +81,8 @@ goal:
     محو نصف الشبكة.
 
 difficulty: intermediate
-status: draft
-publishedAt: null
+status: stable
+publishedAt: "2026-09-11"
 
 maintenance:
   # stable: torch, numpy, matplotlib and the standard library. The target is
