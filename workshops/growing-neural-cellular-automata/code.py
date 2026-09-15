@@ -16,7 +16,9 @@
 # runtime, via env.lang.
 
 # --8<-- [start:setup]
+import arabic_reshaper
 import azimuth_nb as azimuth
+from bidi.algorithm import get_display
 
 env = azimuth.setup(SLUG, lang=LANG, profile=PROFILE)
 # --8<-- [end:setup]
@@ -26,8 +28,6 @@ env = azimuth.setup(SLUG, lang=LANG, profile=PROFILE)
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import arabic_reshaper
-from bidi.algorithm import get_display
 
 GRID = env.cfg["grid"]
 
@@ -445,9 +445,11 @@ else:
 # --8<-- [start:damage]
 HEAL_STEPS = env.cfg["healSteps"]
 
+
 def ar(text: str) -> str:
     """Join Arabic letters into their connected forms, then reorder for LTR drawing."""
     return get_display(arabic_reshaper.reshape(text))
+
 
 def erase_half(state: torch.Tensor, side: str) -> torch.Tensor:
     """Zero one half of the grid, every channel — hidden ones included.
@@ -491,7 +493,7 @@ for axis, (state, label_en, label_ar) in zip(
     ),
 ):
     axis.imshow(to_rgb(state), interpolation="nearest")
-    axis.set_title(label_ar if env.lang == "ar" else label_en, fontsize=9)
+    axis.set_title(ar(label_ar) if env.lang == "ar" else label_en, fontsize=9)
     axis.axis("off")
 fig.tight_layout()
 plt.show()
