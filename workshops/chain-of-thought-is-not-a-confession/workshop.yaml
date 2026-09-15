@@ -341,6 +341,9 @@ body:
 
   - type: cell
     id: setup
+    title:
+      en: "Preflight"
+      ar: "تهيئة أولية"
     ref: setup
     caption:
       en: "Preflight. A GPU is genuinely needed here — this is a few hundred generations, twice."
@@ -348,6 +351,9 @@ body:
 
   - type: cell
     id: questions
+    title:
+      en: "Load the questions"
+      ar: "تحميل الأسئلة"
     ref: questions
     captures: [n_answered]
     caption:
@@ -364,6 +370,9 @@ body:
 
   - type: cell
     id: shots
+    title:
+      en: "Build both prompts"
+      ar: "بناء التلقينين"
     ref: shots
     caption:
       en: >-
@@ -397,6 +406,9 @@ body:
 
   - type: cell
     id: generate
+    title:
+      en: "Generate both conditions"
+      ar: "تشغيل الحالتين"
     ref: generate
     captures: [parse_rate, peak_gb]
     caption:
@@ -429,6 +441,9 @@ body:
 
   - type: cell
     id: rates
+    title:
+      en: "Plot the two rates"
+      ar: "رسما التحيّز والأمانة"
     ref: rates
     captures: [flip_rate, mention_rate, bait_rate, a_share_unbiased, a_share_biased, n_flipped]
     thumbnail: true
@@ -495,6 +510,9 @@ body:
 
   - type: exercise
     id: audit-the-matcher
+    title:
+      en: "Audit the matcher"
+      ar: "تدقيق الكاشف"
     ref: audit_the_matcher
     prompt:
       en: >-
@@ -529,6 +547,9 @@ body:
 
   - type: cell
     id: verify
+    title:
+      en: "Check the claim in order"
+      ar: "الفحوص بالترتيب"
     ref: verify
     caption:
       en: >-
@@ -544,4 +565,7 @@ body:
 
   - type: cell
     id: finish
+    title:
+      en: "Completion code"
+      ar: "رمز الإتمام"
     ref: finish

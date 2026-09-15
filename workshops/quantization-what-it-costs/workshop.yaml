@@ -254,6 +254,9 @@ body:
 
   - type: cell
     id: setup
+    title:
+      en: "Preflight"
+      ar: "تهيئة أولية"
     ref: setup
     caption:
       en: "Preflight. This is the first workshop here that genuinely needs a GPU — int8 and int4 kernels are CUDA only."
@@ -261,6 +264,9 @@ body:
 
   - type: cell
     id: windows
+    title:
+      en: "Build the evaluation windows"
+      ar: "بناء نوافذ التقييم"
     ref: windows
     captures: [n_windows]
     caption:
@@ -293,6 +299,9 @@ body:
 
   - type: cell
     id: measure
+    title:
+      en: "Measure three variants"
+      ar: "قياس النسخ الثلاث"
     ref: measure
     captures: [fp16_ppl, int8_ppl, int4_ppl, fp16_mb, int8_mb, int4_mb, peak_gb]
     caption:
@@ -314,6 +323,9 @@ body:
 
   - type: cell
     id: curve
+    title:
+      en: "Plot the three costs"
+      ar: "رسم التكاليف الثلاث"
     ref: curve
     captures: [memory_ratio, ppl_ratio_int8, ppl_ratio_int4]
     thumbnail: true
@@ -328,6 +340,9 @@ body:
 
   - type: cell
     id: latency
+    title:
+      en: "The one that goes wrong"
+      ar: "القياس الذي يخالف التوقّع"
     ref: latency
     captures: [fp16_ms, int8_ms, int4_ms]
     caption:
@@ -342,6 +357,9 @@ body:
 
   - type: exercise
     id: pick-a-deployment
+    title:
+      en: "Pick a deployment"
+      ar: "اختيار سيناريو النشر"
     ref: pick_a_deployment
     prompt:
       en: >-
@@ -371,6 +389,9 @@ body:
 
   - type: cell
     id: verify
+    title:
+      en: "Check memory and quality"
+      ar: "التحقّق من الذاكرة والجودة"
     ref: verify
     caption:
       en: "Memory must actually fall, and int8 must actually survive. If int8 moved a lot, hint 3 is the reason."
@@ -378,4 +399,7 @@ body:
 
   - type: cell
     id: finish
+    title:
+      en: "Completion code"
+      ar: "رمز الإتمام"
     ref: finish

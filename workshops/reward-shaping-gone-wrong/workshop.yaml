@@ -262,6 +262,9 @@ body:
 
   - type: cell
     id: setup
+    title:
+      en: "Preflight"
+      ar: "تهيئة أولية"
     ref: setup
     caption:
       en: "Preflight. No GPU, no downloads — the environment is generated, not fetched."
@@ -269,6 +272,9 @@ body:
 
   - type: cell
     id: rewards
+    title:
+      en: "Read the three rewards"
+      ar: "قراءة دوال المكافأة الثلاث"
     ref: rewards
     caption:
       en: >-
@@ -294,6 +300,9 @@ body:
 
   - type: cell
     id: train
+    title:
+      en: "Train three agents"
+      ar: "تدريب ثلاثة وكلاء"
     ref: train
     captures: [episodes_run]
     caption:
@@ -316,6 +325,9 @@ body:
 
   - type: cell
     id: scoreboard
+    title:
+      en: "Two columns, two verdicts"
+      ar: "عمودان وحُكمان مختلفان"
     ref: scoreboard
     captures: [shaped_ratio, landing_ratio, honest_landing, hacked_landing]
     thumbnail: true
@@ -331,6 +343,9 @@ body:
 
   - type: cell
     id: watch
+    title:
+      en: "Watch the episode length"
+      ar: "مراقبة طول الحلقة"
     ref: watch
     caption:
       en: >-
@@ -342,6 +357,9 @@ body:
 
   - type: exercise
     id: fix-it
+    title:
+      en: "Fix the reward"
+      ar: "إصلاح دالة المكافأة"
     ref: fix_it
     prompt:
       en: >-
@@ -370,6 +388,9 @@ body:
 
   - type: cell
     id: verify
+    title:
+      en: "Check both, one is a max"
+      ar: "التحقّق من الفحصين"
     ref: verify
     caption:
       en: "Both checks. The second is a MAXIMUM: the exploit must land less, or nothing was demonstrated."
@@ -377,4 +398,7 @@ body:
 
   - type: cell
     id: finish
+    title:
+      en: "Completion code"
+      ar: "رمز الإتمام"
     ref: finish

@@ -243,6 +243,9 @@ body:
 
   - type: cell
     id: setup
+    title:
+      en: "Preflight"
+      ar: "تهيئة أولية"
     ref: setup
     caption:
       en: "Preflight, then the parallel corpus — verified before anything is measured."
@@ -267,6 +270,9 @@ body:
 
   - type: cell
     id: load-corpus
+    title:
+      en: "Count the words first"
+      ar: "عدّ الكلمات أولاً"
     ref: load_corpus
     captures: [pairs, ar_words, en_words]
     caption:
@@ -275,6 +281,9 @@ body:
 
   - type: cell
     id: tokenizers
+    title:
+      en: "Load three tokenizers"
+      ar: "تحميل ثلاثة مُجزّئات"
     ref: tokenizers
     captures: [n_tokenizers]
     caption:
@@ -283,6 +292,9 @@ body:
 
   - type: cell
     id: fertility
+    title:
+      en: "Measure fertility"
+      ar: "قياس الخصوبة"
     ref: fertility
     captures: [ar_fertility, en_fertility, ratio, table]
     thumbnail: true
@@ -298,6 +310,9 @@ body:
 
   - type: cell
     id: pieces
+    title:
+      en: "One sentence, three cuts"
+      ar: "جملة واحدة بثلاث تجزئات"
     ref: pieces
     caption:
       en: >-
@@ -351,6 +366,9 @@ body:
 
   - type: cell
     id: the-bill
+    title:
+      en: "Turn the ratio into cost"
+      ar: "تحويل النسبة إلى تكلفة"
     ref: the_bill
     captures: [ar_cost_multiple, effective_context_ar, effective_context_en]
     caption:
@@ -359,6 +377,9 @@ body:
 
   - type: exercise
     id: reduce-the-tax
+    title:
+      en: "Reduce the tax"
+      ar: "تقليص الضريبة"
     ref: reduce_the_tax
     prompt:
       en: >-
@@ -386,6 +407,9 @@ body:
 
   - type: cell
     id: verify
+    title:
+      en: "Verify both checks"
+      ar: "التحقّق من الفحصين"
     ref: verify
     captures: [fertility_ratio_final]
     caption:
@@ -394,4 +418,7 @@ body:
 
   - type: cell
     id: finish
+    title:
+      en: "Completion code"
+      ar: "رمز الإتمام"
     ref: finish

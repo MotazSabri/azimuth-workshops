@@ -320,6 +320,9 @@ body:
 
   - type: cell
     id: setup
+    title:
+      en: "Preflight"
+      ar: "تهيئة أولية"
     ref: setup
     caption:
       en: "Preflight. No accelerator is requested — this one is small enough that asking for a GPU would be theatre."
@@ -327,6 +330,9 @@ body:
 
   - type: cell
     id: data
+    title:
+      en: "Enumerate and split"
+      ar: "التعداد والتقسيم"
     ref: data
     captures: [n_train, n_test, chance]
     caption:
@@ -344,6 +350,9 @@ body:
 
   - type: cell
     id: leakage
+    title:
+      en: "Check for leakage"
+      ar: "فحص التسرّب"
     ref: leakage
     captures: [leaked_pairs, naive_leaked]
     caption:
@@ -360,6 +369,9 @@ body:
 
   - type: cell
     id: model
+    title:
+      en: "Build the small model"
+      ar: "بناء النموذج الصغير"
     ref: model
     captures: [param_count]
     caption:
@@ -405,6 +417,9 @@ body:
 
   - type: cell
     id: train
+    title:
+      en: "The long run"
+      ar: "الشوط الطويل"
     ref: train
     captures: [peak_train_acc, final_test_acc, memorise_step, generalise_step]
     caption:
@@ -428,6 +443,9 @@ body:
 
   - type: cell
     id: curves
+    title:
+      en: "Plot the two curves"
+      ar: "رسم المنحنيين"
     ref: curves
     captures: [grok_gap]
     thumbnail: true
@@ -443,6 +461,9 @@ body:
 
   - type: exercise
     id: choose-stopping-rule
+    title:
+      en: "Choose a stopping rule"
+      ar: "اختيار قاعدة التوقّف"
     ref: choose_stopping_rule
     prompt:
       en: >-
@@ -472,6 +493,9 @@ body:
 
   - type: cell
     id: verify
+    title:
+      en: "Check memorisation first"
+      ar: "التحقّق من الحفظ أولاً"
     ref: verify
     caption:
       en: >-
@@ -484,4 +508,7 @@ body:
 
   - type: cell
     id: finish
+    title:
+      en: "Completion code"
+      ar: "رمز الإتمام"
     ref: finish

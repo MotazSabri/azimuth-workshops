@@ -407,6 +407,9 @@ body:
 
   - type: cell
     id: setup
+    title:
+      en: "Preflight"
+      ar: "تهيئة أولية"
     ref: setup
     caption:
       en: "Preflight. No accelerator is requested — a few thousand parameters over a few hundred cells does not need one, and asking would be theatre."
@@ -414,6 +417,9 @@ body:
 
   - type: cell
     id: target
+    title:
+      en: "Draw the target shape"
+      ar: "رسم الشكل الهدف"
     ref: target
     captures: [alive_fraction, empty_error]
     caption:
@@ -433,6 +439,9 @@ body:
 
   - type: cell
     id: rule
+    title:
+      en: "Build the update rule"
+      ar: "بناء قاعدة التحديث"
     ref: rule
     captures: [param_count]
     caption:
@@ -491,6 +500,9 @@ body:
 
   - type: cell
     id: train
+    title:
+      en: "Train both rules"
+      ar: "تدريب القاعدتين"
     ref: train
     captures: [naive_final_loss, pool_final_loss, train_seconds]
     caption:
@@ -512,6 +524,9 @@ body:
 
   - type: cell
     id: growth
+    title:
+      en: "Watch it grow"
+      ar: "متابعة النمو"
     ref: growth
     captures: [pool_match]
     thumbnail: true
@@ -533,6 +548,9 @@ body:
 
   - type: cell
     id: persistence
+    title:
+      en: "Test persistence"
+      ar: "اختبار البقاء"
     ref: persistence
     captures: [naive_match_trained, naive_match_long, pool_match_long, persistence_gap]
     caption:
@@ -584,6 +602,9 @@ body:
 
   - type: cell
     id: damage
+    title:
+      en: "Damage and regrow"
+      ar: "الإتلاف وإعادة النمو"
     ref: damage
     captures: [stable_match, damaged_match, healed_match, recovery]
     caption:
@@ -607,6 +628,9 @@ body:
 
   - type: exercise
     id: choose-damage
+    title:
+      en: "Choose the damage"
+      ar: "اختيار الإتلاف"
     ref: choose_damage
     prompt:
       en: >-
@@ -635,6 +659,9 @@ body:
 
   - type: cell
     id: verify
+    title:
+      en: "Check the control first"
+      ar: "التحقّق من الضابط أولاً"
     ref: verify
     caption:
       en: >-
@@ -650,4 +677,7 @@ body:
 
   - type: cell
     id: finish
+    title:
+      en: "Completion code"
+      ar: "رمز الإتمام"
     ref: finish

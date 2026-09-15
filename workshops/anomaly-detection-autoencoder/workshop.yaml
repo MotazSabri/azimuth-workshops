@@ -275,6 +275,9 @@ body:
 
   - type: cell
     id: setup
+    title:
+      en: "Preflight"
+      ar: "تهيئة أولية"
     ref: setup
     caption:
       en: "Preflight: the runtime is checked and the dataset verified before anything trains."
@@ -294,6 +297,9 @@ body:
 
   - type: cell
     id: load-data
+    title:
+      en: "Load normal traces only"
+      ar: "تحميل التسجيلات الطبيعية فقط"
     ref: load_data
     captures: [class_balance]
     caption:
@@ -314,11 +320,17 @@ body:
 
   - type: cell
     id: model
+    title:
+      en: "Build the autoencoder"
+      ar: "بناء المُرمِّز الذاتي"
     ref: model
     captures: [param_count]
 
   - type: cell
     id: train
+    title:
+      en: "Train and watch the curve"
+      ar: "التدريب ومتابعة المنحنى"
     ref: train
     captures: [loss_curve, final_loss]
     caption:
@@ -337,6 +349,9 @@ body:
 
   - type: cell
     id: error-distributions
+    title:
+      en: "Compare the two distributions"
+      ar: "مقارنة التوزيعين"
     ref: error_distributions
     captures: [error_hist, separation]
     thumbnail: true
@@ -346,6 +361,9 @@ body:
 
   - type: exercise
     id: choose-threshold
+    title:
+      en: "Choose the threshold"
+      ar: "اختيار العتبة"
     prompt:
       en: >-
         Choose the threshold. The obvious move is to try values until F1 peaks
@@ -381,6 +399,9 @@ body:
 
   - type: cell
     id: evaluate
+    title:
+      en: "Evaluate at that threshold"
+      ar: "التقييم عند تلك العتبة"
     ref: evaluate
     captures: [f1, precision, recall, confusion]
 
@@ -401,6 +422,9 @@ body:
 
   - type: cell
     id: baseline
+    title:
+      en: "Compare against Isolation Forest"
+      ar: "المقارنة بغابة العزل"
     ref: baseline
     captures: [baseline_f1]
     caption:
@@ -415,6 +439,9 @@ body:
 
   - type: cell
     id: finish
+    title:
+      en: "Completion code"
+      ar: "رمز الإتمام"
     ref: finish
     caption:
       en: "The receipt: your completion code, and the numbers it was derived from."
