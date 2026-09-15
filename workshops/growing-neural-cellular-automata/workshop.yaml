@@ -116,6 +116,12 @@ papers:
 
 assets: []
 
+dependencies:
+  pip:
+    - "arabic-reshaper"
+    - "python-bidi"
+
+
 profiles:
   - id: free
     default: true

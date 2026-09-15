@@ -26,6 +26,8 @@ env = azimuth.setup(SLUG, lang=LANG, profile=PROFILE)
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import arabic_reshaper
+from bidi.algorithm import get_display
 
 GRID = env.cfg["grid"]
 
@@ -443,6 +445,9 @@ else:
 # --8<-- [start:damage]
 HEAL_STEPS = env.cfg["healSteps"]
 
+def ar(text: str) -> str:
+    """Join Arabic letters into their connected forms, then reorder for LTR drawing."""
+    return get_display(arabic_reshaper.reshape(text))
 
 def erase_half(state: torch.Tensor, side: str) -> torch.Tensor:
     """Zero one half of the grid, every channel — hidden ones included.
