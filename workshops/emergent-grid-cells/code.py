@@ -360,24 +360,28 @@ def show_maps(maps, scores, count, cmap):
     return order
 
 
-def percent_above_cut(maps, scores):
+def percent_above(maps, scores, cut):
     active = maps.std(axis=(1, 2)) > 1e-6  # silent units have no map to score
-    return round(100 * float((scores[active] > cfg["grid_score_cut"]).mean()), 1), active
+    return round(100 * float((scores[active] > cut).mean()), 1), active
 
 
-# The noise floor: bumpy maps score above the cut by chance. Measure how often,
-# on an untrained network with exactly the starting weights both twins began from.
+# The null. Noisy maps score well by chance, often above 1, so no fixed cut
+# separates lattices from noise. The cut is instead the score that only one in a
+# hundred units reaches in an untrained network with exactly the starting
+# weights both twins began from. A network with no structure lands near 1%.
 torch.manual_seed(cfg["seed"])
 untrained = PathIntegrator(cfg["place_cells"], cfg["hidden_units"]).to(device).eval()
 untrained_maps, _ = survey(untrained, cfg["surround_scale"], cfg["seq_len"])
-grid_percent_untrained, _ = percent_above_cut(untrained_maps, grid_scores(untrained_maps)[0])
+untrained_scores, _ = grid_scores(untrained_maps)
+untrained_active = untrained_maps.std(axis=(1, 2)) > 1e-6
+cut = float(np.percentile(untrained_scores[untrained_active], cfg["null_percentile"]))
+grid_cut = round(cut, 2)
+grid_percent_untrained, _ = percent_above(untrained_maps, untrained_scores, cut)
 
 dog_scores, dog_sac = grid_scores(dog_maps)
 control_scores, _ = grid_scores(control_maps)
-cut = cfg["grid_score_cut"]
-grid_percent_dog, active_dog = percent_above_cut(dog_maps, dog_scores)
-grid_percent_control, active_control = percent_above_cut(control_maps, control_scores)
-grid_excess_points = round(grid_percent_dog - grid_percent_untrained, 1)
+grid_percent_dog, active_dog = percent_above(dog_maps, dog_scores, cut)
+grid_percent_control, active_control = percent_above(control_maps, control_scores, cut)
 grid_advantage_points = round(grid_percent_dog - grid_percent_control, 1)
 best_grid_score = round(float(dog_scores.max()), 2)
 
@@ -385,11 +389,11 @@ top_dog_units = show_maps(dog_maps, dog_scores, cfg["units_shown"], "inferno")
 
 if env.lang == "ar":
     print(
-        f"وحدات تتجاوز العتبة {cut} · الشبكة المدرَّبة {grid_percent_dog}% · الشبكة قبل التدريب {grid_percent_untrained}%"
+        f"العتبة {grid_cut} · تتجاوزها {grid_percent_dog}% من الوحدات بعد التدريب، و{grid_percent_untrained}% بالأوزان نفسها قبله"
     )
 else:
     print(
-        f"units above the {cut} cut · trained {grid_percent_dog}% · same weights before training {grid_percent_untrained}%"
+        f"cut {grid_cut} · trained {grid_percent_dog}% above it · same weights before training {grid_percent_untrained}%"
     )
 # --8<-- [end:gridscore]
 
@@ -413,11 +417,11 @@ plt.show()
 
 if env.lang == "ar":
     print(
-        f"الوحدات التي تتجاوز درجتها {cut} · هدف المركز والمحيط {grid_percent_dog}% · الهدف الغاوسي {grid_percent_control}%"
+        f"الوحدات التي تتجاوز العتبة {grid_cut} · هدف المركز والمحيط {grid_percent_dog}% · الهدف الغاوسي {grid_percent_control}%"
     )
 else:
     print(
-        f"units scoring above {cut} · centre-surround {grid_percent_dog}% · Gaussian {grid_percent_control}%"
+        f"units above the {grid_cut} cut · centre-surround {grid_percent_dog}% · Gaussian {grid_percent_control}%"
     )
 # --8<-- [end:control_maps]
 
@@ -465,10 +469,10 @@ else:
 
 # --8<-- [start:verify]
 # Control first: a grid comparison between networks that cannot find their way
-# would be a comparison between two kinds of noise. Grid units are then counted
-# above the chance level of untrained weights, never from zero.
+# would be a comparison between two kinds of noise. Grid units are counted above
+# a cut that untrained weights clear only one time in a hundred.
 integrates_ok = env.check("both-integrate", min(dog_skill, control_skill))
-grids_ok = env.check("grid-units", grid_excess_points)
+grids_ok = env.check("grid-units", grid_percent_dog)
 advantage_ok = env.check("surround-advantage", grid_advantage_points)
 # --8<-- [end:verify]
 

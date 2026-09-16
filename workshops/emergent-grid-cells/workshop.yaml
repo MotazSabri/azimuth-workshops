@@ -43,7 +43,7 @@ maintenance:
   cadence: yearly
 
 estimate:
-  gpuMinutes: 20      # placeholder. First T4 run (fp32): 39.2 + 37.9 min training, 78 min end to end
+  gpuMinutes: 20      # placeholder. T4 fp32: 39.2 + 37.9 min. T4 fp16: 10.8 + 10.3 min (23-24 steps/s), 22 min end to end
   totalMinutes: 35    # placeholder, and currently far too low; set from the mixed-precision run
 
 papers:
@@ -79,7 +79,7 @@ profiles:
       ar: "المستوى المجاني"
     requires:
       gpu: true
-      vramGb: 2         # measured peak 0.99 GB in fp32 on the first T4 run
+      vramGb: 2         # measured peak 0.99 GB fp32, 0.70 GB fp16
       ramGb: 4
     scale:
       seed: 17
@@ -90,13 +90,13 @@ profiles:
       hidden_units: 4096
       seq_len: 20
       batch: 200
-      train_steps: 15000   # first T4 run: Gaussian twin converged by ~6k; centre-surround still at 63.5 cm here
+      train_steps: 15000   # NOT ENOUGH: two T4 runs left centre-surround at 64 and 82 cm; set from the calibrate run
       learning_rate: 0.0001
       weight_decay: 0.0001
       log_every: 1500
       map_res: 20
       eval_batches: 25
-      grid_score_cut: 0.3
+      null_percentile: 99
       ring_max: 0.7
       units_shown: 25
   - id: calibrate
@@ -122,7 +122,7 @@ profiles:
       log_every: 1000
       map_res: 20
       eval_batches: 25
-      grid_score_cut: 0.3
+      null_percentile: 99
       ring_max: 0.7
       units_shown: 25
   - id: smoke
@@ -148,14 +148,15 @@ profiles:
       log_every: 20
       map_res: 20
       eval_batches: 2
-      grid_score_cut: 0.3
+      null_percentile: 99
       ring_max: 0.7
       units_shown: 9
 
 checks:
   # All three thresholds are placeholders until the first free-tier run.
-  # Smoke run (untrained-equivalent, 128 units): 10.2% of units above the cut and a
-  # 6.3-point gap from noise alone. The grid checks must sit well clear of that.
+  # T4 runs 1-2: with a fixed 0.3 cut, untrained weights put 14-15% of units above it
+  # and the unconverged centre-surround network matched that exactly. The cut is now
+  # the untrained 99th percentile, so chance is ~1% by construction.
   - id: both-integrate
     required: true
     min: 0.5
@@ -164,11 +165,11 @@ checks:
       ar: "مهارة تكامل المسار لدى الأضعف بين الشبكتين"
   - id: grid-units
     required: true
-    min: 15
+    min: 10
     label:
-      en: "Percentage points of centre-surround units above the cut, beyond what its untrained weights already reach"
+      en: "Percent of centre-surround units above a cut that untrained weights clear only one time in a hundred"
       ar: >-
-        كم نقطة مئوية تزيد وحدات شبكة المركز والمحيط التي تتجاوز العتبة على ما تبلغه أوزانها نفسها قبل التدريب
+        نسبة وحدات شبكة المركز والمحيط التي تتجاوز عتبةً لا تتجاوزها الأوزان غير المدرَّبة إلا مرة في كل مئة
   - id: surround-advantage
     required: true
     min: 10
@@ -416,18 +417,18 @@ body:
     title: { en: "Open the hidden units", ar: "افتح الوحدات المخفية" }
     phase: observe
     thumbnail: true
-    captures: [grid_percent_dog, grid_percent_untrained, grid_excess_points, best_grid_score]
+    captures: [grid_percent_dog, grid_percent_untrained, grid_cut, best_grid_score]
     caption:
       en: >-
         The {{scale.units_shown}} highest-scoring hidden units of the
         centre-surround network, each drawn over the floor of the box, with its
         grid score above. Look for bumps arranged in triangles — every unit
         with its own spacing, orientation and offset. The printed line
-        underneath matters as much as the picture: even random weights produce
-        some maps that clear the cut by chance, and only the excess over that
-        floor counts.
+        underneath matters as much as the picture. Noisy maps can score above 1
+        by pure chance, so the cut is not a fixed number: it is the score that
+        only one unit in a hundred reaches in the same network before training.
       ar: >-
-        أعلى {{scale.units_shown}} وحدة مخفية درجةً في شبكة المركز والمحيط، كل واحدة مرسومة على أرض الصندوق وفوقها درجتها. ابحث عن بقع مرتبة في مثلثات، لكل وحدة تباعدها واتجاهها وإزاحتها الخاصة. والسطر المطبوع تحت الصورة لا يقل أهمية عنها: فحتى الأوزان العشوائية تُنتج بعض الخرائط التي تتجاوز العتبة بالصدفة، والذي يُحسب هو ما يزيد على هذا الحد فقط.
+        أعلى {{scale.units_shown}} وحدة مخفية درجةً في شبكة المركز والمحيط، كل واحدة مرسومة على أرض الصندوق وفوقها درجتها. ابحث عن بقع مرتبة في مثلثات، لكل وحدة تباعدها واتجاهها وإزاحتها الخاصة. والسطر المطبوع تحت الصورة لا يقل أهمية عنها. فالخرائط المشوّشة قد تنال درجة تتجاوز الواحد بمحض الصدفة، ولذلك فالعتبة ليست رقماً ثابتاً: إنها الدرجة التي لا تبلغها إلا وحدة واحدة من كل مئة في الشبكة نفسها قبل التدريب.
 
   - type: cell
     id: control_maps
