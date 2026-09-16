@@ -9,7 +9,9 @@
 # spine keeps the thing under test in view.
 
 # --8<-- [start:setup]
+import arabic_reshaper
 import azimuth_nb as azimuth
+from bidi.algorithm import get_display
 
 env = azimuth.setup(SLUG, lang=LANG, profile=PROFILE)
 # --8<-- [end:setup]
@@ -158,6 +160,11 @@ episodes_run = env.cfg["episodes"] * len(REWARDS)
 
 
 # --8<-- [start:scoreboard]
+def ar(text: str) -> str:
+    """Join Arabic letters into their connected forms, then reorder for LTR drawing."""
+    return get_display(arabic_reshaper.reshape(text))
+
+
 def evaluate(net, reward_fn, seed, n):
     """Two numbers per agent, deliberately.
 
@@ -213,7 +220,7 @@ for i, n in enumerate(names):
     ax.text(
         i, results[n]["landed"] * 100 + 2, f"{results[n]['landed']:.0%}", ha="center", fontsize=9
     )
-ax.set_ylabel("landed (%)" if env.lang == "en" else "نسبة الهبوط (%)")
+ax.set_ylabel("landed (%)" if env.lang == "en" else ar("نسبة الهبوط (%)"))
 ax.set_ylim(0, 105)
 ax.spines[["top", "right"]].set_visible(False)
 fig.tight_layout()

@@ -2,35 +2,35 @@
  "schema": "run/v1",
  "slug": "growing-neural-cellular-automata",
  "lang": "en",
- "codeHash": "8304973cbce09663",
+ "codeHash": "f154e4b6516f0a2b",
  "status": "verified",
  "profile": "free",
  "receipt": {
-  "at": "2026-09-13T13:27:06Z",
+  "at": "2026-09-16T00:08:28Z",
   "device": "Tesla T4",
   "torch": "2.11.0+cu128",
   "python": "3.13.15",
   "shim": "0.1.0",
   "elapsedSec": null,
-  "commit": "6ac94a90b7a41f359526e5d20979a91414b8b0e1",
+  "commit": "bbcb1fa4b18bd2ec7c40565508f686ebae744f9f",
   "source": "imported"
  },
  "metrics": {
   "alive_fraction": 0.3647959232330322,
   "empty_error": 0.17880943417549133,
   "param_count": 4704,
-  "naive_final_loss": 0.0034942058904562146,
-  "pool_final_loss": 0.00843965201638639,
-  "train_seconds": 196.6,
-  "pool_match": 0.9302130197359967,
-  "naive_match_trained": 0.9859437217711646,
-  "naive_match_long": 0.24400505746061274,
-  "pool_match_long": 0.9084987909695728,
-  "persistence_gap": 0.66449373350896,
-  "stable_match": 0.9302130197359967,
-  "damaged_match": 0.42403646325099187,
-  "healed_match": 0.6579085990330757,
-  "recovery": 0.23387213578208388
+  "naive_final_loss": 0.005075511429458857,
+  "pool_final_loss": 0.009506083303131163,
+  "train_seconds": 193.7,
+  "pool_match": 0.9709347997757943,
+  "naive_match_trained": 0.987253394054167,
+  "naive_match_long": 0.2924010254258066,
+  "pool_match_long": 0.9768866084171451,
+  "persistence_gap": 0.6844855829913385,
+  "stable_match": 0.9709347997757943,
+  "damaged_match": 0.4565120305527689,
+  "healed_match": 0.7654351384509843,
+  "recovery": 0.3089231078982154
  },
  "shapes": {},
  "cells": {
@@ -55,7 +55,7 @@
   "train": [
    {
     "kind": "stream",
-    "text": "seed-only  step     1  loss 0.17849      0s\nseed-only  step   250  loss 0.04535      8s\nseed-only  step   500  loss 0.03082     16s\nseed-only  step   750  loss 0.04175     24s\nseed-only  step  1000  loss 0.02027     32s\nseed-only  step  1250  loss 0.01527     40s\nseed-only  step  1500  loss 0.00682     48s\nseed-only  step  1750  loss 0.00559     56s\nseed-only  step  2000  loss 0.00787     64s\nseed-only  step  2250  loss 0.00479     72s\nseed-only  step  2500  loss 0.00322     80s\nseed-only  step  2750  loss 0.00397     89s\nseed-only  step  3000  loss 0.00168     96s\npool       step     1  loss 0.17855     97s\npool       step   250  loss 0.03810    105s\npool       step   500  loss 0.03478    114s\npool       step   750  loss 0.03064    122s\npool       step  1000  loss 0.02665    130s\npool       step  1250  loss 0.02360    139s\npool       step  1500  loss 0.01837    147s\npool       step  1750  loss 0.01383    155s\npool       step  2000  loss 0.01361    163s\npool       step  2250  loss 0.01328    172s\npool       step  2500  loss 0.01034    180s\npool       step  2750  loss 0.00820    188s\npool       step  3000  loss 0.00668    197s\nsample pool — A store of states produced by the rule on earlier training steps, sampled from instead of always restarting at the seed. It changes which situations the rule is asked about, and nothing else.\n\nfinal loss — seed-only 0.00349 · pool 0.00844\n197s to train both rules\npeak VRAM 112 MB"
+    "text": "seed-only  step     1  loss 0.17849      0s\nseed-only  step   250  loss 0.04450     13s\nseed-only  step   500  loss 0.03038     21s\nseed-only  step   750  loss 0.02727     28s\nseed-only  step  1000  loss 0.01292     36s\nseed-only  step  1250  loss 0.02487     44s\nseed-only  step  1500  loss 0.00790     51s\nseed-only  step  1750  loss 0.00650     59s\nseed-only  step  2000  loss 0.00550     67s\nseed-only  step  2250  loss 0.00608     74s\nseed-only  step  2500  loss 0.00239     82s\nseed-only  step  2750  loss 0.00545     90s\nseed-only  step  3000  loss 0.00321     98s\npool       step     1  loss 0.17855     98s\npool       step   250  loss 0.04281    105s\npool       step   500  loss 0.03924    114s\npool       step   750  loss 0.02931    122s\npool       step  1000  loss 0.02788    130s\npool       step  1250  loss 0.02582    138s\npool       step  1500  loss 0.01982    146s\npool       step  1750  loss 0.01451    154s\npool       step  2000  loss 0.01467    162s\npool       step  2250  loss 0.01469    170s\npool       step  2500  loss 0.01054    178s\npool       step  2750  loss 0.01115    186s\npool       step  3000  loss 0.00778    194s\nsample pool — A store of states produced by the rule on earlier training steps, sampled from instead of always restarting at the seed. It changes which situations the rule is asked about, and nothing else.\n\nfinal loss — seed-only 0.00508 · pool 0.00951\n194s to train both rules\npeak VRAM 112 MB"
    }
   ],
   "growth": [
@@ -66,7 +66,7 @@
    },
    {
     "kind": "stream",
-    "text": "one cell to a match of 0.930 in 96 steps"
+    "text": "one cell to a match of 0.971 in 96 steps"
    }
   ],
   "persistence": [
@@ -77,7 +77,7 @@
    },
    {
     "kind": "stream",
-    "text": "cellular automaton — A grid of cells updated in parallel by one rule that reads only a local neighbourhood. No cell sees the whole grid, and there is no step anywhere that considers it.\nat step 200: seed-only 0.244 · pool 0.908\ngap of 0.664"
+    "text": "cellular automaton — A grid of cells updated in parallel by one rule that reads only a local neighbourhood. No cell sees the whole grid, and there is no step anywhere that considers it.\nat step 200: seed-only 0.292 · pool 0.977\ngap of 0.684"
    }
   ],
   "damage": [
@@ -88,7 +88,7 @@
    },
    {
     "kind": "stream",
-    "text": "regeneration — Returning to the target after part of the state is destroyed. Distinct from growth, and — as this run shows — not something a rule acquires just by being good at growing.\ngrown 0.930 · erased 0.424 · healed 0.658\nrecovered 0.234 in 96 steps"
+    "text": "regeneration — Returning to the target after part of the state is destroyed. Distinct from growth, and — as this run shows — not something a rule acquires just by being good at growing.\ngrown 0.971 · erased 0.457 · healed 0.765\nrecovered 0.309 in 96 steps"
    }
   ],
   "choose-damage": [
@@ -99,13 +99,13 @@
    },
    {
     "kind": "stream",
-    "text": "erased bottom · after damage 0.661 · after 96 steps 0.680"
+    "text": "erased bottom · after damage 0.676 · after 96 steps 0.813"
    }
   ],
   "verify": [
    {
     "kind": "stream",
-    "text": "✓ Seed-only rule's match to the target at the horizon it was trained through: 0.9859 (needs ≥ 0.85)\n✓ Pool-trained rule's match to the target, grown from a single cell: 0.9302 (needs ≥ 0.75)\n✓ Pool-trained rule's match to the target, far past the horizon it was trained through: 0.9085 (needs ≥ 0.7)\n✓ Match regained after half the grid is erased: 0.2339 (needs ≥ 0.2)"
+    "text": "✓ Seed-only rule's match to the target at the horizon it was trained through: 0.9873 (needs ≥ 0.85)\n✓ Pool-trained rule's match to the target, grown from a single cell: 0.9709 (needs ≥ 0.75)\n✓ Pool-trained rule's match to the target, far past the horizon it was trained through: 0.9769 (needs ≥ 0.7)\n✓ Match regained after half the grid is erased: 0.3089 (needs ≥ 0.2)"
    }
   ],
   "finish": [

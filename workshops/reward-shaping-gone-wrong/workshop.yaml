@@ -100,6 +100,8 @@ dependencies:
     - swig
   pip:
     - "gymnasium[box2d]==1.2.0"
+    - "arabic-reshaper"
+    - "python-bidi"
 
 profiles:
   - id: free
@@ -304,7 +306,7 @@ body:
       en: "Train three agents"
       ar: "تدريب ثلاثة وكلاء"
     ref: train
-    captures: [episodes_run]
+    captures: [shaped_advantage, landing_ratio, honest_landing, hacked_landing]
     caption:
       en: "Three agents, one architecture, one seed. Only the reward differs."
       ar: "ثلاثة وكلاء، معمارية واحدة، بذرة عشوائية واحدة. ما يختلف هو دالة المكافأة فقط."
