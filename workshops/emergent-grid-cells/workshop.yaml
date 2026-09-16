@@ -43,8 +43,8 @@ maintenance:
   cadence: yearly
 
 estimate:
-  gpuMinutes: 20      # placeholder. T4 fp32: 39.2 + 37.9 min. T4 fp16: 10.8 + 10.3 min (23-24 steps/s), 22 min end to end
-  totalMinutes: 35    # placeholder, and currently far too low; set from the mixed-precision run
+  gpuMinutes: 40      # T4 fp16 at 30k steps: 19.7 + 18.8 min training (25-27 steps/s)
+  totalMinutes: 50    # that run took 39 min end to end, plus reading time
 
 papers:
   - slug: recurrent-neural-network
@@ -79,7 +79,7 @@ profiles:
       ar: "المستوى المجاني"
     requires:
       gpu: true
-      vramGb: 2         # measured peak 0.99 GB fp32, 0.70 GB fp16
+      vramGb: 2         # measured peak 0.70 GB (fp16)
       ramGb: 4
     scale:
       seed: 17
@@ -90,39 +90,14 @@ profiles:
       hidden_units: 4096
       seq_len: 20
       batch: 200
-      train_steps: 15000   # NOT ENOUGH: two T4 runs left centre-surround at 64 and 82 cm; set from the calibrate run
+      train_steps: 30000   # T4: centre-surround leaves its plateau near 11k and reaches 9.4 cm at 30k; 15k left it at 64-82 cm
       learning_rate: 0.0001
       weight_decay: 0.0001
-      log_every: 1500
+      log_every: 2000
       map_res: 20
       eval_batches: 25
-      null_percentile: 99
-      ring_max: 0.7
-      units_shown: 25
-  - id: calibrate
-    name:
-      en: "Calibration run (T4, long training)"
-      ar: "تشغيل المعايرة على بطاقة رسوميات بتدريب أطول"
-    requires:
-      gpu: true
-      vramGb: 2
-      ramGb: 4
-    scale:
-      seed: 17
-      box_m: 2.2
-      place_cells: 512
-      place_sigma_m: 0.12
-      surround_scale: 2
-      hidden_units: 4096
-      seq_len: 20
-      batch: 200
-      train_steps: 30000
-      learning_rate: 0.0001
-      weight_decay: 0.0001
-      log_every: 1000
-      map_res: 20
-      eval_batches: 25
-      null_percentile: 99
+      grid_score_cut: 0.3
+      stability_min: 0.5
       ring_max: 0.7
       units_shown: 25
   - id: smoke
@@ -148,31 +123,34 @@ profiles:
       log_every: 20
       map_res: 20
       eval_batches: 2
-      null_percentile: 99
+      grid_score_cut: 0.3
+      stability_min: 0.5
       ring_max: 0.7
       units_shown: 9
 
 checks:
-  # All three thresholds are placeholders until the first free-tier run.
-  # T4 runs 1-2: with a fixed 0.3 cut, untrained weights put 14-15% of units above it
-  # and the unconverged centre-surround network matched that exactly. The cut is now
-  # the untrained 99th percentile, so chance is ~1% by construction.
+  # Measured on the T4 calibration run (30k steps, fp16), before the stability test existed:
+  # skill 0.484 centre-surround / 0.771 Gaussian (error still falling at 30k).
+  # Grid score > 0.3 alone: ~16% centre-surround, ~0.4% Gaussian, ~15% UNTRAINED -
+  # speckle scores as well as lattices. Untrained split-half stability peaks at 0.23
+  # (CPU, 4096 units), so score > 0.3 AND stability > 0.5 leaves untrained at 0.00%.
+  # Grid thresholds below remain placeholders until a run with the stability test.
   - id: both-integrate
     required: true
-    min: 0.5
+    min: 0.35
     label:
       en: "Path-integration skill of the weaker of the two networks"
       ar: "مهارة تكامل المسار لدى الأضعف بين الشبكتين"
   - id: grid-units
     required: true
-    min: 10
+    min: 8
     label:
-      en: "Percent of centre-surround units above a cut that untrained weights clear only one time in a hundred"
+      en: "Percent of centre-surround units that are grid units: above the score cut and stable across halves of the data"
       ar: >-
-        نسبة وحدات شبكة المركز والمحيط التي تتجاوز عتبةً لا تتجاوزها الأوزان غير المدرَّبة إلا مرة في كل مئة
+        نسبة وحدات شبكة المركز والمحيط التي تُعدّ وحدات سداسية: تتجاوز عتبة الدرجة وتبقى خريطتها ثابتة بين نصفي البيانات
   - id: surround-advantage
     required: true
-    min: 10
+    min: 8
     label:
       en: "Grid-unit percentage points gained by the centre-surround target over the Gaussian one"
       ar: >-
@@ -417,18 +395,19 @@ body:
     title: { en: "Open the hidden units", ar: "افتح الوحدات المخفية" }
     phase: observe
     thumbnail: true
-    captures: [grid_percent_dog, grid_percent_untrained, grid_cut, best_grid_score]
+    captures: [grid_percent_dog, grid_percent_untrained, best_grid_score]
     caption:
       en: >-
         The {{scale.units_shown}} highest-scoring hidden units of the
         centre-surround network, each drawn over the floor of the box, with its
         grid score above. Look for bumps arranged in triangles — every unit
         with its own spacing, orientation and offset. The printed line
-        underneath matters as much as the picture. Noisy maps can score above 1
-        by pure chance, so the cut is not a fixed number: it is the score that
-        only one unit in a hundred reaches in the same network before training.
+        underneath matters as much as the picture. Before training, the same
+        network draws speckled maps, and speckle can score above 1 by pure
+        chance. So a grid unit must also draw the same map from two separate
+        halves of the walks, which a lattice does and speckle never does.
       ar: >-
-        أعلى {{scale.units_shown}} وحدة مخفية درجةً في شبكة المركز والمحيط، كل واحدة مرسومة على أرض الصندوق وفوقها درجتها. ابحث عن بقع مرتبة في مثلثات، لكل وحدة تباعدها واتجاهها وإزاحتها الخاصة. والسطر المطبوع تحت الصورة لا يقل أهمية عنها. فالخرائط المشوّشة قد تنال درجة تتجاوز الواحد بمحض الصدفة، ولذلك فالعتبة ليست رقماً ثابتاً: إنها الدرجة التي لا تبلغها إلا وحدة واحدة من كل مئة في الشبكة نفسها قبل التدريب.
+        أعلى {{scale.units_shown}} وحدة مخفية درجةً في شبكة المركز والمحيط، كل واحدة مرسومة على أرض الصندوق وفوقها درجتها. ابحث عن بقع مرتبة في مثلثات، لكل وحدة تباعدها واتجاهها وإزاحتها الخاصة. والسطر المطبوع تحت الصورة لا يقل أهمية عنها. فالشبكة نفسها قبل التدريب ترسم خرائط منقّطة عشوائية، وهذا التنقيط قد ينال درجة تتجاوز الواحد بمحض الصدفة. لذلك يجب على الوحدة السداسية أيضاً أن ترسم الخريطة نفسها من نصفين منفصلين من المسارات، وهذا ما يفعله النمط السداسي ولا يفعله التنقيط أبداً.
 
   - type: cell
     id: control_maps

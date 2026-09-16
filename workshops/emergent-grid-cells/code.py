@@ -229,16 +229,18 @@ plt.show()
 def survey(model, surround, seq_len, skip=0):
     """Walk the trained network through fresh trajectories.
 
-    Returns (rate maps [units, res, res], decoding skill). Only steps at index
-    >= skip are binned and scored. Skill = 1 - model error / error of a guess
-    that never moves from the starting point, so 0 means "did not integrate".
+    Returns (rate maps [units, res, res], stability [units], decoding skill).
+    Only steps at index >= skip are binned and scored. Skill = 1 - model error /
+    error of a guess that never moves from the starting point, so 0 means "did
+    not integrate". Stability correlates the maps built from two halves of the
+    walks: a real map agrees with itself, noise does not.
     """
     res = cfg["map_res"]
     rng = np.random.default_rng(cfg["seed"] + 1)  # unseen trajectories, same for both networks
-    sums = torch.zeros(res * res, cfg["hidden_units"], device=device)
-    counts = torch.zeros(res * res, device=device)
+    sums = torch.zeros(2, res * res, cfg["hidden_units"], device=device)
+    counts = torch.zeros(2, res * res, device=device)
     model_err, still_err = 0.0, 0.0
-    for _ in range(cfg["eval_batches"]):
+    for batch in range(cfg["eval_batches"]):
         pos, velocity, start, _ = batch_tensors(
             make_trajectories(rng, cfg["batch"], seq_len), surround
         )
@@ -248,14 +250,22 @@ def survey(model, surround, seq_len, skip=0):
         still_err += (pos[:, :1] - where).norm(dim=-1).mean().item()
         cell = ((where + BOX / 2) / BOX * res).long().clamp(0, res - 1)
         index = (cell[..., 0] * res + cell[..., 1]).reshape(-1)
-        sums.index_add_(0, index, states.reshape(-1, states.shape[-1]))
-        counts.index_add_(0, index, torch.ones_like(index, dtype=torch.float32))
-    maps = (sums / counts.clamp(min=1)[:, None]).T.reshape(-1, res, res).cpu().numpy()
-    return maps, 1 - model_err / still_err
+        half = batch % 2
+        sums[half].index_add_(0, index, states.reshape(-1, states.shape[-1]))
+        counts[half].index_add_(0, index, torch.ones_like(index, dtype=torch.float32))
+    maps = (sums.sum(0) / counts.sum(0).clamp(min=1)[:, None]).T.reshape(-1, res, res).cpu().numpy()
+    halves = sums / counts.clamp(min=1)[..., None]  # (2, bins, units)
+    seen = (counts > 0).all(0)
+    a, b = halves[0][seen], halves[1][seen]
+    a, b = a - a.mean(0), b - b.mean(0)
+    stability = (
+        ((a * b).sum(0) / ((a * a).sum(0) * (b * b).sum(0)).sqrt().clamp(min=1e-12)).cpu().numpy()
+    )
+    return maps, stability, 1 - model_err / still_err
 
 
-dog_maps, dog_skill = survey(dog_model, cfg["surround_scale"], cfg["seq_len"])
-control_maps, control_skill = survey(control_model, None, cfg["seq_len"])
+dog_maps, dog_stability, dog_skill = survey(dog_model, cfg["surround_scale"], cfg["seq_len"])
+control_maps, control_stability, control_skill = survey(control_model, None, cfg["seq_len"])
 dog_skill, control_skill = round(dog_skill, 3), round(control_skill, 3)
 
 if env.lang == "ar":
@@ -346,7 +356,7 @@ def grid_scores(maps):
 
 
 def show_maps(maps, scores, count, cmap):
-    order = np.argsort(-scores)[:count]
+    order = np.argsort(-scores)[:count]  # callers pass unstable units as -inf
     cols = math.ceil(math.sqrt(count))
     rows = math.ceil(count / cols)
     _, axes = plt.subplots(rows, cols, figsize=(1.8 * cols, 1.95 * rows))
@@ -360,46 +370,53 @@ def show_maps(maps, scores, count, cmap):
     return order
 
 
-def percent_above(maps, scores, cut):
+def grid_units(maps, scores, stability):
+    """A grid unit scores above the cut AND draws the same map from both halves of the walks.
+
+    Returns (mask over units, percent of active units)."""
     active = maps.std(axis=(1, 2)) > 1e-6  # silent units have no map to score
-    return round(100 * float((scores[active] > cut).mean()), 1), active
+    mask = active & (scores > cfg["grid_score_cut"]) & (stability > cfg["stability_min"])
+    return mask, round(100 * float(mask[active].mean()), 1)
 
 
-# The null. Noisy maps score well by chance, often above 1, so no fixed cut
-# separates lattices from noise. The cut is instead the score that only one in a
-# hundred units reaches in an untrained network with exactly the starting
-# weights both twins began from. A network with no structure lands near 1%.
+# The null. In the same network before training, maps are speckle, and speckle
+# can score above 1 by pure chance: on T4 runs about 15% of untrained units
+# cleared a score of 0.3, as many as in the trained network. Speckle cannot
+# repeat itself across two halves of the data, so the stability test removes it.
 torch.manual_seed(cfg["seed"])
 untrained = PathIntegrator(cfg["place_cells"], cfg["hidden_units"]).to(device).eval()
-untrained_maps, _ = survey(untrained, cfg["surround_scale"], cfg["seq_len"])
-untrained_scores, _ = grid_scores(untrained_maps)
-untrained_active = untrained_maps.std(axis=(1, 2)) > 1e-6
-cut = float(np.percentile(untrained_scores[untrained_active], cfg["null_percentile"]))
-grid_cut = round(cut, 2)
-grid_percent_untrained, _ = percent_above(untrained_maps, untrained_scores, cut)
+untrained_maps, untrained_stability, _ = survey(untrained, cfg["surround_scale"], cfg["seq_len"])
+_, grid_percent_untrained = grid_units(
+    untrained_maps, grid_scores(untrained_maps)[0], untrained_stability
+)
 
 dog_scores, dog_sac = grid_scores(dog_maps)
 control_scores, _ = grid_scores(control_maps)
-grid_percent_dog, active_dog = percent_above(dog_maps, dog_scores, cut)
-grid_percent_control, active_control = percent_above(control_maps, control_scores, cut)
+dog_grid, grid_percent_dog = grid_units(dog_maps, dog_scores, dog_stability)
+control_grid, grid_percent_control = grid_units(control_maps, control_scores, control_stability)
+active_dog = dog_maps.std(axis=(1, 2)) > 1e-6
+active_control = control_maps.std(axis=(1, 2)) > 1e-6
 grid_advantage_points = round(grid_percent_dog - grid_percent_control, 1)
+cut = cfg["grid_score_cut"]
 best_grid_score = round(float(dog_scores.max()), 2)
 
-top_dog_units = show_maps(dog_maps, dog_scores, cfg["units_shown"], "inferno")
+stable_dog = np.where(dog_stability > cfg["stability_min"], dog_scores, -np.inf)
+top_dog_units = show_maps(dog_maps, stable_dog, cfg["units_shown"], "inferno")
 
 if env.lang == "ar":
     print(
-        f"العتبة {grid_cut} · تتجاوزها {grid_percent_dog}% من الوحدات بعد التدريب، و{grid_percent_untrained}% بالأوزان نفسها قبله"
+        f"وحدات سداسية مستقرة · {grid_percent_dog}% بعد التدريب · {grid_percent_untrained}% بالأوزان نفسها قبله"
     )
 else:
     print(
-        f"cut {grid_cut} · trained {grid_percent_dog}% above it · same weights before training {grid_percent_untrained}%"
+        f"stable grid units · trained {grid_percent_dog}% · same weights before training {grid_percent_untrained}%"
     )
 # --8<-- [end:gridscore]
 
 
 # --8<-- [start:control_maps]
-top_control_units = show_maps(control_maps, control_scores, cfg["units_shown"], "viridis")
+stable_control = np.where(control_stability > cfg["stability_min"], control_scores, -np.inf)
+top_control_units = show_maps(control_maps, stable_control, cfg["units_shown"], "viridis")
 
 fig, (ax_hist, ax_sac) = plt.subplots(1, 2, figsize=(9, 3.8))
 bins = np.linspace(-1.0, 1.8, 57)
@@ -417,11 +434,11 @@ plt.show()
 
 if env.lang == "ar":
     print(
-        f"الوحدات التي تتجاوز العتبة {grid_cut} · هدف المركز والمحيط {grid_percent_dog}% · الهدف الغاوسي {grid_percent_control}%"
+        f"وحدات سداسية مستقرة · هدف المركز والمحيط {grid_percent_dog}% · الهدف الغاوسي {grid_percent_control}%"
     )
 else:
     print(
-        f"units above the {grid_cut} cut · centre-surround {grid_percent_dog}% · Gaussian {grid_percent_control}%"
+        f"stable grid units · centre-surround {grid_percent_dog}% · Gaussian {grid_percent_control}%"
     )
 # --8<-- [end:control_maps]
 
@@ -433,7 +450,7 @@ else:
 LENGTH_MULTIPLE = 5
 
 long_len = cfg["seq_len"] * LENGTH_MULTIPLE
-long_maps, long_skill = survey(
+long_maps, _, long_skill = survey(
     dog_model, cfg["surround_scale"], long_len, skip=cfg["seq_len"] if LENGTH_MULTIPLE > 1 else 0
 )
 long_scores, _ = grid_scores(long_maps)
@@ -469,8 +486,8 @@ else:
 
 # --8<-- [start:verify]
 # Control first: a grid comparison between networks that cannot find their way
-# would be a comparison between two kinds of noise. Grid units are counted above
-# a cut that untrained weights clear only one time in a hundred.
+# would be a comparison between two kinds of noise. A grid unit must both score
+# above the cut and reproduce its map from independent halves of the walks.
 integrates_ok = env.check("both-integrate", min(dog_skill, control_skill))
 grids_ok = env.check("grid-units", grid_percent_dog)
 advantage_ok = env.check("surround-advantage", grid_advantage_points)
