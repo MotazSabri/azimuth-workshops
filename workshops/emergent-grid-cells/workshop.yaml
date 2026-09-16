@@ -1,0 +1,523 @@
+schema: workshop/v1
+id: emergent-grid-cells
+constellation: minds-life
+
+title:
+  en: "Grid Cells From a Network That Was Never Asked"
+  ar: "خلايا الشبكة: نمطٌ سداسي لم يطلبه أحد"
+
+concept:
+  en: "A representation nobody asked for is still an answer to a question somebody asked"
+  ar: >-
+    التمثيل الذي لم يطلبه أحد هو، مع ذلك، جوابٌ عن سؤالٍ طرحه أحدهم
+
+scenario:
+  en: >-
+    A rat in the dark still knows where it is. It feels its own speed and
+    turning and keeps a running sum: path integration. In 2005, recordings from
+    the rat's entorhinal cortex found neurons that fire at the corners of a
+    triangular lattice laid across the whole room. They were named grid cells,
+    and nothing in the rat's world is hexagonal. Here you hand a small recurrent
+    network the same problem: velocity in, "where am I?" out. Hexagons are never
+    mentioned. Then you open the network and draw where each hidden unit fires.
+    You also train a twin that differs in one detail only, to find out what the
+    hexagons were really a response to.
+  ar: >-
+    فأرٌ في الظلام ما زال يعرف أين هو. يشعر بسرعته وبانعطافاته، ويُبقي حاصل جمعها حاضراً أولاً بأول، وهذا ما نسميه تكامل المسار. في عام 2005 سجّل الباحثون نشاط الخلايا في القشرة الشمية الداخلية للفأر، فوجدوا خلايا تنشط عند رؤوس نمطٍ مثلثي يمتد على أرض الغرفة كلها. سُمّيت خلايا الشبكة، مع أن لا شيء في عالم الفأر سداسي الشكل. في هذه الورشة تعطي شبكةً تكرارية صغيرة المسألة نفسها: السرعة تدخل، والسؤال «أين أنا؟» يخرج، ولا ذكر للسداسيات إطلاقاً. ثم تفتح النموذج وترسم أين تنشط كل وحدة مخفية فيه. وتدرّب إلى جانبه توأماً لا يختلف عنه إلا في تفصيل واحد، لتعرف ما الذي كانت السداسيات استجابةً له في الحقيقة.
+
+goal:
+  en: >-
+    Both networks track their own position from velocity alone. The network
+    trained on centre-surround place cells turns a clear share of its units into
+    hexagonal firing maps, measured by grid score, and its twin trained on plain
+    Gaussian place cells — navigating just as well — produces markedly fewer.
+  ar: >-
+    أن تتتبع الشبكتان موقعهما من السرعة وحدها. وأن تحوّل الشبكة المدرَّبة على خلايا مكان من نوع «المركز والمحيط» حصةً واضحة من وحداتها إلى خرائط نشاط سداسية تقيسها درجة الشبكة، بينما يُنتج توأمها المدرَّب على خلايا مكان غاوسية بسيطة عدداً أقل بوضوح، رغم أنه يهتدي إلى موقعه بالكفاءة نفسها.
+
+difficulty: intermediate
+status: draft
+publishedAt: null
+
+maintenance:
+  tier: stable
+  cadence: yearly
+
+estimate:
+  gpuMinutes: 20      # placeholder: set from train_minutes_* after the first T4 run
+  totalMinutes: 35    # placeholder
+
+papers:
+  - slug: recurrent-neural-network
+    role: core
+    label:
+      en: "a hidden state that carries the position forward from step to step"
+      ar: "حالة مخفية تحمل الموقع من كل خطوة إلى التي تليها"
+  - slug: backpropagation-through-time
+    role: core
+    label:
+      en: "how an error at the last step reaches the weights used at the first"
+      ar: >-
+        كيف يصل خطأ الخطوة الأخيرة إلى الأوزان التي استُخدمت في الخطوة الأولى
+  - slug: long-short-term-memory
+    role: supporting
+    label:
+      en: "the gated alternative this workshop deliberately does not use"
+      ar: "البديل ذو البوابات الذي تتجنبه هذه الورشة عن قصد"
+  - slug: neural-turing-machine
+    role: supporting
+    label:
+      en: "a contrast: memory with an address, against memory that is only a state"
+      ar: "للمقارنة: ذاكرة لها عنوان، في مقابل ذاكرة ليست سوى حالة"
+
+assets: []
+
+profiles:
+  - id: free
+    default: true
+    name:
+      en: "Free tier (T4)"
+      ar: "المستوى المجاني"
+    requires:
+      gpu: true
+      vramGb: 2         # placeholder: replace with peak_vram_gb from the first run
+      ramGb: 4
+    scale:
+      seed: 17
+      box_m: 2.2
+      place_cells: 512
+      place_sigma_m: 0.12
+      surround_scale: 2
+      hidden_units: 4096
+      seq_len: 20
+      batch: 200
+      train_steps: 15000   # placeholder: the first thing to revisit if grids are faint
+      learning_rate: 0.0001
+      weight_decay: 0.0001
+      log_every: 1500
+      map_res: 20
+      eval_batches: 25
+      grid_score_cut: 0.3
+      units_shown: 25
+  - id: smoke
+    name:
+      en: "Wiring test (CPU, no result)"
+      ar: "اختبار التوصيل على المعالج المركزي، دون نتيجة علمية"
+    requires:
+      gpu: false
+      vramGb: 0
+      ramGb: 2
+    scale:
+      seed: 17
+      box_m: 2.2
+      place_cells: 128
+      place_sigma_m: 0.12
+      surround_scale: 2
+      hidden_units: 128
+      seq_len: 20
+      batch: 32
+      train_steps: 60
+      learning_rate: 0.0001
+      weight_decay: 0.0001
+      log_every: 20
+      map_res: 20
+      eval_batches: 2
+      grid_score_cut: 0.3
+      units_shown: 9
+
+checks:
+  # All three thresholds are placeholders until the first free-tier run.
+  # Smoke run (untrained-equivalent, 128 units): 10.2% of units above the cut and a
+  # 6.3-point gap from noise alone. The grid checks must sit well clear of that.
+  - id: both-integrate
+    required: true
+    min: 0.5
+    label:
+      en: "Path-integration skill of the weaker of the two networks"
+      ar: "مهارة تكامل المسار لدى الأضعف بين الشبكتين"
+  - id: grid-units
+    required: true
+    min: 15
+    label:
+      en: "Percentage points of centre-surround units above the cut, beyond what its untrained weights already reach"
+      ar: >-
+        كم نقطة مئوية تزيد وحدات شبكة المركز والمحيط التي تتجاوز العتبة على ما تبلغه أوزانها نفسها قبل التدريب
+  - id: surround-advantage
+    required: true
+    min: 10
+    label:
+      en: "Grid-unit percentage points gained by the centre-surround target over the Gaussian one"
+      ar: >-
+        كم نقطة مئوية يكسبها هدف المركز والمحيط على الهدف الغاوسي في نسبة الوحدات السداسية
+
+hints:
+  - en: >-
+      Two things can fail independently on longer walks: the readout that turns
+      hidden activity into a position, and the firing maps themselves. Compare
+      the change in skill with the change in the scores of the same units.
+    ar: >-
+      على المسارات الأطول قد ينهار شيئان، كلٌّ منهما مستقلاً عن الآخر: القراءة التي تحوّل النشاط المخفي إلى موقع، وخرائط النشاط نفسها. قارن تغيّر المهارة بتغيّر درجات الوحدات ذاتها.
+  - en: >-
+      Skill near zero means the estimate has drifted as far as a guess that
+      never left the starting point. If the maps stay sharp while skill collapses,
+      look at whether the bumps are still where they were, or have slid.
+    ar: >-
+      المهارة القريبة من الصفر تعني أن التقدير انجرف بقدر ما ينجرف تخمينٌ لم يغادر نقطة البداية أصلاً. فإن بقيت الخرائط حادة بينما انهارت المهارة، فانظر: هل بقيت البقع في أماكنها، أم انزلقت؟
+
+terms:
+  "Recurrent Neural Network (RNN)":
+    en: "A network that reads a sequence one step at a time, feeding its own previous state back in."
+    ar: >-
+      شبكة تقرأ السلسلة خطوةً بعد خطوة، وتعيد إدخال حالتها السابقة في كل مرة.
+  "Hidden State":
+    en: "The vector a recurrent network carries between steps; here, the only place the position can live."
+    ar: >-
+      المتجه الذي تحمله الشبكة التكرارية من خطوة إلى أخرى، وهو هنا المكان الوحيد الذي يمكن أن يُحفظ فيه الموقع.
+  "Path Integration":
+    en: "Estimating where you are by adding up your own movements from a known starting point."
+    ar: "تقدير موقعك بجمع حركاتك أنت، انطلاقاً من نقطة بداية معروفة."
+  "Spatial Representation":
+    en: "A pattern of activity that varies systematically with location."
+    ar: "نمط نشاط يتغير بانتظام كلما تغير المكان."
+  "Emergent Behavior":
+    en: "Behaviour that arises from training or interaction without being specified directly."
+    ar: "سلوك ينشأ من التدريب أو التفاعل دون أن يحدده أحد مباشرة."
+  "Emergent Representation":
+    en: "Internal structure a model develops on its own because it helps with the task it was given."
+    ar: >-
+      بنية داخلية يطوّرها النموذج من تلقاء نفسه لأنها تساعده في المهمة التي أُعطيت له.
+  "Representation Learning":
+    en: "Learning useful internal features as a by-product of optimising a task."
+    ar: >-
+      تعلّم خصائص داخلية مفيدة كأثرٍ جانبي لتحسين الأداء في مهمة ما.
+  "Latent Space":
+    en: "The space of a model's internal activity, as opposed to its inputs and outputs."
+    ar: "فضاء النشاط الداخلي للنموذج، في مقابل مدخلاته ومخرجاته."
+  "Neuron":
+    en: "One unit of a network: a weighted sum followed by a nonlinearity. Here also a hidden unit whose map is drawn."
+    ar: >-
+      وحدة واحدة في الشبكة: مجموع موزون يليه تحويل غير خطي. وهي هنا أيضاً الوحدة المخفية التي نرسم خريطتها.
+  "Feature Map":
+    en: "The activity of one unit laid out over an input dimension — here, over the floor of the arena."
+    ar: >-
+      نشاط وحدة واحدة مبسوطاً على أحد أبعاد المدخل، وهو هنا أرض الساحة.
+  "Generalization":
+    en: "Doing the task under conditions not seen in training, such as walks longer than any trained on."
+    ar: >-
+      أداء المهمة في ظروف لم تظهر أثناء التدريب، كمسارات أطول من أي مسار تدربت عليه الشبكة.
+  "Environment":
+    en: "The world the agent moves through; here, a square box with walls."
+    ar: >-
+      العالم الذي يتحرك فيه الوكيل، وهو هنا صندوق مربع تحيط به الجدران.
+  "Observation Space":
+    en: "What the model receives at each step; here, only a two-dimensional velocity."
+    ar: >-
+      ما يتلقاه النموذج في كل خطوة، وهو هنا سرعة ثنائية البعد لا أكثر.
+  "Trajectory":
+    en: "The sequence of positions an agent passes through."
+    ar: "تسلسل المواقع التي يمر بها الوكيل."
+  "Backpropagation Through Time":
+    en: "Training a recurrent network by unrolling it over the sequence and backpropagating through every step."
+    ar: >-
+      تدريب الشبكة التكرارية بفرد عملياتها على طول السلسلة، ثم تمرير الانتشار العكسي عبر كل خطوة منها.
+
+body:
+  - type: prose
+    title: { en: "Pose the rat's problem", ar: "اطرح مسألة الفأر" }
+    phase: orient
+    text:
+      en: >-
+        Close your eyes and walk three steps forward, turn left, walk two more.
+        You still have a fair idea where the door is. Nothing told you; you
+        integrated your own motion. Animals do this constantly, and in the
+        entorhinal cortex of the rat some of the neurons involved have a
+        startling signature: plotted against position, each one fires at the
+        vertices of a triangular lattice that tiles the entire floor.
+
+
+        This workshop asks whether an artificial network, given only the same
+        problem, arrives at the same answer — and then asks the harder question
+        of what exactly made it do so.
+      ar: >-
+        أغمض عينيك، وامشِ ثلاث خطوات إلى الأمام، ثم انعطف يساراً وامشِ خطوتين. ستظل تعرف تقريباً أين الباب. لم يخبرك أحد؛ أنت جمعت حركتك بنفسك. الحيوانات تفعل هذا طوال الوقت، وبعض الخلايا التي تشارك فيه داخل القشرة الشمية الداخلية للفأر تحمل بصمة مدهشة: ارسم نشاط الواحدة منها على أرض الغرفة، تجدها تنشط عند رؤوس نمطٍ مثلثي يغطي الأرض كلها.
+
+        تسأل هذه الورشة أولاً: إذا أعطينا شبكةً اصطناعية المسألة نفسها ولا شيء غيرها، هل تصل إلى الجواب نفسه؟ ثم تسأل السؤال الأصعب: ما الذي دفعها إليه بالضبط؟
+
+  - type: cell
+    id: setup
+    ref: setup
+    title: { en: "Start the environment", ar: "شغّل البيئة" }
+    phase: orient
+    caption:
+      en: "Confirm the profile and the code hash; everything below is sized from that profile."
+      ar: >-
+        تأكد من ملف التشغيل المختار ومن بصمة الشيفرة؛ فكل ما يلي يأخذ أحجامه من هذا الملف.
+
+  - type: prose
+    title: { en: "Choose what to predict", ar: "اختر ما تتنبأ به" }
+    phase: build
+    text:
+      en: >-
+        The network's output is not a pair of coordinates. It predicts the
+        activity of {{scale.place_cells}} simulated place cells scattered over a
+        {{scale.box_m}}-metre box, each most active near its own centre. The
+        workshop trains two versions that differ in the shape of that tuning. In
+        one, each place cell is a plain Gaussian bump. In the other, the bump is
+        ringed by a shallow zone of suppression — a centre-surround profile.
+        Walks, starting weights, network and training schedule are identical.
+        Hold on to that single difference; the rest of the workshop turns on it.
+      ar: >-
+        مخرج الشبكة ليس زوجاً من الإحداثيات. إنها تتنبأ بنشاط {{scale.place_cells}} خلية مكان محاكاة، موزعة داخل صندوق طول ضلعه {{scale.box_m}} متر، وكل خلية تبلغ ذروة نشاطها قرب مركزها. ندرّب نسختين لا تختلفان إلا في شكل هذه الاستجابة. في الأولى، خلية المكان نتوءٌ غاوسي بسيط. وفي الثانية، يحيط بالنتوء طوقٌ ضحل من الكبح، وهذا ما نسميه نمط «المركز والمحيط». المسارات والأوزان الابتدائية والبنية وجدول التدريب كلها متطابقة. تمسّك بهذا الفرق الوحيد، فبقية الورشة تدور حوله.
+
+  - type: cell
+    id: arena
+    ref: arena
+    title: { en: "Draw walks and tuning", ar: "ارسم المسارات والاستجابات" }
+    phase: build
+    caption:
+      en: >-
+        Left: six simulated walks, turning away from the walls, over grey place
+        cell centres. Right: one place cell's activity along a line through its
+        centre, orange for centre-surround and blue for Gaussian. The only thing
+        to see is the orange curve dipping below zero on both sides.
+      ar: >-
+        في اللوحة اليسرى ستة مسارات محاكاة تنعطف مبتعدةً عن الجدران، فوق مراكز خلايا المكان بالرمادي. وفي اللوحة اليمنى نشاط خلية مكان واحدة على خط يمر بمركزها: البرتقالي لنمط المركز والمحيط، والأزرق للنمط الغاوسي. الشيء الوحيد الذي عليك أن تلاحظه هو أن المنحنى البرتقالي ينزل تحت الصفر على الجانبين.
+
+  - type: prose
+    title: { en: "Give it only velocity", ar: "لا تعطها إلا السرعة" }
+    phase: build
+    text:
+      en: >-
+        The hidden state starts from the place-cell code of the starting point.
+        From then on the network receives one thing per step: how far it moved
+        in x and y. To predict the place code {{scale.seq_len}} steps on, it must
+        accumulate those movements inside its hidden state. The loss compares
+        predicted and true place-cell activity. It contains no term about
+        spatial structure, periodicity, or angles.
+      ar: >-
+        تبدأ الحالة المخفية من شيفرة خلايا المكان عند نقطة الانطلاق. بعدها لا تتلقى الشبكة في كل خطوة إلا شيئاً واحداً: كم تحركت على كل محور. ولكي تتنبأ بشيفرة المكان بعد {{scale.seq_len}} خطوة، لا مفر من أن تراكم تلك الحركات داخل حالتها المخفية. دالة الخسارة تقارن نشاط خلايا المكان المتوقع بالنشاط الحقيقي، ولا تحتوي على أي حدٍّ يخص البنية المكانية أو الدورية أو الزوايا.
+
+  - type: cell
+    id: model
+    ref: model
+    title: { en: "Build the path integrator", ar: "ابنِ مُكامِل المسار" }
+    phase: build
+    caption:
+      en: "An encoder for the starting place, a ReLU recurrent layer, and a linear readout — nothing more."
+      ar: >-
+        مُرمِّز لمكان الانطلاق، وطبقة تكرارية بتفعيل <bdi dir="ltr">ReLU</bdi>، وقراءة خطية في النهاية. لا شيء غير ذلك.
+
+  - type: scaleNote
+    title: { en: "Know the free-tier scale", ar: "اعرف حجم المستوى المجاني" }
+    phase: train
+    text:
+      en: >-
+        Each network has {{scale.hidden_units}} hidden units and trains for
+        {{scale.train_steps}} steps on batches of {{scale.batch}} walks of
+        {{scale.seq_len}} steps. That fits a free Colab T4 twice over, which
+        matters because the comparison needs both networks. Published models
+        of this kind train considerably longer; expect fainter lattices than in
+        the literature, not different ones.
+      ar: >-
+        لكل شبكة {{scale.hidden_units}} وحدة مخفية، وتتدرب {{scale.train_steps}} خطوة على دفعات من {{scale.batch}} مسار، طول كل منها {{scale.seq_len}} خطوة. هذا الحجم يتسع مرتين على بطاقة <bdi dir="ltr">T4</bdi> المجانية في كولاب، وهذا مهم لأن المقارنة تحتاج إلى الشبكتين معاً. النماذج المنشورة من هذا النوع تتدرب مدة أطول بكثير، فتوقّع أنماطاً سداسية أبهت مما في الأبحاث، لا أنماطاً مختلفة عنها.
+
+  - type: cell
+    id: train_dog
+    ref: train_dog
+    title: { en: "Train the centre-surround network", ar: "درّب شبكة المركز والمحيط" }
+    phase: train
+    captures: [train_minutes_dog, peak_vram_gb]
+    caption:
+      en: >-
+        Watch the position error decoded from the predicted place cells, not the
+        loss. The loss will barely move: the centre-surround target is almost
+        flat, so nearly all of it is out of reach. The position error should
+        fall to a few centimetres, and that is the whole of what the network is
+        rewarded for.
+      ar: >-
+        راقب خطأ الموضع المستخرج من خلايا المكان المتوقعة، لا الخسارة. فالخسارة لن تتحرك إلا قليلاً: هدف المركز والمحيط شبه مسطّح، ومعظمه لا يمكن بلوغه أصلاً. أما خطأ الموضع فينبغي أن ينخفض إلى بضعة سنتيمترات، وهذا الرقم هو كل ما تُكافأ عليه الشبكة.
+
+  - type: cell
+    id: train_control
+    ref: train_control
+    title: { en: "Train the Gaussian twin", ar: "درّب التوأم الغاوسي" }
+    phase: train
+    captures: [train_minutes_control]
+    caption:
+      en: >-
+        The same walks in the same order, from the same starting weights. In the
+        plot, both error curves should end near the floor. If the blue one does
+        not, the twin never learned the task and nothing later about it means
+        anything.
+      ar: >-
+        المسارات نفسها بالترتيب نفسه، ومن الأوزان الابتدائية نفسها. في الرسم، ينبغي أن ينتهي منحنيا الخطأ كلاهما قرب القاع. فإن لم يصل المنحنى الأزرق، فالتوأم لم يتعلم المهمة، ولن يعني أي شيء نقوله عنه لاحقاً شيئاً.
+
+  - type: prose
+    title: { en: "Learn to read a map", ar: "تعلّم قراءة الخريطة" }
+    phase: observe
+    text:
+      en: >-
+        To see what a hidden unit represents, walk the trained network through
+        thousands of fresh trajectories and average that unit's activity in
+        each square of a {{scale.map_res}}×{{scale.map_res}} floor grid. The
+        result is its firing map. To score it, correlate the map with shifted
+        copies of itself, which turns any repeating pattern into a ring of peaks
+        around the centre. Rotate that picture. A hexagonal lattice matches
+        itself at 60° and 120° and clashes at 30°, 90° and 150°; the grid score
+        is the gap between the two. Squares and stripes score near or below
+        zero.
+      ar: >-
+        لكي ترى ما تمثّله وحدة مخفية، مرّر الشبكة المدرَّبة عبر آلاف المسارات الجديدة، واحسب متوسط نشاط تلك الوحدة في كل مربع من أرضٍ مقسمة إلى {{scale.map_res}}×{{scale.map_res}}. الناتج هو خريطة نشاطها. ولكي نقيّمها، نقارن الخريطة بنسخٍ مُزاحة منها، فيتحول أي نمط متكرر إلى حلقة من القمم حول المركز. ثم نُدير هذه الصورة: النمط السداسي ينطبق على نفسه عند 60° و120°، ويتعارض معها عند 30° و90° و150°، ودرجة الشبكة هي الفرق بين الحالتين. أما المربعات والخطوط فتنال درجة قريبة من الصفر أو دونه.
+
+  - type: cell
+    id: ratemaps
+    ref: ratemaps
+    title: { en: "Survey both networks", ar: "امسح الشبكتين" }
+    phase: observe
+    captures: [dog_skill, control_skill]
+    caption:
+      en: >-
+        Skill compares each network with a guess that never leaves the starting
+        point: 1 is perfect, 0 learned nothing. Both numbers should be close to
+        each other and well above zero before you trust any map below.
+      ar: >-
+        تقارن المهارةُ كل شبكة بتخمينٍ لا يغادر نقطة البداية: الواحد أداء مثالي، والصفر يعني أنها لم تتعلم شيئاً. ينبغي أن يكون الرقمان متقاربين وأعلى من الصفر بوضوح قبل أن تثق بأي خريطة في الأسفل.
+
+  - type: cell
+    id: gridscore
+    ref: gridscore
+    title: { en: "Open the hidden units", ar: "افتح الوحدات المخفية" }
+    phase: observe
+    thumbnail: true
+    captures: [grid_percent_dog, grid_percent_untrained, grid_excess_points, best_grid_score]
+    caption:
+      en: >-
+        The {{scale.units_shown}} highest-scoring hidden units of the
+        centre-surround network, each drawn over the floor of the box, with its
+        grid score above. Look for bumps arranged in triangles — every unit
+        with its own spacing, orientation and offset. The printed line
+        underneath matters as much as the picture: even random weights produce
+        some maps that clear the cut by chance, and only the excess over that
+        floor counts.
+      ar: >-
+        أعلى {{scale.units_shown}} وحدة مخفية درجةً في شبكة المركز والمحيط، كل واحدة مرسومة على أرض الصندوق وفوقها درجتها. ابحث عن بقع مرتبة في مثلثات، لكل وحدة تباعدها واتجاهها وإزاحتها الخاصة. والسطر المطبوع تحت الصورة لا يقل أهمية عنها: فحتى الأوزان العشوائية تُنتج بعض الخرائط التي تتجاوز العتبة بالصدفة، والذي يُحسب هو ما يزيد على هذا الحد فقط.
+
+  - type: cell
+    id: control_maps
+    ref: control_maps
+    title: { en: "Compare the Gaussian twin", ar: "قارن بالتوأم الغاوسي" }
+    phase: observe
+    captures: [grid_percent_control, grid_advantage_points]
+    caption:
+      en: >-
+        First the twin's best units, laid out the same way. Then the
+        distribution of grid scores over all active units — orange for
+        centre-surround, blue for Gaussian, the dashed line at the cut — and the
+        autocorrelogram of the single best orange unit, where a true grid shows
+        six neighbours around the centre.
+      ar: >-
+        أولاً أفضل وحدات التوأم، مرتبة بالطريقة نفسها. ثم توزيع درجات الشبكة على كل الوحدات النشطة: البرتقالي للمركز والمحيط، والأزرق للغاوسي، والخط المتقطع عند العتبة. وبجانبه خريطة الارتباط الذاتي لأفضل وحدة برتقالية، حيث يظهر النمط السداسي الحقيقي على شكل ست قمم تحيط بالمركز.
+
+  - type: prose
+    title: { en: "Ask what caused hexagons", ar: "اسأل ما الذي صنع السداسيات" }
+    phase: interpret
+    text:
+      en: >-
+        In this run {{run.metrics.grid_percent_dog}}% of the centre-surround
+        network's active units cleared the grid-score cut, against
+        {{run.metrics.grid_percent_control}}% for its twin — and both find
+        their way. So hexagons are not what path integration requires. They
+        are what this objective makes cheapest.
+
+
+        Sorscher, Mel, Ganguli and Ocko gave the reason in 2019. A surround
+        penalises both very broad and very fine spatial patterns, so the
+        network's best move is to build units around one preferred spatial
+        frequency. Firing rates cannot go negative, and among patterns built
+        from a single frequency under that constraint, the triangular lattice
+        wins. Remove the surround and the preferred frequency disappears, taking
+        the lattice with it. Schaeffer, Khona and Fiete pressed the point in
+        2022: emergence of this kind depends on choices a modeller makes, and a
+        network reproducing a brain's pattern is evidence about the objective,
+        not proof that the brain is optimising it.
+
+
+        The hexagons were never asked for. The shape of the target asked for
+        them, one step removed.
+      ar: >-
+        في هذا التشغيل تجاوزت {{run.metrics.grid_percent_dog}}% من الوحدات النشطة في شبكة المركز والمحيط عتبةَ درجة الشبكة، مقابل {{run.metrics.grid_percent_control}}% في توأمها، والشبكتان كلتاهما تهتديان إلى موقعهما. إذن السداسيات ليست شرطاً لتكامل المسار؛ إنها الحل الأرخص تحت هذا الهدف بالذات.
+
+        شرح سورشر وميل وغانغولي وأوكو السبب عام 2019. الطوق الكابح يعاقب الأنماط المكانية الواسعة جداً والدقيقة جداً في آنٍ واحد، فتصبح أفضل خطوة أمام الشبكة أن تبني وحداتها حول تردد مكاني واحد مفضّل. ومعدلات النشاط لا يمكن أن تكون سالبة، ومن بين الأنماط المبنية على تردد واحد تحت هذا القيد، يفوز النمط المثلثي. أزِل الطوق يختفِ التردد المفضّل، ويختفِ النمط معه. ثم عاد شيفر وخونا وفيتي إلى هذه النقطة عام 2022: هذا النوع من الظهور التلقائي مرهونٌ باختيارات يتخذها من يبني النموذج، وحين تعيد شبكةٌ إنتاج نمطٍ نراه في الدماغ، فهذا دليل على طبيعة الهدف، لا برهان على أن الدماغ يسعى إلى الهدف نفسه.
+
+        لم يطلب أحدٌ السداسيات. شكلُ الهدف هو الذي طلبها، من وراء خطوة واحدة.
+
+  - type: paperRef
+    slug: recurrent-neural-network
+    title: { en: "Revisit the recurrent network", ar: "عُد إلى الشبكة التكرارية" }
+    phase: interpret
+    note:
+      en: "The entire map of the room is stored in one vector updated by the same weights at every step."
+      ar: >-
+        خريطة الغرفة كلها محفوظة في متجه واحد تحدّثه الأوزان نفسها في كل خطوة.
+
+  - type: paperRef
+    slug: backpropagation-through-time
+    title: { en: "Revisit backprop through time", ar: "عُد إلى الانتشار العكسي عبر الزمن" }
+    phase: interpret
+    note:
+      en: "Every walk is unrolled over all of its steps; the lattice is shaped by gradients that cross every one of them."
+      ar: >-
+        كل مسار يُفرد على طول خطواته، والنمط السداسي تصوغه تدرجات تعبر تلك الخطوات جميعها.
+
+  - type: exercise
+    id: longer-walks
+    ref: exercise
+    title: { en: "Walk past the training horizon", ar: "امشِ أبعد من أفق التدريب" }
+    phase: stretch
+    prompt:
+      en: >-
+        The network never saw a walk longer than {{scale.seq_len}} steps. Raise
+        LENGTH_MULTIPLE and score only the steps beyond that horizon. The top
+        row redraws the best units from before; the bottom row is the same
+        units on long walks. Decide which breaks first — the position readout or
+        the lattice — and what that says about where the network keeps its
+        sense of place.
+      ar: >-
+        لم ترَ الشبكة قط مساراً أطول من {{scale.seq_len}} خطوة. ارفع قيمة <bdi dir="ltr">LENGTH_MULTIPLE</bdi>، ولا تقيّم إلا الخطوات الواقعة بعد ذلك الأفق. الصف العلوي يعيد رسم أفضل الوحدات كما كانت، والصف السفلي يرسم الوحدات نفسها على المسارات الطويلة. قرّر أيهما ينكسر أولاً، قراءة الموضع أم النمط السداسي، وماذا يخبرك ذلك عن المكان الذي تحتفظ فيه الشبكة بإحساسها بالموقع.
+    hint: 1
+
+  - type: paperRef
+    slug: long-short-term-memory
+    title: { en: "Weigh the gated alternative", ar: "وازن البديل ذا البوابات" }
+    phase: stretch
+    note:
+      en: "DeepMind's 2018 grid-cell agent used an LSTM; here a plain ReLU recurrence is enough, which makes gating an option, not a precondition."
+      ar: >-
+        وكيل ديب مايند لخلايا الشبكة عام 2018 استخدم شبكة <bdi dir="ltr">LSTM</bdi>؛ أما هنا فيكفي تكرار بسيط بتفعيل <bdi dir="ltr">ReLU</bdi>، فالبوابات خيارٌ متاح، لا شرطٌ مسبق.
+
+  - type: paperRef
+    slug: neural-turing-machine
+    title: { en: "Contrast addressable memory", ar: "قارن بالذاكرة ذات العناوين" }
+    phase: stretch
+    note:
+      en: "A Neural Turing Machine writes to a location it can look up. This network has no address to write to — the lattice is how it indexes space instead."
+      ar: >-
+        آلة تورنغ العصبية تكتب في موقع تستطيع أن ترجع إليه. هذه الشبكة لا تملك عنواناً تكتب فيه، والنمط السداسي هو طريقتها في فهرسة المكان بدلاً من ذلك.
+
+  - type: cell
+    id: verify
+    ref: verify
+    title: { en: "Verify the three claims", ar: "تحقّق من الادعاءات الثلاثة" }
+    phase: verify
+    caption:
+      en: "Navigation first; the grid comparison is only meaningful if both networks passed it."
+      ar: >-
+        الملاحة أولاً؛ فمقارنة الأنماط السداسية لا معنى لها إلا إذا نجحت الشبكتان في هذا الاختبار.
+
+  - type: cell
+    id: finish
+    ref: finish
+    title: { en: "Collect the receipt", ar: "استلم الإيصال" }
+    phase: verify
+    caption:
+      en: "Your completion code and the provenance of this run."
+      ar: "رمز الإكمال، وما يوثّق مصدر هذا التشغيل."
