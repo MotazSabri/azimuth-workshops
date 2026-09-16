@@ -43,8 +43,8 @@ maintenance:
   cadence: yearly
 
 estimate:
-  gpuMinutes: 20      # placeholder: set from train_minutes_* after the first T4 run
-  totalMinutes: 35    # placeholder
+  gpuMinutes: 20      # placeholder. First T4 run (fp32): 39.2 + 37.9 min training, 78 min end to end
+  totalMinutes: 35    # placeholder, and currently far too low; set from the mixed-precision run
 
 papers:
   - slug: recurrent-neural-network
@@ -79,7 +79,7 @@ profiles:
       ar: "المستوى المجاني"
     requires:
       gpu: true
-      vramGb: 2         # placeholder: replace with peak_vram_gb from the first run
+      vramGb: 2         # measured peak 0.99 GB in fp32 on the first T4 run
       ramGb: 4
     scale:
       seed: 17
@@ -90,13 +90,40 @@ profiles:
       hidden_units: 4096
       seq_len: 20
       batch: 200
-      train_steps: 15000   # placeholder: the first thing to revisit if grids are faint
+      train_steps: 15000   # first T4 run: Gaussian twin converged by ~6k; centre-surround still at 63.5 cm here
       learning_rate: 0.0001
       weight_decay: 0.0001
       log_every: 1500
       map_res: 20
       eval_batches: 25
       grid_score_cut: 0.3
+      ring_max: 0.7
+      units_shown: 25
+  - id: calibrate
+    name:
+      en: "Calibration run (T4, long training)"
+      ar: "تشغيل المعايرة على بطاقة رسوميات بتدريب أطول"
+    requires:
+      gpu: true
+      vramGb: 2
+      ramGb: 4
+    scale:
+      seed: 17
+      box_m: 2.2
+      place_cells: 512
+      place_sigma_m: 0.12
+      surround_scale: 2
+      hidden_units: 4096
+      seq_len: 20
+      batch: 200
+      train_steps: 30000
+      learning_rate: 0.0001
+      weight_decay: 0.0001
+      log_every: 1000
+      map_res: 20
+      eval_batches: 25
+      grid_score_cut: 0.3
+      ring_max: 0.7
       units_shown: 25
   - id: smoke
     name:
@@ -122,6 +149,7 @@ profiles:
       map_res: 20
       eval_batches: 2
       grid_score_cut: 0.3
+      ring_max: 0.7
       units_shown: 9
 
 checks:
@@ -313,12 +341,12 @@ body:
       en: >-
         Each network has {{scale.hidden_units}} hidden units and trains for
         {{scale.train_steps}} steps on batches of {{scale.batch}} walks of
-        {{scale.seq_len}} steps. That fits a free Colab T4 twice over, which
-        matters because the comparison needs both networks. Published models
-        of this kind train considerably longer; expect fainter lattices than in
-        the literature, not different ones.
+        {{scale.seq_len}} steps. Training the two networks is the long part of
+        this workshop, and the comparison needs both. Published models of this
+        kind train considerably longer; expect fainter lattices than in the
+        literature, not different ones.
       ar: >-
-        لكل شبكة {{scale.hidden_units}} وحدة مخفية، وتتدرب {{scale.train_steps}} خطوة على دفعات من {{scale.batch}} مسار، طول كل منها {{scale.seq_len}} خطوة. هذا الحجم يتسع مرتين على بطاقة <bdi dir="ltr">T4</bdi> المجانية في كولاب، وهذا مهم لأن المقارنة تحتاج إلى الشبكتين معاً. النماذج المنشورة من هذا النوع تتدرب مدة أطول بكثير، فتوقّع أنماطاً سداسية أبهت مما في الأبحاث، لا أنماطاً مختلفة عنها.
+        لكل شبكة {{scale.hidden_units}} وحدة مخفية، وتتدرب {{scale.train_steps}} خطوة على دفعات من {{scale.batch}} مسار، طول كل منها {{scale.seq_len}} خطوة. تدريب الشبكتين هو الجزء الأطول في هذه الورشة، والمقارنة تحتاج إليهما معاً. النماذج المنشورة من هذا النوع تتدرب مدة أطول بكثير، فتوقّع أنماطاً سداسية أبهت مما في الأبحاث، لا أنماطاً مختلفة عنها.
 
   - type: cell
     id: train_dog

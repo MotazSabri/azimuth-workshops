@@ -164,6 +164,12 @@ def train(surround):
     rng = np.random.default_rng(cfg["seed"])  # identical trajectories for both networks
     model = PathIntegrator(cfg["place_cells"], cfg["hidden_units"]).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=cfg["learning_rate"])
+    # Half precision for the recurrent arithmetic on a GPU. A T4 in full precision
+    # ran 6.4 steps/s here, almost all of it matrix multiplication. The loss stays
+    # in full precision, and the scaler keeps its very small gradients from
+    # rounding to zero.
+    amp = device.type == "cuda"
+    scaler = torch.amp.GradScaler("cuda", enabled=amp)
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats()
     history, started = [], time.time()
@@ -171,20 +177,28 @@ def train(surround):
         pos, velocity, start, target = batch_tensors(
             make_trajectories(rng, cfg["batch"], cfg["seq_len"]), surround
         )
-        logits = model(velocity, start)
+        with torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp):
+            logits = model(velocity, start)
+        logits = logits.float()
         loss = -(target * torch.log_softmax(logits, -1)).sum(-1).mean()
         loss = loss + cfg["weight_decay"] * (model.rnn.weight_hh_l0**2).sum()
         opt.zero_grad(set_to_none=True)
-        loss.backward()
-        opt.step()
+        scaler.scale(loss).backward()
+        scaler.step(opt)
+        scaler.update()
         if step % cfg["log_every"] == 0 or step == cfg["train_steps"]:
             with torch.no_grad():
                 err_cm = 100 * (decode(logits) - pos[:, 1:]).norm(dim=-1).mean().item()
             history.append((step, loss.item(), err_cm))
+            rate = step / (time.time() - started)
             if env.lang == "ar":
-                print(f"خطوة {step:>6} · الخسارة {loss.item():.3f} · خطأ الموضع {err_cm:.1f} سم")
+                print(
+                    f"خطوة {step:>6} · الخسارة {loss.item():.3f} · خطأ الموضع {err_cm:.1f} سم · {rate:.1f} خطوة/ث"
+                )
             else:
-                print(f"step {step:>6} · loss {loss.item():.3f} · position error {err_cm:.1f} cm")
+                print(
+                    f"step {step:>6} · loss {loss.item():.3f} · position error {err_cm:.1f} cm · {rate:.1f} steps/s"
+                )
     peak = torch.cuda.max_memory_allocated() / 2**30 if device.type == "cuda" else 0.0
     return model.eval(), np.array(history), time.time() - started, peak
 
@@ -313,7 +327,11 @@ def grid_scores(maps):
     rotated = {a: rotate(sac, a).reshape(n, -1) for a in (30, 60, 90, 120, 150)}
     flat = sac.reshape(n, -1)
     best = np.full(n, -np.inf)
-    for outer in np.linspace(0.4, 1.0, 10):
+    # Rings stop at ring_max of the map width. Beyond it two copies of the map
+    # barely overlap, the autocorrelogram is noise, and in the first T4 run that
+    # noise gave single blobs scores above 1.1. The cap keeps full sensitivity to
+    # lattices up to 0.7 of the box apart.
+    for outer in np.linspace(0.4, cfg["ring_max"], 10):
         ring = ((r >= 0.2 * res) & (r <= outer * res)).reshape(-1)
         a = flat[:, ring] - flat[:, ring].mean(1, keepdims=True)
         corr = {}
@@ -384,7 +402,11 @@ bins = np.linspace(-1.0, 1.8, 57)
 ax_hist.hist(control_scores[active_control], bins=bins, color="tab:blue", alpha=0.55, density=True)
 ax_hist.hist(dog_scores[active_dog], bins=bins, color="tab:orange", alpha=0.55, density=True)
 ax_hist.axvline(cut, color="0.2", ls="--", lw=1)
-ax_sac.imshow(dog_sac[top_dog_units[0]].T, origin="lower", cmap="RdBu_r", vmin=-1, vmax=1)
+# The exemplar is the best unit that fires over a real part of the floor: a unit
+# with two or three tiny spots can score well and still draw an unreadable picture.
+coverage = (dog_maps > 0.5 * dog_maps.max(axis=(1, 2), keepdims=True)).mean(axis=(1, 2))
+exemplar = next((u for u in top_dog_units if coverage[u] >= 0.15), top_dog_units[0])
+ax_sac.imshow(dog_sac[exemplar].T, origin="lower", cmap="RdBu_r", vmin=-1, vmax=1)
 ax_sac.axis("off")
 plt.tight_layout()
 plt.show()
