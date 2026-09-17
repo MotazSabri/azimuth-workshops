@@ -25,13 +25,13 @@ scenario:
 
 goal:
   en: >-
-    Both networks learn to track their own position from velocity alone, and the centre-surround network does it measurably less precisely. Even so, it turns a clear share of its units into stable hexagonal firing maps, while its better-navigating Gaussian twin produces almost none.
+    Both networks learn to track their own position from velocity alone, and the centre-surround network does it less precisely. Its grid scores still sit above its Gaussian twin's as a whole, and in this seed a clear share of its units become stable hexagonal maps. Across seven seeds that share ranged from 1% to 22%: the lean toward a lattice held, and the lattice itself did not.
   ar: >-
-    أن تتعلم الشبكتان تتبّع موقعهما من السرعة وحدها، وأن تكون شبكة المركز والمحيط أقل دقة في ذلك بشكل ملموس. ومع هذا تحوّل حصةً واضحة من وحداتها إلى خرائط نشاط سداسية مستقرة، بينما لا يكاد توأمها الغاوسي، وهو الأدق في الملاحة، يُنتج منها شيئاً.
+    أن تتعلم الشبكتان تتبّع موقعهما من السرعة وحدها، وأن تكون شبكة المركز والمحيط أقل دقة في ذلك. ومع هذا تبقى درجاتها في مجملها أعلى من درجات توأمها الغاوسي، وفي هذه البذرة تتحول حصةٌ واضحة من وحداتها إلى خرائط سداسية مستقرة. وعبر سبع بذور تراوحت هذه الحصة بين 1% و22%: الميل نحو النمط ثبت، أما النمط نفسه فلم يثبت.
 
 difficulty: intermediate
 status: draft
-publishedAt: null
+publishedAt:
 
 maintenance:
   tier: stable
@@ -95,33 +95,6 @@ profiles:
       stability_min: 0.5
       ring_max: 0.7
       units_shown: 25
-  - id: replicate
-    name:
-      en: "Replication run (second seed, T4)"
-      ar: "تشغيل التكرار ببذرة ثانية على بطاقة رسوميات"
-    requires:
-      gpu: true
-      vramGb: 2
-      ramGb: 4
-    scale:
-      seed: 29           # identical to free except the seed; ships no result of its own
-      box_m: 2.2
-      place_cells: 512
-      place_sigma_m: 0.12
-      surround_scale: 2
-      hidden_units: 4096
-      seq_len: 20
-      batch: 200
-      train_steps: 30000
-      learning_rate: 0.0001
-      weight_decay: 0.0001
-      log_every: 2000
-      map_res: 20
-      eval_batches: 25
-      grid_score_cut: 0.3
-      stability_min: 0.5
-      ring_max: 0.7
-      units_shown: 25
   - id: smoke
     name:
       en: "Wiring test (CPU, no result)"
@@ -151,34 +124,36 @@ profiles:
       units_shown: 9
 
 checks:
-  # Reference: seed 17, free profile, T4 fp16 (identical logs across two runs, so ONE seed).
-  #   skill 0.484 centre-surround / 0.771 Gaussian; error 9.4 / 4.5 cm; untrained skill -4.
-  #   stable grid units 16.6% centre-surround / 0.2% Gaussian / 2.0% untrained.
-  #   Score > 0.3 without the stability test let ~15% of untrained speckle through.
-  # All three mins stay provisional until the `replicate` profile (seed 29) has run:
-  # the centre-surround network sat on a plateau until ~12k steps, and a seed that
-  # breaks later could fail both-integrate without anything being broken.
+  # Design after the pre-registered seed sweep (tools/sweep_emergent_grid_cells.py, T4, torch 2.11):
+  #   stable grid units across 7 seeds: 1.0 3.5 4.1 11.7 12.8 16.6 22.4% -> 4 of 7 at >= 8% -> option 3.
+  #   all 7 left the plateau (error 6.4-9.4 cm); untrained floor 1.4-2.2%.
+  #   median gap, centre-surround minus twin: +0.151 (seed 3), +0.185 (seed 97), the two weakest seeds.
+  #   the twin navigated more precisely in 4 of 4 seeds where both were trained.
+  #   seeds 17, 3 and 97 each reproduced exactly across separate T4 sessions.
+  # both-integrate min 0.35: lowest measured skill 0.484. surround-pull min 0.08: about half the
+  # smallest gap measured. Code.py takes those medians over STABLE units (over all active units,
+  # untrained weights alone give ~0.14); the sweep measured them over active units, where stable
+  # units were 99% of centre-surround and 81-93% of twin units. Confirm on the next free run.
+  # grid-units is reported, not required: it varies twentyfold by seed.
   - id: both-integrate
     required: true
     min: 0.35
     label:
       en: "Path-integration skill of the weaker of the two networks"
       ar: "مهارة تكامل المسار لدى الأضعف بين الشبكتين"
-  - id: grid-units
+  - id: surround-pull
     required: true
+    min: 0.08
+    label:
+      en: "Median grid score of the centre-surround network minus its Gaussian twin's"
+      ar: "وسيط درجات شبكة المركز والمحيط مطروحاً منه وسيط درجات توأمها الغاوسي"
+  - id: grid-units
+    required: false
     min: 8
     label:
       en: "Percent of centre-surround units that are grid units: above the score cut and stable across halves of the data"
       ar: >-
         نسبة وحدات شبكة المركز والمحيط التي تُعدّ وحدات سداسية: تتجاوز عتبة الدرجة وتبقى خريطتها ثابتة بين نصفي البيانات
-  - id: surround-advantage
-    required: true
-    min: 8
-    label:
-      en: "Grid-unit percentage points gained by the centre-surround target over the Gaussian one"
-      ar: >-
-        كم نقطة مئوية يكسبها هدف المركز والمحيط على الهدف الغاوسي في نسبة الوحدات السداسية
-
 hints:
   - en: >-
       Two things can fail independently on longer walks: the readout that turns hidden activity into a position, and the firing maps themselves. Compare how much the error grows, in centimetres, with how much the scores of the same units fall.
@@ -248,7 +223,7 @@ terms:
 
 body:
   - type: prose
-    title: { en: "Pose the rat's problem", ar: "اطرح مسألة الفأر" }
+    title: {en: "Pose the rat's problem", ar: "اطرح مسألة الفأر"}
     phase: orient
     text:
       en: >-
@@ -272,7 +247,7 @@ body:
   - type: cell
     id: setup
     ref: setup
-    title: { en: "Start the environment", ar: "شغّل البيئة" }
+    title: {en: "Start the environment", ar: "شغّل البيئة"}
     phase: orient
     caption:
       en: "Confirm the profile and the code hash; everything below is sized from that profile."
@@ -280,7 +255,7 @@ body:
         تأكد من ملف التشغيل المختار ومن بصمة الشيفرة؛ فكل ما يلي يأخذ أحجامه من هذا الملف.
 
   - type: prose
-    title: { en: "Choose what to predict", ar: "اختر ما تتنبأ به" }
+    title: {en: "Choose what to predict", ar: "اختر ما تتنبأ به"}
     phase: build
     text:
       en: >-
@@ -298,7 +273,7 @@ body:
   - type: cell
     id: arena
     ref: arena
-    title: { en: "Draw walks and tuning", ar: "ارسم المسارات والاستجابات" }
+    title: {en: "Draw walks and tuning", ar: "ارسم المسارات والاستجابات"}
     phase: build
     caption:
       en: >-
@@ -307,7 +282,7 @@ body:
         في اللوحة اليسرى ستة مسارات محاكاة فوق مراكز خلايا المكان بالرمادي؛ وحين يبلغ المسار جداراً يبطئ وينزلق بمحاذاته. وفي اللوحة اليمنى نشاط خلية مكان واحدة على خط يمر بمركزها: البرتقالي لنمط المركز والمحيط، والأزرق للنمط الغاوسي. المنحنى البرتقالي لا ينزل تحت الصفر أبداً، بل يستقر على أرضية مرتفعة، ثم ينخفض إلى الصفر في حلقة حول القمة، وهذه الحلقة هي المحيط. ولأن الشيفرة يجب أن تبقى موجبة ومجموعها واحد، فنحو ثلاثة أرباعها هي هذه الأرضية شبه المسطحة، ولهذا لن تتحرك خسارة هذه الشبكة إلا قليلاً.
 
   - type: prose
-    title: { en: "Give it only velocity", ar: "لا تعطها إلا السرعة" }
+    title: {en: "Give it only velocity", ar: "لا تعطها إلا السرعة"}
     phase: build
     text:
       en: >-
@@ -323,7 +298,7 @@ body:
   - type: cell
     id: model
     ref: model
-    title: { en: "Build the path integrator", ar: "ابنِ مُكامِل المسار" }
+    title: {en: "Build the path integrator", ar: "ابنِ مُكامِل المسار"}
     phase: build
     caption:
       en: "An encoder for the starting place, a ReLU recurrent layer, and a linear readout — nothing more."
@@ -331,7 +306,7 @@ body:
         مُرمِّز لمكان الانطلاق، وطبقة تكرارية بتفعيل <bdi dir="ltr">ReLU</bdi>، وقراءة خطية في النهاية. لا شيء غير ذلك.
 
   - type: scaleNote
-    title: { en: "Know the free-tier scale", ar: "اعرف حجم المستوى المجاني" }
+    title: {en: "Know the free-tier scale", ar: "اعرف حجم المستوى المجاني"}
     phase: train
     text:
       en: >-
@@ -347,19 +322,19 @@ body:
   - type: cell
     id: train_dog
     ref: train_dog
-    title: { en: "Train the centre-surround network", ar: "درّب شبكة المركز والمحيط" }
+    title: {en: "Train the centre-surround network", ar: "درّب شبكة المركز والمحيط"}
     phase: train
-    captures: [train_minutes_dog, peak_vram_gb]
+    captures: [train_minutes_dog, peak_vram_gb, dog_final_error_cm, plateau_break_step]
     caption:
       en: >-
-        Watch the position error decoded from the predicted place cells, not the loss, which barely moves. Expect a long plateau. In the reference run the error sat near a metre for about eleven thousand steps, broke between roughly twelve and twenty thousand, and ended near 9 cm. Do not stop the cell while the error is flat: position error is the whole of what the network is rewarded for, and the break comes late.
+        Watch the position error decoded from the predicted place cells, not the loss, which barely moves. Expect a long plateau near a metre. In the reference run the error first fell below half a metre at step {{run.metrics.plateau_break_step}} and ended at {{run.metrics.dog_final_error_cm}} cm. Every one of seven seeds tested broke through, the measured ones between fourteen and twenty thousand steps. Do not stop the cell while the error is flat: position error is the whole of what the network is rewarded for, and the break comes late.
       ar: >-
-        راقب خطأ الموضع المستخرج من خلايا المكان المتوقعة، لا الخسارة التي لا تكاد تتحرك. وتوقّع فترة ركود طويلة: في التشغيل المرجعي بقي الخطأ قرب المتر نحو أحد عشر ألف خطوة، ثم انكسر بين الخطوة الاثني عشر ألفاً والعشرين ألفاً تقريباً، وانتهى قرب 9 سم. لا توقف الخلية والخطأ ثابت: فخطأ الموضع هو كل ما تُكافأ عليه الشبكة، والانكسار يأتي متأخراً.
+        راقب خطأ الموضع المستخرج من خلايا المكان المتوقعة، لا الخسارة التي لا تكاد تتحرك. وتوقّع فترة ركود طويلة قرب المتر. في التشغيل المرجعي نزل الخطأ تحت نصف متر أول مرة عند الخطوة {{run.metrics.plateau_break_step}}، وانتهى عند {{run.metrics.dog_final_error_cm}} سم. وقد تجاوزت البذور السبع التي جُرّبت كلها فترة الركود، والمقيسة منها بين الخطوة الأربعة عشر ألفاً والعشرين ألفاً. لا توقف الخلية والخطأ ثابت: فخطأ الموضع هو كل ما تُكافأ عليه الشبكة، والانكسار يأتي متأخراً.
 
   - type: cell
     id: train_control
     ref: train_control
-    title: { en: "Train the Gaussian twin", ar: "درّب التوأم الغاوسي" }
+    title: {en: "Train the Gaussian twin", ar: "درّب التوأم الغاوسي"}
     phase: train
     captures: [train_minutes_control]
     caption:
@@ -369,7 +344,7 @@ body:
         المسارات نفسها بالترتيب نفسه، ومن الأوزان الابتدائية نفسها. في الرسم، المحور الأفقي خطوات التدريب، والعمودي خطأ الموضع بالسنتيمترات. ينخفض المنحنى الأزرق خلال بضعة آلاف من الخطوات، أما البرتقالي فيصل متأخراً كثيراً ويستقر أعلى منه. فإن لم ينخفض المنحنى الأزرق أبداً، فالتوأم لم يتعلم المهمة، ولن يعني أي شيء نقوله عنه لاحقاً شيئاً.
 
   - type: prose
-    title: { en: "Learn to read a map", ar: "تعلّم قراءة الخريطة" }
+    title: {en: "Learn to read a map", ar: "تعلّم قراءة الخريطة"}
     phase: observe
     text:
       en: >-
@@ -388,7 +363,7 @@ body:
   - type: cell
     id: ratemaps
     ref: ratemaps
-    title: { en: "Survey both networks", ar: "امسح الشبكتين" }
+    title: {en: "Survey both networks", ar: "امسح الشبكتين"}
     phase: observe
     captures: [dog_skill, control_skill]
     caption:
@@ -400,64 +375,76 @@ body:
   - type: cell
     id: gridscore
     ref: gridscore
-    title: { en: "Open the hidden units", ar: "افتح الوحدات المخفية" }
+    title: {en: "Open the hidden units", ar: "افتح الوحدات المخفية"}
     phase: observe
     thumbnail: true
     captures: [grid_percent_dog, grid_percent_untrained, best_grid_score]
     caption:
       en: >-
-        The {{scale.units_shown}} highest-scoring hidden units of the centre-surround network, each drawn over the floor of the box, with its grid score above. Look for bumps arranged in triangles — every unit with its own spacing, orientation and offset. At {{scale.map_res}}×{{scale.map_res}} bins the maps are coarse, and a lattice this wide fits only a few periods in the box, so some units show just three or four bumps. The printed line underneath matters as much as the picture. Before training, the same network draws speckled maps, and speckle can score above 1 by pure chance. So a grid unit must also draw the same map from two separate halves of the walks, which a lattice does and speckle never does.
+        The {{scale.units_shown}} highest-scoring hidden units of the centre-surround network, each drawn over the floor of the box, with its grid score above. Look for bumps arranged in triangles — every unit with its own spacing, orientation and offset. At {{scale.map_res}}×{{scale.map_res}} bins the maps are coarse, and a lattice this wide fits only a few periods in the box, so some units show just three or four bumps. The printed line underneath matters as much as the picture. Before training, the same network draws speckled maps, and speckle can score above 1 by pure chance. So a grid unit must also draw the same map from two separate halves of the walks, which a lattice does and speckle never does. This seed is one of the stronger ones; the closing section says how the other seeds went.
       ar: >-
-        أعلى {{scale.units_shown}} وحدة مخفية درجةً في شبكة المركز والمحيط، كل واحدة مرسومة على أرض الصندوق وفوقها درجتها. ابحث عن بقع مرتبة في مثلثات، لكل وحدة تباعدها واتجاهها وإزاحتها الخاصة. وبدقة {{scale.map_res}}×{{scale.map_res}} تبقى الخرائط خشنة، ولا يتسع الصندوق إلا لدورات قليلة من نمط بهذا الاتساع، فتُظهر بعض الوحدات ثلاث بقع أو أربعاً فقط. والسطر المطبوع تحت الصورة لا يقل أهمية عنها. فالشبكة نفسها قبل التدريب ترسم خرائط منقّطة عشوائية، وهذا التنقيط قد ينال درجة تتجاوز الواحد بمحض الصدفة. لذلك يجب على الوحدة السداسية أيضاً أن ترسم الخريطة نفسها من نصفين منفصلين من المسارات، وهذا ما يفعله النمط السداسي ولا يفعله التنقيط أبداً.
+        أعلى {{scale.units_shown}} وحدة مخفية درجةً في شبكة المركز والمحيط، كل واحدة مرسومة على أرض الصندوق وفوقها درجتها. ابحث عن بقع مرتبة في مثلثات، لكل وحدة تباعدها واتجاهها وإزاحتها الخاصة. وبدقة {{scale.map_res}}×{{scale.map_res}} تبقى الخرائط خشنة، ولا يتسع الصندوق إلا لدورات قليلة من نمط بهذا الاتساع، فتُظهر بعض الوحدات ثلاث بقع أو أربعاً فقط. والسطر المطبوع تحت الصورة لا يقل أهمية عنها. فالشبكة نفسها قبل التدريب ترسم خرائط منقّطة عشوائية، وهذا التنقيط قد ينال درجة تتجاوز الواحد بمحض الصدفة. لذلك يجب على الوحدة السداسية أيضاً أن ترسم الخريطة نفسها من نصفين منفصلين من المسارات، وهذا ما يفعله النمط السداسي ولا يفعله التنقيط أبداً. وهذه البذرة من أقوى البذور؛ ويبيّن القسم الختامي ما جرى في البذور الأخرى.
 
   - type: cell
     id: control_maps
     ref: control_maps
-    title: { en: "Compare the Gaussian twin", ar: "قارن بالتوأم الغاوسي" }
+    title: {en: "Compare the Gaussian twin", ar: "قارن بالتوأم الغاوسي"}
     phase: observe
-    captures: [grid_percent_control, grid_advantage_points]
+    captures: [grid_percent_control, grid_advantage_points, dog_median_score, control_median_score, median_gap]
     caption:
       en: >-
-        First the twin's best stable units, laid out the same way. A few can score well while showing a single blob: the score is not a perfect detector, which is why the percentages carry the result and no single map does. Then the distribution of grid scores over all active units, orange for centre-surround, blue for Gaussian, the dashed line at the cut, and beside it the autocorrelogram of one steady grid unit. In a clean lattice the peaks nearest the centre form a hexagon; at this resolution expect that pattern to show through noise, not crisply.
+        First the twin's best stable units, laid out the same way. A few can score well while showing a single blob: the score is not a perfect detector, which is why the percentages carry the result and no single map does. Then the distribution of grid scores over all active units, orange for centre-surround, blue for Gaussian, the dashed line at the cut and a solid line at each distribution's median, and beside it the autocorrelogram of one steady grid unit. In a clean lattice the peaks nearest the centre form a hexagon; at this resolution expect that pattern to show through noise, not crisply.
       ar: >-
-        أولاً أفضل وحدات التوأم المستقرة، مرتبة بالطريقة نفسها. وقد تنال بعضها درجة عالية وهي لا تُظهر إلا بقعة واحدة: فالدرجة ليست كاشفاً مثالياً، ولهذا تحمل النسبُ المئوية النتيجةَ، لا أي خريطة بعينها. ثم توزيع درجات الشبكة على كل الوحدات النشطة: البرتقالي للمركز والمحيط، والأزرق للغاوسي، والخط المتقطع عند العتبة. وبجانبه خريطة الارتباط الذاتي لوحدة سداسية مستقرة. في النمط النظيف تشكّل أقرب القمم إلى المركز شكلاً سداسياً، وبهذه الدقة توقّع أن يظهر هذا الشكل وسط التشويش، لا واضحاً حادّ الحواف.
+        أولاً أفضل وحدات التوأم المستقرة، مرتبة بالطريقة نفسها. وقد تنال بعضها درجة عالية وهي لا تُظهر إلا بقعة واحدة: فالدرجة ليست كاشفاً مثالياً، ولهذا تحمل النسبُ المئوية النتيجةَ، لا أي خريطة بعينها. ثم توزيع درجات الشبكة على كل الوحدات النشطة: البرتقالي للمركز والمحيط، والأزرق للغاوسي، والخط المتقطع عند العتبة، وخط متصل عند وسيط كل توزيع. وبجانبه خريطة الارتباط الذاتي لوحدة سداسية مستقرة. في النمط النظيف تشكّل أقرب القمم إلى المركز شكلاً سداسياً، وبهذه الدقة توقّع أن يظهر هذا الشكل وسط التشويش، لا واضحاً حادّ الحواف.
 
   - type: prose
-    title: { en: "Ask what caused hexagons", ar: "اسأل ما الذي صنع السداسيات" }
+    title: {en: "Ask what caused hexagons", ar: "اسأل ما الذي صنع السداسيات"}
     phase: interpret
     text:
       en: >-
-        In this run {{run.metrics.grid_percent_dog}}% of the centre-surround network's active units were stable grid units, against {{run.metrics.grid_percent_control}}% for its twin and {{run.metrics.grid_percent_untrained}}% for the same weights before training. The twin was also the better navigator. The network that grew hexagons is not the one that solved the task best, so hexagons are not what path integration needs here.
+        In this run {{run.metrics.grid_percent_dog}}% of the centre-surround network's active units were stable grid units, against {{run.metrics.grid_percent_control}}% for its twin and {{run.metrics.grid_percent_untrained}}% for the same weights before training. Its median grid score was {{run.metrics.dog_median_score}}, the twin's {{run.metrics.control_median_score}}. The twin was also the better navigator, so hexagons are not what path integration needs here.
 
 
-        Sorscher, Mel, Ganguli and Ocko proposed the mechanism in 2019. A surround penalises both very broad and very fine spatial patterns, so the target itself favours units built around one preferred spatial frequency. Firing rates cannot go negative, and among patterns built from a single frequency under that constraint, the triangular lattice wins. Remove the surround and the preferred frequency goes, taking the lattice with it. The pull comes from the shape of the target, and in this run it held even though it bought no better navigation.
+        That result belongs to one seed, and the seed was chosen. A seed sets the place-cell layout, the walks and the starting weights together. Before any outcome was known, seven seeds were fixed and the centre-surround network was trained on each. All seven learned to navigate. Their shares of stable grid units were 1.0, 3.5, 4.1, 11.7, 12.8, 16.6 and 22.4%, and four of them cleared 8%. This notebook uses the 16.6% seed: the second strongest, and one whose run repeated exactly in separate sessions.
 
 
-        Schaeffer, Khona and Fiete pressed the point in 2022: emergence of this kind depends on choices a modeller makes, and a network reproducing a brain's pattern is evidence about the objective, not proof that the brain is optimising it. This run is a small instance of their argument.
+        Two things held. The twin navigated more precisely in all four seeds where both networks were trained. And the centre-surround scores sat above the twin's as a whole even where the lattice barely formed: in the two weakest seeds, with grid shares close to the untrained floor, the median gap was still 0.15 and 0.19. The lean toward sixfold structure was consistent. The lattice it produces was not.
+
+
+        Sorscher, Mel, Ganguli and Ocko proposed the mechanism in 2019. A surround penalises both very broad and very fine spatial patterns, so the target favours units built around one preferred spatial frequency. Firing rates cannot go negative, and among single-frequency patterns under that constraint, the triangular lattice wins. That describes what the objective favours, not whether a particular training run gets there. A finite run at this scale moves toward it by an amount that depends on the seed.
+
+
+        Schaeffer, Khona and Fiete argued in 2022 that emergence in these models depends on choices a modeller makes and is more fragile than it first appeared, and that a network reproducing a brain's pattern is evidence about the objective, not proof that the brain is optimising it. Seven seeds here are a small instance of the same point.
 
 
         One caution before leaning on the navigation gap. Position is decoded from the three most active predicted place cells, and about three quarters of the centre-surround code is a nearly flat floor, so its peak is harder to read. Part of the gap may come from a harder readout rather than worse integration, and this run cannot separate the two.
 
 
-        The hexagons were never asked for. The shape of the target asked for them, one step removed, and they arrived without making the network any more accurate.
+        The hexagons were never asked for. The shape of the target asked for them, one step removed. It asks on every run; the lattice answers only on some.
       ar: >-
-        في هذا التشغيل كانت {{run.metrics.grid_percent_dog}}% من الوحدات النشطة في شبكة المركز والمحيط وحداتٍ سداسية مستقرة، مقابل {{run.metrics.grid_percent_control}}% في توأمها، و{{run.metrics.grid_percent_untrained}}% في الأوزان نفسها قبل التدريب. والتوأم نفسه كان الأدق في الملاحة. فالشبكة التي نمت فيها السداسيات ليست التي حلّت المهمة على أفضل وجه، والسداسيات إذن ليست ما يحتاجه تكامل المسار هنا.
+        في هذا التشغيل كانت {{run.metrics.grid_percent_dog}}% من الوحدات النشطة في شبكة المركز والمحيط وحداتٍ سداسية مستقرة، مقابل {{run.metrics.grid_percent_control}}% في توأمها، و{{run.metrics.grid_percent_untrained}}% في الأوزان نفسها قبل التدريب. وبلغ وسيط درجاتها {{run.metrics.dog_median_score}}، ووسيط درجات التوأم {{run.metrics.control_median_score}}. والتوأم نفسه كان الأدق في الملاحة، فالسداسيات إذن ليست ما يحتاجه تكامل المسار هنا.
 
 
-        اقترح سورشر وميل وغانغولي وأوكو الآلية عام 2019. الطوق الكابح يعاقب الأنماط المكانية الواسعة جداً والدقيقة جداً في آنٍ واحد، فيميل الهدف نفسه إلى وحداتٍ مبنية حول تردد مكاني واحد مفضّل. ومعدلات النشاط لا يمكن أن تكون سالبة، ومن بين الأنماط المبنية على تردد واحد تحت هذا القيد يفوز النمط المثلثي. أزِل الطوق يختفِ التردد المفضّل، ويختفِ النمط معه. فالجذب يأتي من شكل الهدف، وقد صمد في هذا التشغيل مع أنه لم يجلب ملاحةً أفضل.
+        لكن هذه النتيجة تخص بذرة واحدة، وقد اختيرت عن قصد. فالبذرة تحدد مواضع خلايا المكان والمسارات والأوزان الابتدائية معاً. وقبل معرفة أي نتيجة ثُبّتت سبع بذور، ودُرّبت شبكة المركز والمحيط على كل منها. تعلّمت السبع كلها الملاحة، وكانت حصص الوحدات السداسية المستقرة فيها 1.0 و3.5 و4.1 و11.7 و12.8 و16.6 و22.4%، وتجاوزت أربعٌ منها عتبة 8%. تستخدم هذه الورشة البذرة ذات الـ16.6%: وهي الثانية قوةً، وقد أُعيد تشغيلها في جلسات منفصلة فجاءت متطابقة.
 
 
-        ثم عاد شيفر وخونا وفيتي إلى هذه النقطة عام 2022: هذا النوع من الظهور التلقائي مرهونٌ باختيارات يتخذها من يبني النموذج، وحين تعيد شبكةٌ إنتاج نمطٍ نراه في الدماغ، فهذا دليل على طبيعة الهدف، لا برهان على أن الدماغ يسعى إلى الهدف نفسه. وهذا التشغيل مثال صغير على حجتهم.
+        وثبت أمران. كان التوأم الأدق في الملاحة في البذور الأربع التي دُرّبت فيها الشبكتان كلتاهما. وبقيت درجات شبكة المركز والمحيط في مجملها أعلى من درجات التوأم حتى حين لم يكد النمط يتشكل: ففي أضعف بذرتين، وحصتاهما قريبتان من حدّ الأوزان غير المدرَّبة، بقي فارق الوسيط 0.15 و0.19. الميل نحو البنية السداسية كان ثابتاً، أما النمط الذي ينتج عنه فلم يكن كذلك.
+
+
+        اقترح سورشر وميل وغانغولي وأوكو الآلية عام 2019. الطوق الكابح يعاقب الأنماط المكانية الواسعة جداً والدقيقة جداً في آنٍ واحد، فيميل الهدف إلى وحداتٍ مبنية حول تردد مكاني واحد مفضّل. ومعدلات النشاط لا يمكن أن تكون سالبة، ومن بين الأنماط المبنية على تردد واحد تحت هذا القيد يفوز النمط المثلثي. هذا يصف ما يفضّله الهدف، لا ما إذا كان تشغيلٌ بعينه سيبلغه. فالتشغيل المحدود بهذا الحجم يقترب منه بمقدارٍ يتوقف على البذرة.
+
+
+        ثم رأى شيفر وخونا وفيتي عام 2022 أن هذا النوع من الظهور التلقائي مرهونٌ باختيارات يتخذها من يبني النموذج، وأنه أهشّ مما بدا أول الأمر، وأن إعادة شبكةٍ إنتاج نمطٍ نراه في الدماغ دليلٌ على طبيعة الهدف، لا برهان على أن الدماغ يسعى إلى الهدف نفسه. والبذور السبع هنا مثال صغير على الفكرة نفسها.
 
 
         وقبل أن تبني الكثير على فارق الملاحة، تنبّه إلى أمر: الموضع يُستخرج من أنشط ثلاث خلايا مكان متوقعة، ونحو ثلاثة أرباع شيفرة المركز والمحيط أرضيةٌ شبه مسطحة، فقراءة قمّتها أصعب. قد يعود جزء من الفارق إلى صعوبة القراءة لا إلى ضعف التكامل، وهذا التشغيل لا يستطيع الفصل بين الاثنين.
 
 
-        لم يطلب أحدٌ السداسيات. شكلُ الهدف هو الذي طلبها، من وراء خطوة واحدة، وجاءت دون أن تجعل الشبكة أدق في شيء.
+        لم يطلب أحدٌ السداسيات. شكلُ الهدف هو الذي طلبها، من وراء خطوة واحدة. وهو يطلبها في كل تشغيل، أما النمط فلا يستجيب إلا في بعضها.
 
   - type: paperRef
     slug: recurrent-neural-network
-    title: { en: "Revisit the recurrent network", ar: "عُد إلى الشبكة التكرارية" }
+    title: {en: "Revisit the recurrent network", ar: "عُد إلى الشبكة التكرارية"}
     phase: interpret
     note:
       en: "The entire map of the room is stored in one vector updated by the same weights at every step."
@@ -466,7 +453,7 @@ body:
 
   - type: paperRef
     slug: backpropagation-through-time
-    title: { en: "Revisit backprop through time", ar: "عُد إلى الانتشار العكسي عبر الزمن" }
+    title: {en: "Revisit backprop through time", ar: "عُد إلى الانتشار العكسي عبر الزمن"}
     phase: interpret
     note:
       en: "Every walk is unrolled over all of its steps; the lattice is shaped by gradients that cross every one of them."
@@ -476,7 +463,7 @@ body:
   - type: exercise
     id: longer-walks
     ref: exercise
-    title: { en: "Walk past the training horizon", ar: "امشِ أبعد من أفق التدريب" }
+    title: {en: "Walk past the training horizon", ar: "امشِ أبعد من أفق التدريب"}
     phase: stretch
     prompt:
       en: >-
@@ -487,7 +474,7 @@ body:
 
   - type: paperRef
     slug: long-short-term-memory
-    title: { en: "Weigh the gated alternative", ar: "وازن البديل ذا البوابات" }
+    title: {en: "Weigh the gated alternative", ar: "وازن البديل ذا البوابات"}
     phase: stretch
     note:
       en: "DeepMind's 2018 grid-cell agent used an LSTM; here a plain ReLU recurrence is enough, which makes gating an option, not a precondition."
@@ -496,7 +483,7 @@ body:
 
   - type: paperRef
     slug: neural-turing-machine
-    title: { en: "Contrast addressable memory", ar: "قارن بالذاكرة ذات العناوين" }
+    title: {en: "Contrast addressable memory", ar: "قارن بالذاكرة ذات العناوين"}
     phase: stretch
     note:
       en: "A Neural Turing Machine writes to a location it can look up. This network has no address to write to — the lattice is how it indexes space instead."
@@ -506,7 +493,7 @@ body:
   - type: cell
     id: verify
     ref: verify
-    title: { en: "Verify the three claims", ar: "تحقّق من الادعاءات الثلاثة" }
+    title: {en: "Verify the three claims", ar: "تحقّق من الادعاءات الثلاثة"}
     phase: verify
     caption:
       en: "Navigation first; the grid comparison is only meaningful if both networks passed it."
@@ -516,7 +503,7 @@ body:
   - type: cell
     id: finish
     ref: finish
-    title: { en: "Collect the receipt", ar: "استلم الإيصال" }
+    title: {en: "Collect the receipt", ar: "استلم الإيصال"}
     phase: verify
     caption:
       en: "Your completion code and the provenance of this run."
