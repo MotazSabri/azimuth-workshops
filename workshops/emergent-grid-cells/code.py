@@ -217,8 +217,6 @@ fig, ax = plt.subplots(figsize=(6, 3.5))
 ax.plot(dog_history[:, 0], dog_history[:, 2], color="tab:orange", lw=2)
 ax.plot(control_history[:, 0], control_history[:, 2], color="tab:blue", lw=2)
 ax.set_ylim(bottom=0)  # zero-based: both curves must visibly reach the floor
-ax.set_xlabel("step")
-ax.set_ylabel("cm")
 plt.tight_layout()
 plt.show()
 # --8<-- [end:train_control]
@@ -229,17 +227,20 @@ plt.show()
 def survey(model, surround, seq_len, skip=0):
     """Walk the trained network through fresh trajectories.
 
-    Returns (rate maps [units, res, res], stability [units], decoding skill).
+    Returns (rate maps [units, res, res], stability [units], decoding skill,
+    error in cm, error in cm of always guessing the box centre).
     Only steps at index >= skip are binned and scored. Skill = 1 - model error /
     error of a guess that never moves from the starting point, so 0 means "did
-    not integrate". Stability correlates the maps built from two halves of the
-    walks: a real map agrees with itself, noise does not.
+    not integrate". That guess gets worse as walks get longer, so skill is only
+    comparable between walks of the same length; the centimetre errors are not.
+    Stability correlates the maps built from two halves of the walks: a real map
+    agrees with itself, noise does not.
     """
     res = cfg["map_res"]
     rng = np.random.default_rng(cfg["seed"] + 1)  # unseen trajectories, same for both networks
     sums = torch.zeros(2, res * res, cfg["hidden_units"], device=device)
     counts = torch.zeros(2, res * res, device=device)
-    model_err, still_err = 0.0, 0.0
+    model_err, still_err, centre_err = 0.0, 0.0, 0.0
     for batch in range(cfg["eval_batches"]):
         pos, velocity, start, _ = batch_tensors(
             make_trajectories(rng, cfg["batch"], seq_len), surround
@@ -248,6 +249,7 @@ def survey(model, surround, seq_len, skip=0):
         where = pos[:, 1 + skip :]
         model_err += (decode(model.decoder(states)) - where).norm(dim=-1).mean().item()
         still_err += (pos[:, :1] - where).norm(dim=-1).mean().item()
+        centre_err += where.norm(dim=-1).mean().item()
         cell = ((where + BOX / 2) / BOX * res).long().clamp(0, res - 1)
         index = (cell[..., 0] * res + cell[..., 1]).reshape(-1)
         half = batch % 2
@@ -261,20 +263,37 @@ def survey(model, surround, seq_len, skip=0):
     stability = (
         ((a * b).sum(0) / ((a * a).sum(0) * (b * b).sum(0)).sqrt().clamp(min=1e-12)).cpu().numpy()
     )
-    return maps, stability, 1 - model_err / still_err
+    per_batch_cm = 100 / cfg["eval_batches"]
+    return (
+        maps,
+        stability,
+        1 - model_err / still_err,
+        model_err * per_batch_cm,
+        centre_err * per_batch_cm,
+    )
 
 
-dog_maps, dog_stability, dog_skill = survey(dog_model, cfg["surround_scale"], cfg["seq_len"])
-control_maps, control_stability, control_skill = survey(control_model, None, cfg["seq_len"])
+dog_maps, dog_stability, dog_skill, dog_err_cm, _ = survey(
+    dog_model, cfg["surround_scale"], cfg["seq_len"]
+)
+control_maps, control_stability, control_skill, control_err_cm, _ = survey(
+    control_model, None, cfg["seq_len"]
+)
 dog_skill, control_skill = round(dog_skill, 3), round(control_skill, 3)
 
 if env.lang == "ar":
     print(
         f"مهارة تكامل المسار · هدف المركز والمحيط {dog_skill:.3f} · الهدف الغاوسي {control_skill:.3f}"
     )
+    print(
+        f"خطأ الموضع · هدف المركز والمحيط {dog_err_cm:.1f} سم · الهدف الغاوسي {control_err_cm:.1f} سم"
+    )
 else:
     print(
         f"path-integration skill · centre-surround {dog_skill:.3f} · Gaussian {control_skill:.3f}"
+    )
+    print(
+        f"position error · centre-surround {dog_err_cm:.1f} cm · Gaussian {control_err_cm:.1f} cm"
     )
 # --8<-- [end:ratemaps]
 
@@ -385,7 +404,7 @@ def grid_units(maps, scores, stability):
 # repeat itself across two halves of the data, so the stability test removes it.
 torch.manual_seed(cfg["seed"])
 untrained = PathIntegrator(cfg["place_cells"], cfg["hidden_units"]).to(device).eval()
-untrained_maps, untrained_stability, _ = survey(untrained, cfg["surround_scale"], cfg["seq_len"])
+untrained_maps, untrained_stability, *_ = survey(untrained, cfg["surround_scale"], cfg["seq_len"])
 _, grid_percent_untrained = grid_units(
     untrained_maps, grid_scores(untrained_maps)[0], untrained_stability
 )
@@ -423,10 +442,16 @@ bins = np.linspace(-1.0, 1.8, 57)
 ax_hist.hist(control_scores[active_control], bins=bins, color="tab:blue", alpha=0.55, density=True)
 ax_hist.hist(dog_scores[active_dog], bins=bins, color="tab:orange", alpha=0.55, density=True)
 ax_hist.axvline(cut, color="0.2", ls="--", lw=1)
-# The exemplar is the best unit that fires over a real part of the floor: a unit
-# with two or three tiny spots can score well and still draw an unreadable picture.
+# The exemplar is the steadiest grid unit that fires over a real part of the
+# floor. The top scorer can be a unit with a few tiny spots, which scores well
+# and draws a noisy autocorrelogram; a stable, well-covered map draws a cleaner one.
 coverage = (dog_maps > 0.5 * dog_maps.max(axis=(1, 2), keepdims=True)).mean(axis=(1, 2))
-exemplar = next((u for u in top_dog_units if coverage[u] >= 0.15), top_dog_units[0])
+candidates = np.flatnonzero(dog_grid & (coverage >= 0.15))
+exemplar = (
+    int(candidates[np.argmax(dog_stability[candidates])])
+    if len(candidates)
+    else int(top_dog_units[0])
+)
 ax_sac.imshow(dog_sac[exemplar].T, origin="lower", cmap="RdBu_r", vmin=-1, vmax=1)
 ax_sac.axis("off")
 plt.tight_layout()
@@ -447,10 +472,12 @@ else:
 # YOUR TURN.
 # The network only ever saw walks of cfg["seq_len"] steps. Run it for longer and
 # score only the steps it was never trained on. Try 1, then 3, 5, 10.
+# Errors are compared in centimetres: skill is measured against standing still,
+# and standing still gets worse on longer walks, which would flatter the network.
 LENGTH_MULTIPLE = 5
 
 long_len = cfg["seq_len"] * LENGTH_MULTIPLE
-long_maps, _, long_skill = survey(
+long_maps, _, _, long_err_cm, centre_cm = survey(
     dog_model, cfg["surround_scale"], long_len, skip=cfg["seq_len"] if LENGTH_MULTIPLE > 1 else 0
 )
 long_scores, _ = grid_scores(long_maps)
@@ -469,14 +496,18 @@ plt.show()
 
 if env.lang == "ar":
     print(
-        f"مسارات أطول بـ {LENGTH_MULTIPLE} مرات · مهارة التكامل {long_skill:.3f} (كانت {dog_skill:.3f})"
+        f"مسارات أطول بـ {LENGTH_MULTIPLE} مرات · خطأ الموضع بعد أفق التدريب {long_err_cm:.1f} سم"
     )
+    print(f"داخل الأفق {dog_err_cm:.1f} سم · تخمين مركز الصندوق دائماً {centre_cm:.1f} سم")
     print(
         f"متوسط درجة الوحدات نفسها {np.mean(kept):.2f} (كان {np.mean(dog_scores[top_dog_units]):.2f})"
     )
 else:
     print(
-        f"walks {LENGTH_MULTIPLE}× longer · integration skill {long_skill:.3f} (was {dog_skill:.3f})"
+        f"walks {LENGTH_MULTIPLE}× longer · position error beyond the training horizon {long_err_cm:.1f} cm"
+    )
+    print(
+        f"within the horizon {dog_err_cm:.1f} cm · always guessing the box centre {centre_cm:.1f} cm"
     )
     print(
         f"mean score of the same units {np.mean(kept):.2f} (was {np.mean(dog_scores[top_dog_units]):.2f})"
