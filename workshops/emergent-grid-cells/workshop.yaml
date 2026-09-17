@@ -30,16 +30,16 @@ goal:
     أن تتعلم الشبكتان تتبّع موقعهما من السرعة وحدها، وأن تكون شبكة المركز والمحيط أقل دقة في ذلك. ومع هذا تبقى درجاتها في مجملها أعلى من درجات توأمها الغاوسي، وفي هذه البذرة تتحول حصةٌ واضحة من وحداتها إلى خرائط سداسية مستقرة. وعبر سبع بذور تراوحت هذه الحصة بين 1% و22%: الميل نحو النمط ثبت، أما النمط نفسه فلم يثبت.
 
 difficulty: intermediate
-status: draft
-publishedAt:
+status: stable
+publishedAt: "2026-09-17"
 
 maintenance:
   tier: stable
   cadence: yearly
 
 estimate:
-  gpuMinutes: 40      # T4 fp16 at 30k steps: 19.7 + 18.8 min training (25-27 steps/s)
-  totalMinutes: 50    # that run took 39 min end to end, plus reading time
+  gpuMinutes: 43      # final T4 runs: 41.2 (en) and 43.7 (ar) min of training at 22-25 steps/s
+  totalMinutes: 55    # those runs took 42 and 45 min end to end, plus reading time
 
 papers:
   - slug: recurrent-neural-network
@@ -133,7 +133,8 @@ checks:
   # both-integrate min 0.35: lowest measured skill 0.484. surround-pull min 0.08: about half the
   # smallest gap measured. Code.py takes those medians over STABLE units (over all active units,
   # untrained weights alone give ~0.14); the sweep measured them over active units, where stable
-  # units were 99% of centre-surround and 81-93% of twin units. Confirm on the next free run.
+  # units were 99% of centre-surround and 81-93% of twin units. Final free run (seed 17, both
+  # languages, identical metrics): stable-unit gap 0.463, skill 0.484/0.771, grid units 16.6%.
   # grid-units is reported, not required: it varies twentyfold by seed.
   - id: both-integrate
     required: true
