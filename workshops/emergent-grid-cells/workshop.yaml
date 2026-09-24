@@ -42,7 +42,7 @@ estimate:
   totalMinutes: 55    # those runs took 42 and 45 min end to end, plus reading time
 
 papers:
-  - slug: recurrent-neural-network
+  - slug: rnn
     role: core
     label:
       en: "a hidden state that carries the position forward from step to step"
@@ -53,7 +53,7 @@ papers:
       en: "how an error at the last step reaches the weights used at the first"
       ar: >-
         كيف يصل خطأ الخطوة الأخيرة إلى الأوزان التي استُخدمت في الخطوة الأولى
-  - slug: long-short-term-memory
+  - slug: lstm
     role: supporting
     label:
       en: "the gated alternative this workshop deliberately does not use"
