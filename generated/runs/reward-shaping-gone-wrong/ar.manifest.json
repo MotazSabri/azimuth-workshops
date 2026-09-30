@@ -2,7 +2,7 @@
  "schema": "run/v1",
  "slug": "reward-shaping-gone-wrong",
  "lang": "ar",
- "codeHash": "921396b8e8c2671a",
+ "codeHash": "359973e6e1900567",
  "status": "verified",
  "profile": "free",
  "receipt": {
@@ -21,7 +21,7 @@
   "setup": [
    {
     "kind": "stream",
-    "text": "تشكيل المكافأة وكيف ينحرف\nبدون معالج رسوميات · ذاكرة 12.7 غ.ب · PyTorch 2.11.0+cpu\nالملف: ⁦free⁩\nجاهز · ⁦episodes=1500, evalEpisodes=50, hidden=128, learningRate=0.0007, gamma=0.99, seed=17⁩\nالشيفرة · ⁦921396b8e8c2671a⁩"
+    "text": "تشكيل المكافأة وكيف ينحرف\nبدون معالج رسوميات · ذاكرة 12.7 غ.ب · PyTorch 2.11.0+cpu\nالملف: ⁦free⁩\nجاهز · ⁦episodes=1500, evalEpisodes=50, hidden=128, learningRate=0.0007, gamma=0.99, seed=17⁩\nالشيفرة · ⁦359973e6e1900567⁩"
    }
   ],
   "rewards": [
