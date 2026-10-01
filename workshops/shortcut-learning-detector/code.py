@@ -140,8 +140,8 @@ train_flags = draw_flags(y_train, rate, gen)
 
 # Three test sets built from the SAME test photos. Only the square moves.
 test_sets = {
-    "matched": paint(x_test, draw_flags(y_test, rate, gen)),         # same rule as training
-    "clean": x_test.clone(),                                         # no square at all
+    "matched": paint(x_test, draw_flags(y_test, rate, gen)),  # same rule as training
+    "clean": x_test.clone(),  # no square at all
     "flipped": paint(x_test, draw_flags(y_test, 1.0 - rate, gen)),  # the rule reversed
 }
 
@@ -154,9 +154,13 @@ gallery = paint(x_train[:16], train_flags[:16]).cpu()
 fig, axes = plt.subplots(2, 8, figsize=(11, 3.2))
 for ax, img, y, f in zip(axes.flat, gallery, y_train[:16].cpu(), train_flags[:16].cpu()):
     ax.imshow(img.permute(1, 2, 0).numpy(), interpolation="nearest")
-    ax.set_title(label("dog" if y else "cat", "كلب" if y else "قطة") + (" ■" if f else ""), fontsize=9)
+    ax.set_title(
+        label("dog" if y else "cat", "كلب" if y else "قطة") + (" ■" if f else ""), fontsize=9
+    )
     ax.axis("off")
-fig.suptitle(label("Training images (■ = carries the square)", "صور من بيانات التدريب (■ = تحمل المربّع)"))
+fig.suptitle(
+    label("Training images (■ = carries the square)", "صور من بيانات التدريب (■ = تحمل المربّع)")
+)
 plt.tight_layout()
 plt.show()
 
@@ -188,7 +192,9 @@ class Block(nn.Module):
         self.bn2 = nn.BatchNorm2d(c_out)
         self.skip = nn.Sequential()
         if stride != 1 or c_in != c_out:
-            self.skip = nn.Sequential(nn.Conv2d(c_in, c_out, 1, stride, bias=False), nn.BatchNorm2d(c_out))
+            self.skip = nn.Sequential(
+                nn.Conv2d(c_in, c_out, 1, stride, bias=False), nn.BatchNorm2d(c_out)
+            )
 
     def forward(self, x):
         h = F.relu(self.bn1(self.conv1(x)))
@@ -199,7 +205,9 @@ class SmallResNet(nn.Module):
     def __init__(self, width):
         super().__init__()
         w = width
-        self.stem = nn.Sequential(nn.Conv2d(3, w, 3, 1, 1, bias=False), nn.BatchNorm2d(w), nn.ReLU())
+        self.stem = nn.Sequential(
+            nn.Conv2d(3, w, 3, 1, 1, bias=False), nn.BatchNorm2d(w), nn.ReLU()
+        )
         self.stage1 = nn.Sequential(Block(w, w, 1), Block(w, w, 1))
         self.stage2 = nn.Sequential(Block(w, 2 * w, 2), Block(2 * w, 2 * w, 1))
         self.stage3 = nn.Sequential(Block(2 * w, 4 * w, 2), Block(4 * w, 4 * w, 1))
@@ -255,9 +263,13 @@ def train(flags, run_seed, epochs, tag):
             correct += (logits.argmax(1) == y_train[idx]).sum().item()
         if epoch == 0 or (epoch + 1) % 5 == 0 or epoch + 1 == epochs:
             if env.lang == "ar":
-                print(f"[{tag}] الحقبة {epoch + 1:>2}  الخسارة {total / n_train:.3f}  دقة التدريب {correct / n_train:.3f}")
+                print(
+                    f"[{tag}] الحقبة {epoch + 1:>2}  الخسارة {total / n_train:.3f}  دقة التدريب {correct / n_train:.3f}"
+                )
             else:
-                print(f"[{tag}] epoch {epoch + 1:>2}  loss {total / n_train:.3f}  train acc {correct / n_train:.3f}")
+                print(
+                    f"[{tag}] epoch {epoch + 1:>2}  loss {total / n_train:.3f}  train acc {correct / n_train:.3f}"
+                )
     return model.eval()
 
 
@@ -265,8 +277,12 @@ def train(flags, run_seed, epochs, tag):
 def accuracy(model, images_u8):
     hits = 0
     for i in range(0, len(images_u8), 500):
-        hits += (model(to_input(images_u8[i : i + 500])).argmax(1) == y_test[i : i + 500]).sum().item()
+        hits += (
+            (model(to_input(images_u8[i : i + 500])).argmax(1) == y_test[i : i + 500]).sum().item()
+        )
     return hits / len(images_u8)
+
+
 # --8<-- [end:model]
 
 
@@ -323,16 +339,35 @@ cond_labels = {
 }
 xs = np.arange(len(test_sets))
 fig, ax = plt.subplots(figsize=(7, 4))
-ax.bar(xs - 0.2, [results[k]["honest"] for k in test_sets], 0.4,
-       label=label("honest model", "النموذج النزيه"), color="#4c72b0")
-ax.bar(xs + 0.2, [results[k]["shortcut"] for k in test_sets], 0.4,
-       label=label("shortcut model", "نموذج الاختصار"), color="#dd8452")
+ax.bar(
+    xs - 0.2,
+    [results[k]["honest"] for k in test_sets],
+    0.4,
+    label=label("honest model", "النموذج النزيه"),
+    color="#4c72b0",
+)
+ax.bar(
+    xs + 0.2,
+    [results[k]["shortcut"] for k in test_sets],
+    0.4,
+    label=label("shortcut model", "نموذج الاختصار"),
+    color="#dd8452",
+)
 ax.axhline(0.5, color="grey", ls="--", lw=1)
-ax.text(len(test_sets) - 0.5, 0.51, label("chance", "التخمين العشوائي"), color="grey", ha="right", fontsize=9)
+ax.text(
+    len(test_sets) - 0.5,
+    0.51,
+    label("chance", "التخمين العشوائي"),
+    color="grey",
+    ha="right",
+    fontsize=9,
+)
 ax.set_xticks(xs, [cond_labels[k] for k in test_sets])
 ax.set_ylim(0, 1)  # zero-based: the honest model's flat line IS the point
 ax.set_ylabel(label("test accuracy", "دقة الاختبار"))
-ax.set_title(label("Same photos, three placements of the square", "الصور نفسها، وثلاث طرق لتوزيع المربّع"))
+ax.set_title(
+    label("Same photos, three placements of the square", "الصور نفسها، وثلاث طرق لتوزيع المربّع")
+)
 ax.legend(loc="lower left")
 plt.tight_layout()
 plt.show()
@@ -395,6 +430,7 @@ patch_attention_shortcut = round(patch_attention(shortcut, probe), 4)
 attention_gap = round(patch_attention_shortcut - patch_attention_honest, 4)
 uniform_share = round(((8 - r0) ** 2) / 64, 4)
 
+
 # Pick demonstrative examples instead of indexing blindly: cats that the
 # honest model calls cat, the shortcut model calls dog, once the square is on.
 def gradcam_all(model, images_u8):
@@ -409,7 +445,9 @@ fooled = ((pred_h == 0) & (pred_s == 1)).nonzero().squeeze(1)[:6]
 if len(fooled) == 0:  # nothing qualified: show the first cats rather than nothing
     fooled = torch.arange(6, device=device)
 
-up = lambda c: F.interpolate(c[None, None], size=32, mode="bilinear", align_corners=False)[0, 0].cpu()  # noqa: E731
+up = lambda c: F.interpolate(c[None, None], size=32, mode="bilinear", align_corners=False)[
+    0, 0
+].cpu()  # noqa: E731
 fig, axes = plt.subplots(3, len(fooled), figsize=(1.9 * len(fooled), 6))
 axes = np.array(axes).reshape(3, -1)
 row_titles = [
@@ -430,7 +468,9 @@ for row in range(3):
         ax.set_xticks([])
         ax.set_yticks([])
     axes[row, 0].set_ylabel(row_titles[row], fontsize=9)
-fig.suptitle(label("Cats with the square: where each model looked", "قطط تحمل المربّع: أين نظر كلّ نموذج"))
+fig.suptitle(
+    label("Cats with the square: where each model looked", "قطط تحمل المربّع: أين نظر كلّ نموذج")
+)
 plt.tight_layout()
 plt.show()
 
@@ -466,11 +506,15 @@ ex_flipped = accuracy(ex_model, paint(x_test, draw_flags(y_test, 1.0 - my_rate, 
 ex_attention = patch_attention(ex_model, probe)
 
 if env.lang == "ar":
-    print(f"\nنسبة الارتباط {my_rate}:  مطابق {ex_matched:.3f}   معكوس {ex_flipped:.3f}"
-          f"   الانهيار {ex_matched - ex_flipped:+.3f}   انتباه المربّع {ex_attention:.3f}")
+    print(
+        f"\nنسبة الارتباط {my_rate}:  مطابق {ex_matched:.3f}   معكوس {ex_flipped:.3f}"
+        f"   الانهيار {ex_matched - ex_flipped:+.3f}   انتباه المربّع {ex_attention:.3f}"
+    )
 else:
-    print(f"\nrate {my_rate}:  matched {ex_matched:.3f}   flipped {ex_flipped:.3f}"
-          f"   collapse {ex_matched - ex_flipped:+.3f}   attention on square {ex_attention:.3f}")
+    print(
+        f"\nrate {my_rate}:  matched {ex_matched:.3f}   flipped {ex_flipped:.3f}"
+        f"   collapse {ex_matched - ex_flipped:+.3f}   attention on square {ex_attention:.3f}"
+    )
 # --8<-- [end:exercise]
 
 

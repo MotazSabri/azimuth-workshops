@@ -22,7 +22,9 @@ import torch.nn.functional as F
 
 assert torch.cuda.is_available(), "This workshop measures GPU memory: switch the runtime to a GPU."
 _tv = tuple(int(p) for p in torch.__version__.split("+")[0].split(".")[:2])
-assert _tv >= (2, 1), f"torch {torch.__version__} is too old for fused attention; use Colab's default runtime."
+assert _tv >= (2, 1), (
+    f"torch {torch.__version__} is too old for fused attention; use Colab's default runtime."
+)
 
 DEVICE = "cuda"
 DTYPE = torch.float16
@@ -172,7 +174,10 @@ class Decoder(nn.Module):
         # A cache of the right shape for timing; its contents do not matter.
         shape = (batch, self.n_kv, length, D_HEAD)
         return [
-            (torch.randn(shape, device=DEVICE, dtype=DTYPE), torch.randn(shape, device=DEVICE, dtype=DTYPE))
+            (
+                torch.randn(shape, device=DEVICE, dtype=DTYPE),
+                torch.randn(shape, device=DEVICE, dtype=DTYPE),
+            )
             for _ in range(N_LAYERS)
         ]
 
@@ -256,13 +261,17 @@ say(
 )
 if env.lang == "ar":
     probe_table = pd.DataFrame(
-        {"الفاتورة": ["الأوزان", "التفعيلات (ذروة عابرة)", "ذاكرة المفاتيح والقيم"],
-         "GiB": [probe_weights_gib, probe_act_gib, probe_cache_gib]}
+        {
+            "الفاتورة": ["الأوزان", "التفعيلات (ذروة عابرة)", "ذاكرة المفاتيح والقيم"],
+            "GiB": [probe_weights_gib, probe_act_gib, probe_cache_gib],
+        }
     )
 else:
     probe_table = pd.DataFrame(
-        {"bill": ["weights", "activations (transient peak)", "KV cache"],
-         "GiB": [probe_weights_gib, probe_act_gib, probe_cache_gib]}
+        {
+            "bill": ["weights", "activations (transient peak)", "KV cache"],
+            "GiB": [probe_weights_gib, probe_act_gib, probe_cache_gib],
+        }
     )
 probe_table.round(2)
 # --8<-- [end:measure]
@@ -317,11 +326,23 @@ c = [r["cache"] / GIB for r in rows]
 a = [r["act"] / GIB for r in rows]
 ax.bar(xs, w, color="#8a94a6", label=ar("weights", "الأوزان"))
 ax.bar(xs, c, bottom=w, color="#d9822b", label=ar("KV cache", "ذاكرة المفاتيح والقيم"))
-ax.bar(xs, a, bottom=[wi + ci for wi, ci in zip(w, c)], color="#5b8def", alpha=0.55,
-       label=ar("activations (transient)", "التفعيلات (عابرة)"))
+ax.bar(
+    xs,
+    a,
+    bottom=[wi + ci for wi, ci in zip(w, c)],
+    color="#5b8def",
+    alpha=0.55,
+    label=ar("activations (transient)", "التفعيلات (عابرة)"),
+)
 ax.axhline(2 * wb / GIB, color="#333", lw=0.8, ls=":")
-ax.text(len(rows) - 0.5, 2 * wb / GIB, ar(" cache = weights", " الذاكرة المؤقتة = الأوزان"),
-        va="bottom", ha="right", fontsize=8)
+ax.text(
+    len(rows) - 0.5,
+    2 * wb / GIB,
+    ar(" cache = weights", " الذاكرة المؤقتة = الأوزان"),
+    va="bottom",
+    ha="right",
+    fontsize=8,
+)
 ax.set_xticks(list(xs), [str(r["ctx"]) for r in rows])
 ax.set_xlabel(ar(f"context length (batch of {BATCH})", f"طول السياق (دفعة من {BATCH})"))
 ax.set_ylabel("GiB")
@@ -366,13 +387,15 @@ for name_en, name_ar, params, layers, kv, dh in LLAMA2:
     name = name_ar if env.lang == "ar" else name_en
     per_token = predicted_cache_bytes(layers, kv, dh, 1, 1)
     weights = params * 2
-    proj.append({
-        "name": name,
-        "kib_per_token": per_token / 1024,
-        "weights_gib": weights / GIB,
-        "crossover_tokens": weights / per_token,
-        "cache_gib_b8": per_token * LLAMA_BATCH * LLAMA_CTX / GIB,
-    })
+    proj.append(
+        {
+            "name": name,
+            "kib_per_token": per_token / 1024,
+            "weights_gib": weights / GIB,
+            "crossover_tokens": weights / per_token,
+            "cache_gib_b8": per_token * LLAMA_BATCH * LLAMA_CTX / GIB,
+        }
+    )
 
 llama7b_crossover_tokens = round(proj[0]["crossover_tokens"])
 llama7b_cache_over_weights_b8 = round(proj[0]["cache_gib_b8"] / proj[0]["weights_gib"], 2)
@@ -380,11 +403,21 @@ llama70b_crossover_tokens = round(proj[2]["crossover_tokens"])
 llama70b_mha_crossover_tokens = round(proj[3]["crossover_tokens"])
 
 if env.lang == "ar":
-    cols = {"name": "النموذج", "kib_per_token": "KiB لكل رمز", "weights_gib": "الأوزان GiB",
-            "crossover_tokens": "رموز التعادل", "cache_gib_b8": f"الذاكرة المؤقتة GiB ({LLAMA_BATCH} × {LLAMA_CTX})"}
+    cols = {
+        "name": "النموذج",
+        "kib_per_token": "KiB لكل رمز",
+        "weights_gib": "الأوزان GiB",
+        "crossover_tokens": "رموز التعادل",
+        "cache_gib_b8": f"الذاكرة المؤقتة GiB ({LLAMA_BATCH} × {LLAMA_CTX})",
+    }
 else:
-    cols = {"name": "model", "kib_per_token": "KiB per token", "weights_gib": "weights GiB",
-            "crossover_tokens": "tokens to match weights", "cache_gib_b8": f"cache GiB at {LLAMA_BATCH} x {LLAMA_CTX}"}
+    cols = {
+        "name": "model",
+        "kib_per_token": "KiB per token",
+        "weights_gib": "weights GiB",
+        "crossover_tokens": "tokens to match weights",
+        "cache_gib_b8": f"cache GiB at {LLAMA_BATCH} x {LLAMA_CTX}",
+    }
 proj_table = pd.DataFrame(proj).rename(columns=cols).round(1)
 proj_table
 # --8<-- [end:formula]
@@ -403,17 +436,21 @@ cache_fused_gib = round(fused["cache"] / GIB, 2)
 score_matrix_gib = round(FB * N_HEADS * FC * FC * 2 / GIB, 2)
 
 if env.lang == "ar":
-    flash_table = pd.DataFrame({
-        "الانتباه": ["تقليدي (مصفوفة كاملة)", "مدمج، على شكل كتل"],
-        "التفعيلات GiB": [naive_act_gib, fused_act_gib],
-        "الذاكرة المؤقتة GiB": [cache_naive_gib, cache_fused_gib],
-    })
+    flash_table = pd.DataFrame(
+        {
+            "الانتباه": ["تقليدي (مصفوفة كاملة)", "مدمج، على شكل كتل"],
+            "التفعيلات GiB": [naive_act_gib, fused_act_gib],
+            "الذاكرة المؤقتة GiB": [cache_naive_gib, cache_fused_gib],
+        }
+    )
 else:
-    flash_table = pd.DataFrame({
-        "attention": ["naive (full matrix)", "fused, tiled kernel"],
-        "activations GiB": [naive_act_gib, fused_act_gib],
-        "KV cache GiB": [cache_naive_gib, cache_fused_gib],
-    })
+    flash_table = pd.DataFrame(
+        {
+            "attention": ["naive (full matrix)", "fused, tiled kernel"],
+            "activations GiB": [naive_act_gib, fused_act_gib],
+            "KV cache GiB": [cache_naive_gib, cache_fused_gib],
+        }
+    )
 say(
     f"{FB} x {FC} tokens. One layer's score matrix alone: {score_matrix_gib:.2f} GiB",
     f"الدفعة: {FB} × {FC} (تسلسلات × رموز). مصفوفة الدرجات لطبقة واحدة وحدها: {score_matrix_gib:.2f} GiB",
@@ -438,22 +475,28 @@ by_kv = {v["kv"]: v for v in variants}
 mha = by_kv[N_HEADS]
 gqa_ratio = round(mha["cache"] / by_kv[cfg["gqa_kv"]]["cache"], 2)
 mqa_ratio = round(mha["cache"] / by_kv[1]["cache"], 2)
-gqa_weight_change_pct = round(100 * (mha["weights"] - by_kv[cfg["gqa_kv"]]["weights"]) / mha["weights"], 1)
+gqa_weight_change_pct = round(
+    100 * (mha["weights"] - by_kv[cfg["gqa_kv"]]["weights"]) / mha["weights"], 1
+)
 
 if env.lang == "ar":
-    gqa_table = pd.DataFrame({
-        "رؤوس KV": [v["kv"] for v in variants],
-        "الأوزان GiB": [v["weights"] / GIB for v in variants],
-        "الذاكرة المؤقتة GiB": [v["cache"] / GIB for v in variants],
-        "تقلّص الذاكرة المؤقتة": [mha["cache"] / v["cache"] for v in variants],
-    })
+    gqa_table = pd.DataFrame(
+        {
+            "رؤوس KV": [v["kv"] for v in variants],
+            "الأوزان GiB": [v["weights"] / GIB for v in variants],
+            "الذاكرة المؤقتة GiB": [v["cache"] / GIB for v in variants],
+            "تقلّص الذاكرة المؤقتة": [mha["cache"] / v["cache"] for v in variants],
+        }
+    )
 else:
-    gqa_table = pd.DataFrame({
-        "kv heads": [v["kv"] for v in variants],
-        "weights GiB": [v["weights"] / GIB for v in variants],
-        "KV cache GiB": [v["cache"] / GIB for v in variants],
-        "cache shrink vs MHA": [mha["cache"] / v["cache"] for v in variants],
-    })
+    gqa_table = pd.DataFrame(
+        {
+            "kv heads": [v["kv"] for v in variants],
+            "weights GiB": [v["weights"] / GIB for v in variants],
+            "KV cache GiB": [v["cache"] / GIB for v in variants],
+            "cache shrink vs MHA": [mha["cache"] / v["cache"] for v in variants],
+        }
+    )
 gqa_table.round(2)
 # --8<-- [end:gqa]
 
@@ -544,13 +587,26 @@ decode_gbps = round(mha_t[-1]["bytes"] / (mha_t[-1]["ms"] / 1000) / 1e9)
 
 fig, ax = plt.subplots(figsize=(7.5, 4.0))
 ctxs = [t["ctx"] for t in mha_t]
-ax.plot(ctxs, [t["ms"] for t in mha_t], "o-", color="#d9822b", label=ar(f"MHA, {N_HEADS} kv heads", f"MHA، رؤوس KV: {N_HEADS}"))
-ax.plot(ctxs, [t["ms"] for t in gqa_t], "s-", color="#2b9d8f",
-        label=ar(f"GQA, {cfg['gqa_kv']} kv heads", f"GQA، رؤوس KV: {cfg['gqa_kv']}"))
+ax.plot(
+    ctxs,
+    [t["ms"] for t in mha_t],
+    "o-",
+    color="#d9822b",
+    label=ar(f"MHA, {N_HEADS} kv heads", f"MHA، رؤوس KV: {N_HEADS}"),
+)
+ax.plot(
+    ctxs,
+    [t["ms"] for t in gqa_t],
+    "s-",
+    color="#2b9d8f",
+    label=ar(f"GQA, {cfg['gqa_kv']} kv heads", f"GQA، رؤوس KV: {cfg['gqa_kv']}"),
+)
 ax.set_xscale("log", base=2)
 ax.set_xticks(ctxs, [str(x) for x in ctxs])
 ax.set_ylim(bottom=0)
-ax.set_xlabel(ar(f"cached tokens per sequence (batch of {DB})", f"الرموز المخزّنة لكل تسلسل (دفعة من {DB})"))
+ax.set_xlabel(
+    ar(f"cached tokens per sequence (batch of {DB})", f"الرموز المخزّنة لكل تسلسل (دفعة من {DB})")
+)
 ax.set_ylabel(ar("ms per generated token", "ميلي ثانية لكل رمز مولَّد"))
 ax.set_title(ar("Every new token reads the whole cache", "كل رمز جديد يقرأ الذاكرة المؤقتة كاملة"))
 ax.legend(frameon=False)

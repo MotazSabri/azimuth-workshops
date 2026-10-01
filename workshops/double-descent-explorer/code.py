@@ -169,9 +169,7 @@ ax.scatter(
 )
 ax.set_xscale("log")
 ax.set_yscale("log")
-ax.set_xlabel(
-    t("number of random features p (parameters)", "عدد السمات العشوائية p (المعاملات)")
-)
+ax.set_xlabel(t("number of random features p (parameters)", "عدد السمات العشوائية p (المعاملات)"))
 ax.set_ylabel(t("mean squared error (log scale)", "متوسط مربع الخطأ (مقياس لوغاريتمي)"))
 ax.set_title(
     t(
@@ -202,9 +200,7 @@ say(
 # --8<-- [start:norms]
 # The size of the fitted weights, across the same sweep. Large weights mean the
 # model reacts violently to small changes in its input — including the noise.
-norm_curve = np.median(
-    [[np.linalg.norm(fit(tk, int(p))[2]) for p in grid] for tk in tasks], axis=0
-)
+norm_curve = np.median([[np.linalg.norm(fit(tk, int(p))[2]) for p in grid] for tk in tasks], axis=0)
 threshold_norm = round(float(norm_curve[grid == n_train][0]))
 widest_norm = round(float(norm_curve[-1]))
 sweet_spot_norm = round(float(norm_curve[best_idx]))
@@ -214,9 +210,7 @@ ax.plot(grid, norm_curve, "o-", ms=3, color="tab:purple")
 ax.axvline(n_train, color="grey", ls="--", lw=1)
 ax.set_xscale("log")
 ax.set_yscale("log")
-ax.set_xlabel(
-    t("number of random features p (parameters)", "عدد السمات العشوائية p (المعاملات)")
-)
+ax.set_xlabel(t("number of random features p (parameters)", "عدد السمات العشوائية p (المعاملات)"))
 ax.set_ylabel(t("weight norm ‖w‖ (log scale)", "معيار الأوزان ‖w‖ (مقياس لوغاريتمي)"))
 ax.set_title(
     t(
@@ -256,9 +250,7 @@ for _ in range(cfg["gd_steps"]):
     w -= step * f_gd.T @ (f_gd @ w - y_gd)
 
 gd_train_mse = float(np.mean((f_gd @ w - y_gd) ** 2))
-gd_cosine = round(
-    float(w @ w_min_norm / (np.linalg.norm(w) * np.linalg.norm(w_min_norm))), 4
-)
+gd_cosine = round(float(w @ w_min_norm / (np.linalg.norm(w) * np.linalg.norm(w_min_norm))), 4)
 say(
     f"p = {gd_p}: gradient descent reached training MSE {gd_train_mse:.1e}",
     f"عند p = {gd_p}: وصل الانحدار التدرّجي إلى خطأ تدريب {gd_train_mse:.1e}",
@@ -341,9 +333,7 @@ ax.axhline(
 ax.axvline(n_train, color="grey", ls="--", lw=1)
 ax.set_xscale("log")
 ax.set_yscale("log")
-ax.set_xlabel(
-    t("number of random features p (parameters)", "عدد السمات العشوائية p (المعاملات)")
-)
+ax.set_xlabel(t("number of random features p (parameters)", "عدد السمات العشوائية p (المعاملات)"))
 ax.set_ylabel(t("test MSE (log scale)", "خطأ الاختبار (مقياس لوغاريتمي)"))
 ax.set_title(t("A small penalty removes the peak", "عقوبة صغيرة تُزيل القمّة"))
 ax.legend()

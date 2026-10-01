@@ -43,15 +43,31 @@ def cohort(n_patients, t_start, t_end, rng):
             lab_b = rng.normal(0, 1)
             emergency = float(rng.random() < 0.3 + 0.1 * (frailty > 0))
             logit = (
-                -1.3 + 1.5 * frailty + 0.25 * (chronic - 2) + 0.12 * (los - 5)
-                + 0.4 * emergency + 0.3 * lab_a + 0.15 * j + 0.01 * (age - 65)
+                -1.3
+                + 1.5 * frailty
+                + 0.25 * (chronic - 2)
+                + 0.12 * (los - 5)
+                + 0.4 * emergency
+                + 0.3 * lab_a
+                + 0.15 * j
+                + 0.01 * (age - 65)
             )
             readmitted = int(rng.random() < 1 / (1 + np.exp(-logit)))
-            rows.append({
-                "patient": pid, "month": t, "age": age, "chronic": chronic,
-                "los": los, "n_meds": n_meds, "lab_a": lab_a, "lab_b": lab_b,
-                "emergency": emergency, "prior": float(j), "readmitted": readmitted,
-            })
+            rows.append(
+                {
+                    "patient": pid,
+                    "month": t,
+                    "age": age,
+                    "chronic": chronic,
+                    "los": los,
+                    "n_meds": n_meds,
+                    "lab_a": lab_a,
+                    "lab_b": lab_b,
+                    "emergency": emergency,
+                    "prior": float(j),
+                    "readmitted": readmitted,
+                }
+            )
     df = pd.DataFrame(rows)
     for col in ["lab_a", "lab_b"]:  # labs are not always drawn
         df.loc[rng.random(len(df)) < 0.2, col] = np.nan
@@ -86,19 +102,31 @@ holdout_admissions = len(holdout)
 if env.lang == "ar":
     # Counts go after a colon: Arabic number-noun agreement depends on the
     # number, and these numbers come from the profile.
-    print(f"التطوير — الأشهر 0–24 | المرضى: {cfg['dev_patients']} | "
-          f"حالات الدخول: {dev_admissions} | نسبة العودة: {dev_rate_pct}٪")
-    print(f"البيانات المحجوزة — الأشهر 24–36 | مرضى جدد: {cfg['holdout_patients']} | "
-          f"حالات الدخول: {holdout_admissions} | نسبة العودة: {holdout_rate_pct}٪")
-    print(f"الأعمدة — سريرية: {len(CLINICAL)} | مؤشّرات مخبرية: {len(MARKERS)} | "
-          f"بعد الخروج: {POST_DISCHARGE}")
+    print(
+        f"التطوير — الأشهر 0–24 | المرضى: {cfg['dev_patients']} | "
+        f"حالات الدخول: {dev_admissions} | نسبة العودة: {dev_rate_pct}٪"
+    )
+    print(
+        f"البيانات المحجوزة — الأشهر 24–36 | مرضى جدد: {cfg['holdout_patients']} | "
+        f"حالات الدخول: {holdout_admissions} | نسبة العودة: {holdout_rate_pct}٪"
+    )
+    print(
+        f"الأعمدة — سريرية: {len(CLINICAL)} | مؤشّرات مخبرية: {len(MARKERS)} | "
+        f"بعد الخروج: {POST_DISCHARGE}"
+    )
 else:
-    print(f"development: {dev_admissions} admissions from {cfg['dev_patients']} patients, "
-          f"months 0-24, readmission rate {dev_rate_pct}%")
-    print(f"holdout:     {holdout_admissions} admissions from {cfg['holdout_patients']} new "
-          f"patients, months 24-36, readmission rate {holdout_rate_pct}%")
-    print(f"columns: {len(CLINICAL)} clinical, {len(MARKERS)} lab markers, "
-          f"and one post-discharge field ({POST_DISCHARGE})")
+    print(
+        f"development: {dev_admissions} admissions from {cfg['dev_patients']} patients, "
+        f"months 0-24, readmission rate {dev_rate_pct}%"
+    )
+    print(
+        f"holdout:     {holdout_admissions} admissions from {cfg['holdout_patients']} new "
+        f"patients, months 24-36, readmission rate {holdout_rate_pct}%"
+    )
+    print(
+        f"columns: {len(CLINICAL)} clinical, {len(MARKERS)} lab markers, "
+        f"and one post-discharge field ({POST_DISCHARGE})"
+    )
 # --8<-- [end:build_world]
 
 
@@ -147,7 +175,7 @@ def evaluate(stage, labels=None, make_model=boosted):
     y = y_dev if labels is None else labels
     cols = CLINICAL + MARKERS
     if stage >= 4:
-        cols = cols + [POST_DISCHARGE]  # LEAK 4: a field that is filled in later
+        cols = [*cols, POST_DISCHARGE]  # LEAK 4: a field that is filled in later
     X, X_out = dev[cols].to_numpy(), holdout[cols].to_numpy()
 
     steps = []
@@ -172,8 +200,7 @@ def evaluate(stage, labels=None, make_model=boosted):
         splitter = GroupKFold(cfg["folds"])
 
     model = make_pipeline(*steps, make_model())
-    oof = cross_val_predict(model, X, y, cv=splitter, groups=groups,
-                            method="predict_proba")[:, 1]
+    oof = cross_val_predict(model, X, y, cv=splitter, groups=groups, method="predict_proba")[:, 1]
     # The care team can call one patient in five: the threshold is set on the
     # cross-validated scores, exactly as it would be before launch.
     threshold = np.quantile(oof, 1 - cfg["alert_rate"])
@@ -211,12 +238,17 @@ results = {0: honest}
 for stage in range(1, 5):
     results[stage] = evaluate(stage)
 
-header = ("المرحلة", "AUC تحقّق", "AUC محجوزة", "الفرق") if env.lang == "ar" \
+header = (
+    ("المرحلة", "AUC تحقّق", "AUC محجوزة", "الفرق")
+    if env.lang == "ar"
     else ("stage", "CV AUC", "holdout AUC", "gap")
+)
 print(f"{header[0]:<30}{header[1]:>12}{header[2]:>14}{header[3]:>9}")
 for stage, r in results.items():
-    print(f"{stage} {STAGES[stage]:<28}{r['cv_auc']:>12.3f}{r['holdout_auc']:>14.3f}"
-          f"{r['cv_auc'] - r['holdout_auc']:>+9.3f}")
+    print(
+        f"{stage} {STAGES[stage]:<28}{r['cv_auc']:>12.3f}{r['holdout_auc']:>14.3f}"
+        f"{r['cv_auc'] - r['holdout_auc']:>+9.3f}"
+    )
 
 cv_auc_leaky = round(results[4]["cv_auc"], 3)
 holdout_auc_leaky = round(results[4]["holdout_auc"], 3)
@@ -250,8 +282,9 @@ if env.lang == "ar":
     # matplotlib's bundled DejaVu has no Arabic glyphs. Amiri comes from the
     # apt line in the dependencies cell; Ubuntu releases name the file
     # differently, so match case-insensitively.
-    amiri = [p for p in Path("/usr/share/fonts").rglob("*.ttf")
-             if p.name.lower() == "amiri-regular.ttf"]
+    amiri = [
+        p for p in Path("/usr/share/fonts").rglob("*.ttf") if p.name.lower() == "amiri-regular.ttf"
+    ]
     if amiri:
         font_manager.fontManager.addfont(str(amiri[0]))
         plt.rcParams["font.family"] = font_manager.FontProperties(fname=str(amiri[0])).get_name()
@@ -260,22 +293,51 @@ if env.lang == "ar":
 
 stages = list(results)
 fig, ax = plt.subplots(figsize=(7.5, 4.2))
-ax.plot(stages, [results[s]["cv_auc"] for s in stages], "o-", color="#c2410c", lw=2,
-        label=ar("ما قاله التحقّق المتقاطع") if env.lang == "ar" else "what cross-validation said")
-ax.plot(stages, [results[s]["holdout_auc"] for s in stages], "o-", color="#1d4ed8", lw=2,
-        label=ar("ما حدث على بيانات لم تُرَ") if env.lang == "ar" else "what happened on unseen data")
+ax.plot(
+    stages,
+    [results[s]["cv_auc"] for s in stages],
+    "o-",
+    color="#c2410c",
+    lw=2,
+    label=ar("ما قاله التحقّق المتقاطع") if env.lang == "ar" else "what cross-validation said",
+)
+ax.plot(
+    stages,
+    [results[s]["holdout_auc"] for s in stages],
+    "o-",
+    color="#1d4ed8",
+    lw=2,
+    label=ar("ما حدث على بيانات لم تُرَ") if env.lang == "ar" else "what happened on unseen data",
+)
 # AUC's floor is 0.5, not 0: a coin flip. Anchoring there keeps "flat" honest.
 ax.set_ylim(0.5, 1.0)
 ax.axhline(0.5, color="#999", lw=0.8)
 ax.set_xticks(stages)
 if env.lang == "ar":
-    ax.set_xticklabels([ar(s) for s in ["نزيه", "+ توحيد\nقبل التقسيم", "+ انتقاء\nقبل التقسيم",
-                                        "+ تقسيم الزيارات\nلا المرضى", "+ عمود\nبعد الخروج"]])
+    ax.set_xticklabels(
+        [
+            ar(s)
+            for s in [
+                "نزيه",
+                "+ توحيد\nقبل التقسيم",
+                "+ انتقاء\nقبل التقسيم",
+                "+ تقسيم الزيارات\nلا المرضى",
+                "+ عمود\nبعد الخروج",
+            ]
+        ]
+    )
     ax.set_ylabel("AUC")
     ax.set_title(ar("كل تسريب يرفع الدرجة المُعلنة، ولا يرفع الأداء الحقيقي"))
 else:
-    ax.set_xticklabels(["honest", "+ scale\nbefore split", "+ select\nbefore split",
-                        "+ split rows,\nnot patients", "+ post-discharge\ncolumn"])
+    ax.set_xticklabels(
+        [
+            "honest",
+            "+ scale\nbefore split",
+            "+ select\nbefore split",
+            "+ split rows,\nnot patients",
+            "+ post-discharge\ncolumn",
+        ]
+    )
     ax.set_ylabel("AUC")
     ax.set_title("Every leak raises the reported score. None raises the real one.")
 ax.legend(loc="upper left", frameon=False)
@@ -321,17 +383,29 @@ else:
     print(f"{'':<30}{'recall (CV)':>14}{'recall (holdout)':>18}{'share alerted':>16}")
 for stage in (0, 4):
     r = results[stage]
-    print(f"{stage} {STAGES[stage]:<28}{r['cv_recall']:>14.1%}{r['holdout_recall']:>18.1%}"
-          f"{r['holdout_flagged']:>16.1%}")
+    print(
+        f"{stage} {STAGES[stage]:<28}{r['cv_recall']:>14.1%}{r['holdout_recall']:>18.1%}"
+        f"{r['holdout_flagged']:>16.1%}"
+    )
 
 fig, ax = plt.subplots(figsize=(6.5, 3.6))
 x = np.arange(2)
 cv_bars = [recall_cv_honest, recall_cv_leaky]
 out_bars = [recall_holdout_honest, recall_holdout_leaky]
-ax.bar(x - 0.18, cv_bars, 0.36, color="#c2410c",
-       label=ar("في التحقّق المتقاطع") if env.lang == "ar" else "in cross-validation")
-ax.bar(x + 0.18, out_bars, 0.36, color="#1d4ed8",
-       label=ar("بعد الإطلاق") if env.lang == "ar" else "after launch")
+ax.bar(
+    x - 0.18,
+    cv_bars,
+    0.36,
+    color="#c2410c",
+    label=ar("في التحقّق المتقاطع") if env.lang == "ar" else "in cross-validation",
+)
+ax.bar(
+    x + 0.18,
+    out_bars,
+    0.36,
+    color="#1d4ed8",
+    label=ar("بعد الإطلاق") if env.lang == "ar" else "after launch",
+)
 ax.set_ylim(0, 1)  # recall starts at zero, and zero is part of the story
 ax.set_xticks(x)
 if env.lang == "ar":
@@ -370,8 +444,10 @@ if env.lang == "ar":
 else:
     print(f"{'random forest':<30}{'CV AUC':>12}{'holdout AUC':>14}{'recall after launch':>22}")
 for stage, r in ((0, rf_honest), (4, rf_leaky)):
-    print(f"{stage} {STAGES[stage]:<28}{r['cv_auc']:>12.3f}{r['holdout_auc']:>14.3f}"
-          f"{r['holdout_recall']:>22.1%}")
+    print(
+        f"{stage} {STAGES[stage]:<28}{r['cv_auc']:>12.3f}{r['holdout_auc']:>14.3f}"
+        f"{r['holdout_recall']:>22.1%}"
+    )
 # --8<-- [end:model_swap]
 
 
@@ -387,8 +463,11 @@ for stage in STAGES:
         scores.append(evaluate(stage, labels=shuffled)["cv_auc"])
     audit[stage] = float(np.mean(scores))
 
-head = ("المرحلة", "AUC على تسميات مخلوطة", "AUC المُعلَن") if env.lang == "ar" \
+head = (
+    ("المرحلة", "AUC على تسميات مخلوطة", "AUC المُعلَن")
+    if env.lang == "ar"
     else ("stage", "AUC on shuffled labels", "reported AUC")
+)
 print(f"{head[0]:<30}{head[1]:>24}{head[2]:>22}")
 for stage in STAGES:
     print(f"{stage} {STAGES[stage]:<28}{audit[stage]:>24.3f}{results[stage]['cv_auc']:>22.3f}")
@@ -415,8 +494,11 @@ for col in CLINICAL + MARKERS + [POST_DISCHARGE]:
 
 ranked = sorted(solo.items(), key=lambda kv: kv[1], reverse=True)
 for col, score in ranked[:8]:
-    flag = "  <-- " + ("اسأل عنه" if env.lang == "ar" else "ask about it") \
-        if score >= SUSPICIOUS_AUC else ""
+    flag = (
+        "  <-- " + ("اسأل عنه" if env.lang == "ar" else "ask about it")
+        if score >= SUSPICIOUS_AUC
+        else ""
+    )
     print(f"{col:<18}{score:.3f}{flag}")
 
 solo_auc_post_discharge = round(solo[POST_DISCHARGE], 3)
