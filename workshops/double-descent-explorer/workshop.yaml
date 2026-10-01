@@ -1,0 +1,728 @@
+schema: workshop/v1
+id: double-descent-explorer
+constellation: classical-ml
+
+title:
+  en: "Double Descent: Past the Interpolation Threshold"
+  ar: "الهبوط المزدوج: ما بعد عتبة الاستيفاء"
+
+concept:
+  en: "Test error peaks where parameters equal data points, not where the model gets too complex"
+  ar: "يبلغ خطأ الاختبار ذروته حين يتساوى عدد المعاملات مع عدد نقاط البيانات، لا حين يصبح النموذج معقّداً أكثر من اللازم"
+
+scenario:
+  en: >-
+    You were taught that test error traces a U: too simple underfits, too
+    complex overfits, and the sweet spot sits in between. So you would stop
+    growing a model once its test error starts to climb. This workshop keeps
+    going. It sweeps one model from a handful of parameters to twenty times
+    more parameters than training points, and measures what the U-curve
+    predicts and what actually happens.
+  ar: >-
+    تعلّمتَ أن خطأ الاختبار يرسم منحنى على شكل حرف <bdi dir="ltr">U</bdi>.
+    النموذج البسيط جداً يقصر عن ملاءمة البيانات، والنموذج المعقّد جداً يفرط في ملاءمتها، والنقطة المثلى تقع بينهما.
+    وبحسب هذه القاعدة، تتوقّف عن تكبير النموذج حين يبدأ خطأ الاختبار بالصعود.
+    في هذه الورشة لا نتوقّف.
+    نكبّر نموذجاً واحداً من بضعة معاملات إلى عشرين ضعف عدد نقاط التدريب.
+    ثم نقارن ما يتنبّأ به منحنى <bdi dir="ltr">U</bdi> بما يحدث فعلاً.
+
+goal:
+  en: >-
+    Locate the test-error peak and show that it sits at the interpolation
+    threshold, where the parameter count equals the number of training
+    points. Confirm that the widest model fits its training data exactly,
+    yet comes back down from the peak. Then measure why, and what removes
+    the peak.
+  ar: >-
+    أن تحدّد موضع ذروة خطأ الاختبار، وتُثبت أنها تقع عند عتبة الاستيفاء، أي حيث يساوي عدد المعاملات عدد نقاط التدريب.
+    ثم أن تتحقّق من أن أعرض نموذج يلائم بيانات تدريبه ملاءمة تامّة، ومع ذلك يهبط خطؤه بعيداً عن الذروة.
+    وأخيراً أن تقيس سبب ذلك، وما الذي يُزيل الذروة.
+
+difficulty: intermediate
+status: draft
+publishedAt: null
+
+maintenance:
+  tier: stable
+  cadence: yearly
+
+estimate:
+  gpuMinutes: 0
+  totalMinutes: 30        # local CPU run of code.py takes ~25 s; re-measure after Colab
+
+papers:
+  - slug: reconciling-modern-machine-learning-and-the-bias-variance-tradeoff
+    role: core
+    label:
+      en: "the double-descent curve itself, and the random-features setting it was first shown in"
+      ar: "منحنى الهبوط المزدوج نفسه، ونموذج السمات العشوائية الذي ظهر فيه أوّل مرة"
+  - slug: random-features
+    role: core
+    label:
+      en: "the model being swept: a fixed random first layer with only the output weights fitted"
+      ar: "النموذج الذي نكبّره: طبقة أولى عشوائية ثابتة، ولا نلائم إلا أوزان المخرج"
+  - slug: deep-double-descent
+    role: core
+    label:
+      en: "evidence that the same peak appears in deep networks, and that label noise and regularization control its height"
+      ar: "الدليل على أن الذروة نفسها تظهر في الشبكات العميقة، وأن ضجيج التسميات والتنظيم يتحكّمان في ارتفاعها"
+  - slug: understanding-deep-learning-requires-rethinking-generalization
+    role: supporting
+    label:
+      en: "the shuffled-labels test: a model that can fit noise perfectly is not explained by its capacity"
+      ar: "تجربة التسميات المخلوطة: نموذج يلائم الضجيج ملاءمة تامّة لا تفسّر سعتُه قدرتَه على التعميم"
+  - slug: grokking
+    role: supporting
+    label:
+      en: "a second case where generalization improves after the training data is already fitted, this time over training steps"
+      ar: "حالة ثانية يتحسّن فيها التعميم بعد أن تكون بيانات التدريب قد لوئمت بالكامل، لكن هذه المرة عبر خطوات التدريب"
+
+assets: []
+
+profiles:
+  - id: free
+    default: true
+    name:
+      en: "Free tier (CPU)"
+      ar: "المستوى المجاني (<bdi dir=\"ltr\">CPU</bdi>)"
+    requires:
+      gpu: false          # closed-form least squares on small matrices
+      vramGb: 0
+      ramGb: 1            # measured peak RSS ~250 MB on a local run
+    scale:
+      seed: 17
+      n_train: 200        # training points; the interpolation threshold sits here
+      n_test: 2000
+      dim: 20             # input dimension
+      noise: 0.5          # standard deviation of the label noise
+      p_max: 4000         # widest model: twenty times n_train
+      grid_points: 40     # log-spaced widths, plus a dense band around n_train
+      trials: 5           # independent datasets; curves are medians over these
+      ridge: 0.01
+      gd_width: 1000
+      gd_steps: 20000
+
+# Thresholds come from local CPU runs over five base seeds (1, 17, 50, 123,
+# 999). Across those runs train R² was 1.0, peak-at-threshold ranged
+# 107–1709 and second-descent ranged 108–1557. The floors sit far below that
+# to allow for BLAS differences on Colab: the value at exactly p = n is
+# ill-conditioned and moves a lot between machines. Revisit after the first
+# Colab run.
+checks:
+  - id: widest-model-interpolates
+    required: true
+    min: 0.999
+    label:
+      en: "Share of training-label variance the widest model fits (R²)"
+      ar: "نسبة تباين تسميات التدريب التي يلائمها أعرض نموذج (<bdi dir=\"ltr\">R²</bdi>)"
+  - id: peak-at-threshold
+    required: true
+    min: 20
+    label:
+      en: "Test error at the threshold, as a multiple of the classical sweet spot"
+      ar: "خطأ الاختبار عند العتبة مقسوماً على خطأ النقطة المثلى الكلاسيكية"
+  - id: second-descent
+    required: true
+    min: 20
+    label:
+      en: "Test error at the threshold, as a multiple of the widest model's"
+      ar: "خطأ الاختبار عند العتبة مقسوماً على خطأ أعرض نموذج"
+
+hints:
+  - en: >-
+      Look at where the peak sat in the first sweep, and at what that number
+      equals in the scale table. Is it a property of the model, or of the
+      model and the dataset together?
+    ar: >-
+      انظر أين وقعت الذروة في المسح الأول.
+      ثم ابحث في جدول الحجم عن القيمة التي يساويها ذلك الرقم.
+      هل هذا الموضع خاصية للنموذج وحده، أم للنموذج والبيانات معاً؟
+  - en: >-
+      The peak sits where the number of fitted weights equals the number of
+      training points, because that is the only width with exactly one exact
+      fit. Doubling the data moves that width.
+    ar: >-
+      تقع الذروة حيث يساوي عدد الأوزان المُلائَمة عدد نقاط التدريب.
+      السبب أن هذا هو العرض الوحيد الذي توجد عنده ملاءمة تامّة واحدة لا غير.
+      فإذا ضاعفتَ البيانات، انتقل هذا العرض معها.
+
+terms:
+  double-descent:
+    en: "Test error that falls, rises to a peak at the interpolation threshold, then falls again as model size keeps growing."
+    ar: "خطأ اختبار ينخفض، ثم يرتفع إلى ذروة عند عتبة الاستيفاء، ثم ينخفض مرة أخرى مع استمرار تكبير النموذج."
+  bias-variance-tradeoff:
+    en: "The classical account of test error as bias (too simple) plus variance (too sensitive to the training sample), traded off by model complexity."
+    ar: "التفسير الكلاسيكي لخطأ الاختبار بأنه مجموع الانحياز (بساطة زائدة) والتباين (حساسية زائدة لعيّنة التدريب)، ويُوازَن بينهما عبر تعقيد النموذج."
+  generalization:
+    en: "How well a model performs on data it was not trained on."
+    ar: "مدى جودة أداء النموذج على بيانات لم يتدرّب عليها."
+  overfitting:
+    en: "Fitting the training data in a way that hurts performance on new data, usually by fitting its noise."
+    ar: "ملاءمة بيانات التدريب بطريقة تضرّ بالأداء على بيانات جديدة، وغالباً بملاءمة الضجيج الذي فيها."
+  underfitting:
+    en: "A model too constrained to capture the pattern in the training data."
+    ar: "نموذج مقيّد أكثر من اللازم، فلا يلتقط النمط الموجود في بيانات التدريب."
+  model-capacity:
+    en: "The range of functions a model can represent; in this workshop, set by the number of random features."
+    ar: "نطاق الدوال التي يستطيع النموذج تمثيلها. في هذه الورشة يحدّده عدد السمات العشوائية."
+  interpolation-threshold:
+    en: "The model size at which it can first fit every training point exactly; here, when parameter count equals the number of training points."
+    ar: "حجم النموذج الذي يصبح عنده قادراً لأول مرة على ملاءمة كل نقطة تدريب ملاءمة تامّة. هنا يحدث ذلك حين يساوي عدد المعاملات عدد نقاط التدريب."
+  training-error:
+    en: "The loss measured on the data the model was fitted to."
+    ar: "الخسارة مقيسةً على البيانات التي لوئم عليها النموذج."
+  test-error:
+    en: "The loss measured on held-out data; the estimate of generalization."
+    ar: "الخسارة مقيسةً على بيانات محجوزة لم يرها النموذج، وهي تقديرنا لقدرته على التعميم."
+  model-scale:
+    en: "How large a model is, usually measured by its parameter count."
+    ar: "حجم النموذج، ويُقاس عادةً بعدد معاملاته."
+  parameter-count:
+    en: "The number of fitted weights; here, the number of random features p."
+    ar: "عدد الأوزان المُلائَمة. هنا هو عدد السمات العشوائية <bdi dir=\"ltr\">p</bdi>."
+  generalization-gap:
+    en: "The difference between test error and training error."
+    ar: "الفرق بين خطأ الاختبار وخطأ التدريب."
+  empirical-risk-minimization:
+    en: "Choosing the model that minimizes average loss on the training set."
+    ar: "اختيار النموذج الذي يجعل متوسط الخسارة على مجموعة التدريب أصغر ما يمكن."
+  loss-function:
+    en: "The quantity being minimized; here, mean squared error."
+    ar: "الكمية التي نسعى إلى تصغيرها. هنا هي متوسط مربع الخطأ."
+  optimization:
+    en: "The procedure that searches for the weights; which solution it finds matters once many fit equally well."
+    ar: "الإجراء الذي يبحث عن الأوزان. وحين تتساوى حلول كثيرة في ملاءمة البيانات، يصبح مهماً أيّ حلّ يصل إليه."
+  gradient-descent:
+    en: "Repeatedly stepping the weights against the gradient of the loss."
+    ar: "تحريك الأوزان مرة بعد مرة في الاتجاه المعاكس لتدرّج الخسارة."
+  memorization:
+    en: "Fitting individual training examples, including ones with no learnable pattern."
+    ar: "ملاءمة أمثلة التدريب فرداً فرداً، حتى تلك التي لا يحمل فيها نمط قابل للتعلّم."
+  feature-learning:
+    en: "Adapting the internal representation during training. Random features do not do this: the first layer stays fixed."
+    ar: "تكييف التمثيل الداخلي أثناء التدريب. السمات العشوائية لا تفعل ذلك، لأن الطبقة الأولى تبقى ثابتة."
+  dataset-size:
+    en: "The number of training points n."
+    ar: "عدد نقاط التدريب <bdi dir=\"ltr\">n</bdi>."
+  sample-complexity:
+    en: "How many training points a learner needs to reach a given error."
+    ar: "عدد نقاط التدريب التي يحتاجها نموذج التعلّم ليبلغ خطأً معيّناً."
+  inductive-bias:
+    en: "The preferences that decide which solution a learner picks when the data allow many."
+    ar: "التفضيلات التي تحدّد أيّ حلّ يختاره نموذج التعلّم حين تسمح البيانات بحلول كثيرة."
+  interpolation-statistical:
+    en: "Fitting every training point exactly. Also: predicting inside the region the training data cover."
+    ar: "ملاءمة كل نقطة تدريب ملاءمة تامّة. وتعني أيضاً التنبّؤ داخل المنطقة التي تغطّيها بيانات التدريب."
+  extrapolation-statistical:
+    en: "Predicting outside the region the training data cover."
+    ar: "التنبّؤ خارج المنطقة التي تغطّيها بيانات التدريب."
+  neural-network:
+    en: "A model built from layers of weighted sums and nonlinearities; random features are a two-layer network with the first layer frozen."
+    ar: "نموذج مبنيّ من طبقات من المجاميع الموزونة والدوال غير الخطية. والسمات العشوائية شبكةٌ من طبقتين، طبقتها الأولى مجمّدة."
+
+body:
+  # ── Frame ─────────────────────────────────────────────────────────────
+  - type: prose
+    phase: { en: "Frame", ar: "التأطير" }
+    title: { en: "Recall the U-shaped curve", ar: "تذكّر منحنى <bdi dir=\"ltr\">U</bdi>" }
+    text:
+      en: >-
+        The statistics course drew one picture. On the left, a model too
+        simple to capture the pattern: high bias, underfitting. On the right,
+        a model so flexible it chases the noise in its training sample: high
+        variance, overfitting. Test error is the sum of the two, so it traces a
+        U, and the job is to stop at the bottom.
+
+
+        That picture is not wrong about what it describes. But it was drawn
+        for models that stop short of fitting every training point. Modern
+        models routinely go far past that point. The question for this
+        workshop is simple: what happens to test error if you keep adding
+        parameters after the training error has already reached zero?
+      ar: >-
+        رسم مقرّر الإحصاء صورة واحدة.
+        في طرفها الأيسر نموذج أبسط من أن يلتقط النمط، فيكون انحيازه عالياً، ويقصر عن ملاءمة البيانات.
+        وفي طرفها الأيمن نموذج مرن إلى حدّ أنه يلاحق الضجيج في عيّنة التدريب، فيكون تباينه عالياً، ويفرط في الملاءمة.
+        خطأ الاختبار هو مجموع الاثنين، ولذلك يرسم منحنى على شكل <bdi dir="ltr">U</bdi>.
+        والمطلوب أن نتوقّف عند قاع هذا المنحنى.
+
+
+        هذه الصورة ليست خاطئة في ما تصفه.
+        لكنها رُسمت لنماذج تتوقّف قبل أن تلائم كل نقطة تدريب.
+        أما النماذج الحديثة فتتجاوز هذه النقطة بكثير، وهذا أمر معتاد فيها.
+        وسؤال هذه الورشة بسيط: ماذا يحدث لخطأ الاختبار إذا واصلنا إضافة المعاملات بعد أن يصل خطأ التدريب إلى الصفر؟
+
+  - type: cell
+    id: setup
+    ref: setup
+    phase: { en: "Frame", ar: "التأطير" }
+    title: { en: "Load the workshop runtime", ar: "حمّل بيئة الورشة" }
+    caption:
+      en: "Nothing to look for yet. This cell connects the notebook to its profile and defines the helpers that print and label figures in your language."
+      ar: "لا شيء نبحث عنه بعد. تربط هذه الخلية الدفتر بملفّ التشغيل، وتعرّف الدوال المساعدة التي تطبع النصوص وتكتب عناوين الرسوم بلغتك."
+
+  - type: prose
+    phase: { en: "Frame", ar: "التأطير" }
+    title: { en: "Pick a model you can sweep", ar: "اختر نموذجاً يسهل تكبيره" }
+    text:
+      en: >-
+        To sweep model size cleanly, we need a model whose size is a single
+        number and whose fit has no training-schedule noise. Random features
+        give us both. The input passes through a fixed, randomly drawn layer
+        of p ReLU units, and only the p output weights are fitted, by least
+        squares. That makes p the parameter count. The first layer never
+        changes, so there is no feature learning here. Whatever we find comes
+        from the parameter count alone.
+
+
+        One detail matters later. When p is larger than the number of
+        training points n, there are infinitely many weight vectors that fit
+        the training data exactly. The solver returns the one with the
+        smallest norm.
+      ar: >-
+        لكي نكبّر النموذج تكبيراً نظيفاً، نحتاج إلى شرطين.
+        الأول أن يكون حجم النموذج رقماً واحداً.
+        والثاني ألّا تتأثّر الملاءمة بتفاصيل جدول التدريب، كمعدّل التعلّم وعدد الحقب.
+        نموذج السمات العشوائية يحقّق الشرطين معاً.
+        يمرّ المُدخل عبر طبقة ثابتة من <bdi dir="ltr">p</bdi> وحدة <bdi dir="ltr">ReLU</bdi>، أوزانها مسحوبة عشوائياً.
+        ثم نلائم أوزان المخرج وحدها، وعددها <bdi dir="ltr">p</bdi>، بطريقة المربعات الصغرى.
+        إذن <bdi dir="ltr">p</bdi> هو عدد المعاملات.
+        ولأن الطبقة الأولى لا تتغيّر أبداً، فلا يوجد هنا تعلّم للسمات.
+        وهذا يعني أن كل ما سنراه سببه عدد المعاملات وحده.
+
+
+        وهناك تفصيل سنحتاجه لاحقاً.
+        حين يكون <bdi dir="ltr">p</bdi> أكبر من عدد نقاط التدريب <bdi dir="ltr">n</bdi>، توجد متجهات أوزان لا نهاية لعددها تلائم بيانات التدريب ملاءمة تامّة.
+        ومن بينها كلّها، يُعيد الحلّال المتّجه ذا المعيار الأصغر.
+
+  - type: cell
+    id: prepare
+    ref: prepare
+    phase: { en: "Frame", ar: "التأطير" }
+    title: { en: "Build the shared data", ar: "ابنِ البيانات المشتركة" }
+    captures: [target_var]
+    caption:
+      en: "Note the last line: the error of a model that ignores its input and always predicts the mean. Any model worth having must beat it."
+      ar: "انتبه إلى السطر الأخير. إنه خطأ نموذج يتجاهل مُدخله ويتنبّأ دائماً بالمتوسط. وأيّ نموذج يستحق الاستخدام يجب أن يتفوّق عليه."
+
+  - type: scaleNote
+    phase: { en: "Frame", ar: "التأطير" }
+    title: { en: "Note the run's scale", ar: "لاحظ حجم التشغيل" }
+    text:
+      en: >-
+        Each trial draws its own target function and {{scale.n_train}}
+        training points with label noise of standard deviation
+        {{scale.noise}}. Widths run up to {{scale.p_max}} features, and every
+        curve is the median over {{scale.trials}} trials. The test set has no
+        label noise, so test error measures distance from the true function.
+      ar: >-
+        كل تجربة تسحب دالّة هدف خاصة بها، و{{scale.n_train}} نقطة تدريب.
+        وتُضاف إلى تسميات التدريب ضوضاء انحرافها المعياري {{scale.noise}}.
+        يمتدّ عرض النموذج حتى {{scale.p_max}} سمة، وكل منحنى هو الوسيط عبر {{scale.trials}} تجارب.
+        أما مجموعة الاختبار فخالية من الضجيج.
+        ولذلك يقيس خطأ الاختبار بُعد النموذج عن الدالّة الحقيقية نفسها.
+
+  # ── Sweep ─────────────────────────────────────────────────────────────
+  - type: cell
+    id: sweep
+    ref: sweep
+    phase: { en: "Sweep", ar: "المسح" }
+    title: { en: "Sweep through the threshold", ar: "امسح عبر العتبة" }
+    thumbnail: true
+    captures:
+      - sweet_spot_p
+      - sweet_spot_test
+      - threshold_test
+      - widest_test
+      - peak_ratio
+      - second_descent
+      - widest_vs_sweet_spot
+      - train_r2_widest
+    caption:
+      en: "Both axes are logarithmic. Find the classical U on the left, then watch the dashed line at p = n: what the test error does there, and what the training error does at the same moment."
+      ar: "المحوران لوغاريتميان. ابحث أولاً عن منحنى <bdi dir=\"ltr\">U</bdi> الكلاسيكي في اليسار. ثم راقب الخط المتقطّع عند <bdi dir=\"ltr\">p = n</bdi>: ماذا يفعل خطأ الاختبار هناك، وماذا يفعل خطأ التدريب في اللحظة نفسها؟"
+
+  - type: prose
+    phase: { en: "Sweep", ar: "المسح" }
+    title: { en: "Read the two descents", ar: "اقرأ الهبوطين" }
+    text:
+      en: >-
+        Start from the left. Test error falls as features are added, because
+        the model is underfitting and each feature helps. It bottoms out
+        around p = {{run.metrics.sweet_spot_p}} at a test error of
+        {{run.metrics.sweet_spot_test}}, then starts to rise. Up to here, this
+        is the curve from the course.
+
+
+        The rise does not level off. It turns into a spike, and the spike sits
+        exactly at p = n = {{scale.n_train}}, the width at which the training
+        error first reaches zero. There the test error is
+        {{run.metrics.threshold_test}}: a factor of {{run.metrics.peak_ratio}}
+        above the sweet spot, and far worse than predicting the mean.
+
+
+        Then the curve comes back down, although the training error stays at
+        zero all the way to {{scale.p_max}} features. The widest model ends at
+        a test error of {{run.metrics.widest_test}}, which is
+        {{run.metrics.widest_vs_sweet_spot}} times the sweet spot's. In other
+        words, a model that fits every noisy training label exactly ends up
+        roughly level with the best model the classical rule would have
+        picked.
+
+
+        Change the seed and that last ratio moves to either side of 1. The
+        spike does not move: it stays at p = n, and it stays huge.
+      ar: >-
+        ابدأ من اليسار.
+        ينخفض خطأ الاختبار كلما أضفنا سمات.
+        السبب أن النموذج في هذه المنطقة يقصر عن ملاءمة البيانات، فكل سمة جديدة تساعده.
+        يبلغ الخطأ قاعه قرب <bdi dir="ltr">p = {{run.metrics.sweet_spot_p}}</bdi>، بقيمة {{run.metrics.sweet_spot_test}}، ثم يبدأ بالصعود.
+        حتى هذه النقطة، هذا هو المنحنى الذي درسناه في المقرّر.
+
+
+        لكن الصعود لا يستقرّ.
+        بل يتحوّل إلى قمّة حادّة.
+        وتقع هذه القمّة تماماً عند <bdi dir="ltr">p = n = {{scale.n_train}}</bdi>، وهو العرض الذي يصل عنده خطأ التدريب إلى الصفر لأول مرة.
+        خطأ الاختبار هناك {{run.metrics.threshold_test}}.
+        أي أنه أكبر من خطأ النقطة المثلى بنحو {{run.metrics.peak_ratio}} ضعفاً، وأسوأ بكثير من مجرّد التنبّؤ بالمتوسط.
+
+
+        بعد ذلك يعود المنحنى إلى الهبوط.
+        ويحدث هذا مع أن خطأ التدريب يبقى صفراً على طول الطريق حتى {{scale.p_max}} سمة.
+        ينتهي أعرض نموذج عند خطأ اختبار قدره {{run.metrics.widest_test}}، أي {{run.metrics.widest_vs_sweet_spot}} من خطأ النقطة المثلى.
+        بعبارة أخرى: نموذج يلائم كل تسمية تدريب ملاءمة تامّة، رغم ما فيها من ضجيج، ينتهي تقريباً في مستوى أفضل نموذج كانت القاعدة الكلاسيكية ستختاره.
+
+
+        إذا غيّرتَ البذرة العشوائية، تتحرّك هذه النسبة الأخيرة فوق الواحد أو تحته.
+        أما القمّة فلا تتحرّك.
+        تبقى عند <bdi dir="ltr">p = n</bdi>، وتبقى ضخمة.
+
+  - type: paperRef
+    slug: reconciling-modern-machine-learning-and-the-bias-variance-tradeoff
+    phase: { en: "Sweep", ar: "المسح" }
+    title: { en: "See where the curve was named", ar: "اعرف أين سُمّي المنحنى" }
+    note:
+      en: "Belkin and colleagues named this curve and showed it first in random-features models like this one, then in trees and neural networks."
+      ar: "أطلق بلكن وزملاؤه على هذا المنحنى اسمه. وأظهروه أولاً في نماذج سمات عشوائية كهذا النموذج، ثم في الأشجار والشبكات العصبية."
+
+  # ── Explain ───────────────────────────────────────────────────────────
+  - type: prose
+    phase: { en: "Explain", ar: "التفسير" }
+    title: { en: "Ask why p = n", ar: "اسأل: لماذا عند <bdi dir=\"ltr\">p = n</bdi>؟" }
+    text:
+      en: >-
+        Count the options the solver has at each width. Below n, there are
+        fewer weights than training points, so no weight vector fits every
+        point. Least squares picks the best compromise. Above n, there are
+        more weights than points, so infinitely many weight vectors fit every
+        point exactly, and the solver picks the smallest.
+
+
+        Exactly at p = n, there is one exact fit and no choice. That single
+        fit has to pass through every noisy label. To do it, the weights
+        usually have to grow very large, and large weights make the model
+        swing wildly between training points. If that account is right, the
+        size of the weights should spike at the same place the test error
+        does.
+      ar: >-
+        لنعدّ الخيارات المتاحة للحلّال عند كل عرض.
+        حين يكون العرض أقلّ من <bdi dir="ltr">n</bdi>، تكون الأوزان أقلّ من نقاط التدريب.
+        فلا يوجد متجه أوزان يمرّ بكل النقاط.
+        وتختار المربعات الصغرى أفضل حلّ وسط.
+        وحين يكون العرض أكبر من <bdi dir="ltr">n</bdi>، تكون الأوزان أكثر من النقاط.
+        فتوجد متجهات أوزان لا نهاية لعددها تمرّ بكل النقاط تماماً، ويختار الحلّال أصغرها.
+
+
+        أما عند <bdi dir="ltr">p = n</bdi> تماماً، فتوجد ملاءمة تامّة واحدة، ولا مجال للاختيار.
+        هذه الملاءمة الوحيدة مُجبرة على المرور بكل تسمية، بما فيها من ضجيج.
+        ولكي تفعل ذلك، تحتاج الأوزان في العادة إلى أن تكبر كثيراً.
+        والأوزان الكبيرة تجعل تنبّؤات النموذج تتأرجح بعنف بين نقاط التدريب.
+        إذا كان هذا التفسير صحيحاً، فيجب أن يقفز حجم الأوزان في الموضع نفسه الذي يقفز فيه خطأ الاختبار.
+
+  - type: cell
+    id: norms
+    ref: norms
+    phase: { en: "Explain", ar: "التفسير" }
+    title: { en: "Measure the weight norm", ar: "قِس معيار الأوزان" }
+    captures: [sweet_spot_norm, threshold_norm, widest_norm]
+    caption:
+      en: "Compare this curve's shape with the test-error curve above. Does the spike sit at the same width?"
+      ar: "قارن شكل هذا المنحنى بمنحنى خطأ الاختبار أعلاه. هل تقع القمّة عند العرض نفسه؟"
+
+  - type: prose
+    phase: { en: "Explain", ar: "التفسير" }
+    title: { en: "Connect norm to error", ar: "اربط المعيار بالخطأ" }
+    text:
+      en: >-
+        It does. The weight norm goes from {{run.metrics.sweet_spot_norm}} at
+        the sweet spot to {{run.metrics.threshold_norm}} at the threshold, and
+        falls back to {{run.metrics.widest_norm}} at the widest model. Past
+        n, every extra feature gives the solver more ways to fit the same
+        points, so the smallest exact fit keeps getting smaller and smoother.
+
+
+        This changes what "more parameters" means. In the classical picture,
+        each parameter is more freedom to overfit. Past the threshold, each
+        parameter is more room to fit the same data gently. Capacity alone
+        does not decide generalization. Which of the many exact fits you end
+        up with decides it.
+      ar: >-
+        نعم، تقع عنده.
+        يرتفع معيار الأوزان من {{run.metrics.sweet_spot_norm}} عند النقطة المثلى إلى {{run.metrics.threshold_norm}} عند العتبة.
+        ثم يعود فينخفض إلى {{run.metrics.widest_norm}} عند أعرض نموذج.
+        بعد <bdi dir="ltr">n</bdi>، كل سمة إضافية تمنح الحلّال طرقاً أكثر لملاءمة النقاط نفسها.
+        ولذلك تزداد أصغر ملاءمة تامّة صِغَراً ونعومة.
+
+
+        هذا يغيّر معنى عبارة «معاملات أكثر».
+        في الصورة الكلاسيكية، كل معامل إضافي يعني حرية أكبر للإفراط في الملاءمة.
+        أما بعد العتبة، فكل معامل إضافي يعني مجالاً أوسع لملاءمة البيانات نفسها برفق.
+        إذن السعة وحدها لا تحدّد التعميم.
+        ما يحدّده هو أيّ ملاءمة تامّة، من بين ملاءمات كثيرة، ينتهي إليها النموذج.
+
+  - type: cell
+    id: gd
+    ref: gd
+    phase: { en: "Explain", ar: "التفسير" }
+    title: { en: "Check what gradient descent picks", ar: "تحقّق ممّا يختاره الانحدار التدرّجي" }
+    captures: [gd_cosine]
+    caption:
+      en: "The smallest fit was the solver's choice. Here plain gradient descent, starting from zero weights, gets no instruction to keep the weights small. Look at the cosine similarity: 1 means the same direction."
+      ar: "الملاءمة الأصغر كانت اختيار الحلّال. هنا نستخدم انحداراً تدرّجياً عادياً يبدأ من أوزان صفرية، ولا يُطلب منه إبقاء الأوزان صغيرة. انظر إلى تشابه جيب التمام: القيمة 1 تعني الاتجاه نفسه."
+
+  - type: prose
+    phase: { en: "Explain", ar: "التفسير" }
+    title: { en: "Name the inductive bias", ar: "سمِّ الانحياز الاستقرائي" }
+    text:
+      en: >-
+        Gradient descent lands on the minimum-norm fit, with a cosine
+        similarity of {{run.metrics.gd_cosine}}. The reason is mechanical.
+        Every gradient step is a combination of the training inputs, so
+        starting from zero, the weights never pick up a component the data
+        cannot see. The only exact fit with no such component is the smallest
+        one.
+
+
+        So nobody had to choose the smallest fit. The optimizer chose it. This
+        is an inductive bias: a preference built into the procedure, not
+        written into the loss function. In deep networks the details differ,
+        but the lesson carries over. To predict how an overparameterized model
+        generalizes, you have to know how it was trained, not just how big it
+        is.
+      ar: >-
+        يصل الانحدار التدرّجي إلى الملاءمة ذات المعيار الأصغر، بتشابه جيب تمام قدره {{run.metrics.gd_cosine}}.
+        والسبب آليّ بحت.
+        كل خطوة تدرّج هي تركيبة خطية من مُدخلات التدريب.
+        فإذا بدأنا من الصفر، لا تكتسب الأوزان أبداً أيّ مركّبة لا تراها البيانات.
+        والملاءمة التامّة الوحيدة الخالية من مثل هذه المركّبات هي الملاءمة الأصغر.
+
+
+        إذن لم يحتج أحد إلى اختيار الملاءمة الأصغر، بل اختارها المُحسِّن بنفسه.
+        هذا ما نسمّيه الانحياز الاستقرائي: تفضيل مبنيّ في الإجراء نفسه، وغير مكتوب في دالّة الخسارة.
+        في الشبكات العميقة تختلف التفاصيل، لكن الدرس يبقى صالحاً.
+        لكي تتنبّأ بقدرة نموذج كثير المعاملات على التعميم، يجب أن تعرف كيف دُرِّب، لا حجمه فقط.
+
+  - type: cell
+    id: memorize
+    ref: memorize
+    phase: { en: "Explain", ar: "التفسير" }
+    title: { en: "Fit labels with no pattern", ar: "لائم تسميات بلا نمط" }
+    captures: [shuffled_test_mse]
+    caption:
+      en: "Same widest model, same inputs, labels shuffled. Compare the two training errors first, then the two test errors."
+      ar: "النموذج الأعرض نفسه، والمُدخلات نفسها، لكن التسميات مخلوطة. قارن خطأي التدريب أولاً، ثم خطأي الاختبار."
+
+  - type: prose
+    phase: { en: "Explain", ar: "التفسير" }
+    title: { en: "Separate fitting from learning", ar: "افصل الملاءمة عن التعلّم" }
+    text:
+      en: >-
+        Both training errors are zero. The widest model memorizes shuffled
+        labels as perfectly as real ones. Their test errors are nothing alike:
+        {{run.metrics.widest_test}} on real labels, and
+        {{run.metrics.shuffled_test_mse}} on shuffled ones, which is worse than
+        always predicting the mean ({{run.metrics.target_var}}).
+
+
+        This is why "the model is big enough to memorize the data" cannot be
+        the whole explanation of overfitting. The same model, at the same
+        size, generalizes on one dataset and fails on the other. The
+        difference lies in the data, and in how a smooth fit through it
+        behaves between the points.
+      ar: >-
+        خطأ التدريب صفر في الحالتين.
+        أي أن أعرض نموذج يحفظ التسميات المخلوطة بالكمال نفسه الذي يحفظ به التسميات الحقيقية.
+        لكن خطأي الاختبار لا يتشابهان أبداً.
+        على التسميات الحقيقية يبلغ {{run.metrics.widest_test}}.
+        وعلى التسميات المخلوطة يبلغ {{run.metrics.shuffled_test_mse}}، وهذا أسوأ من التنبّؤ الدائم بالمتوسط ({{run.metrics.target_var}}).
+
+
+        لهذا لا تكفي عبارة «النموذج كبير بما يكفي ليحفظ البيانات» لتفسير الإفراط في الملاءمة.
+        النموذج نفسه، بالحجم نفسه، يعمّم جيداً على مجموعة بيانات ويفشل على أخرى.
+        الفرق إذن في البيانات نفسها.
+        وتحديداً في سلوك الملاءمة الناعمة التي تمرّ بها، في المسافات الواقعة بين النقاط.
+
+  - type: paperRef
+    slug: understanding-deep-learning-requires-rethinking-generalization
+    phase: { en: "Explain", ar: "التفسير" }
+    title: { en: "Read the random-labels result", ar: "اقرأ نتيجة التسميات العشوائية" }
+    note:
+      en: "Zhang and colleagues ran this experiment on image classifiers: networks that generalize well also fit random labels perfectly, so their size cannot explain their generalization."
+      ar: "أجرى جانغ وزملاؤه هذه التجربة على مصنّفات الصور. وجدوا أن الشبكات التي تعمّم جيداً تلائم التسميات العشوائية أيضاً ملاءمة تامّة. ولذلك لا يمكن أن يفسّر حجمُها قدرتَها على التعميم."
+
+  # ── Repair ────────────────────────────────────────────────────────────
+  - type: prose
+    phase: { en: "Repair", ar: "العلاج" }
+    title: { en: "Stop fitting exactly", ar: "توقّف عن الملاءمة التامّة" }
+    text:
+      en: >-
+        If the peak comes from forcing an exact fit through noisy labels,
+        then allowing a slightly inexact fit should remove it. Ridge
+        regression does that. It adds a penalty of λ times the squared weight
+        norm, so the solver gives up a little training error to keep the
+        weights small. The next cell reruns the same sweep, on the same
+        data, with λ = {{scale.ridge}}.
+      ar: >-
+        إذا كانت القمّة ناتجة عن إجبار النموذج على ملاءمة تامّة لتسميات فيها ضجيج، فالسماح بملاءمة غير تامّة قليلاً يجب أن يُزيلها.
+        وهذا ما يفعله انحدار الحافّة (<bdi dir="ltr">ridge</bdi>).
+        يضيف هذا الانحدار عقوبة تساوي <bdi dir="ltr">λ</bdi> مضروبة في مربع معيار الأوزان.
+        فيتنازل الحلّال عن قليل من دقّة التدريب مقابل إبقاء الأوزان صغيرة.
+        الخلية التالية تعيد المسح نفسه، على البيانات نفسها، مع <bdi dir="ltr">λ = {{scale.ridge}}</bdi>.
+
+  - type: cell
+    id: ridge
+    ref: ridge
+    phase: { en: "Repair", ar: "العلاج" }
+    title: { en: "Sweep again with ridge", ar: "امسح مجدداً مع عقوبة الحافّة" }
+    captures:
+      - ridge_threshold_test
+      - ridge_widest_test
+      - ridge_vs_sweet_spot
+      - ridge_worst_climb
+    caption:
+      en: "The faded curve is the first sweep. The dotted line is the classical sweet spot. Look for two things: whether the peak survives, and where the best model now sits."
+      ar: "المنحنى الباهت هو المسح الأول، والخط المنقّط هو النقطة المثلى الكلاسيكية. ابحث عن أمرين: هل تبقى القمّة؟ وأين يقع أفضل نموذج الآن؟"
+
+  - type: prose
+    phase: { en: "Repair", ar: "العلاج" }
+    title: { en: "Revise the tradeoff", ar: "راجِع المفاضلة" }
+    text:
+      en: >-
+        The peak is gone. At p = n the regularized model scores
+        {{run.metrics.ridge_threshold_test}}, against
+        {{run.metrics.threshold_test}} without the penalty. The curve is now
+        close to monotone: the largest rise anywhere above its best value so
+        far is a factor of {{run.metrics.ridge_worst_climb}}.
+
+
+        The bigger change is at the right edge. The widest regularized model
+        reaches a test error of {{run.metrics.ridge_widest_test}}, which is
+        {{run.metrics.ridge_vs_sweet_spot}} times the classical sweet spot.
+        The best model in the whole workshop is the largest one, with a small
+        penalty. Unlike the unregularized ratio, this result held on every
+        seed tried while building the workshop.
+
+
+        So the bias-variance tradeoff survives, but its axis was mislabelled.
+        Variance does not grow with the parameter count. It explodes when the
+        parameter count lands near the number of training points and the fit
+        is forced to be exact. Move away from that point in either direction,
+        or loosen the fit, and more parameters stop hurting.
+      ar: >-
+        اختفت القمّة.
+        عند <bdi dir="ltr">p = n</bdi> يحقّق النموذج المنظَّم خطأ اختبار قدره {{run.metrics.ridge_threshold_test}}، مقابل {{run.metrics.threshold_test}} من دون العقوبة.
+        وصار المنحنى قريباً من أن يكون متناقصاً باستمرار.
+        فأكبر صعود له، في أيّ موضع، فوق أفضل قيمة بلغها قبل ذلك، لا يزيد على مُضاعِف قدره {{run.metrics.ridge_worst_climb}}.
+
+
+        لكن التغيير الأكبر يقع في الطرف الأيمن.
+        يبلغ أعرض نموذج منظَّم خطأ اختبار قدره {{run.metrics.ridge_widest_test}}، أي {{run.metrics.ridge_vs_sweet_spot}} من خطأ النقطة المثلى الكلاسيكية.
+        إذن أفضل نموذج في الورشة كلّها هو أكبرها، مع عقوبة صغيرة.
+        وعلى خلاف النسبة في المسح الأول بلا عقوبة، ثبتت هذه النتيجة في كل بذرة عشوائية جُرِّبت أثناء بناء الورشة.
+
+
+        إذن تبقى المفاضلة بين الانحياز والتباين صحيحة، لكن محورها كان موسوماً خطأً.
+        التباين لا يكبر مع عدد المعاملات.
+        بل ينفجر حين يقترب عدد المعاملات من عدد نقاط التدريب، وتكون الملاءمة مُجبرة على أن تكون تامّة.
+        ابتعد عن تلك النقطة في أيّ اتجاه، أو خفّف شرط الملاءمة التامّة، فتكفّ المعاملات الإضافية عن الإضرار بالنموذج.
+
+  - type: paperRef
+    slug: deep-double-descent
+    phase: { en: "Repair", ar: "العلاج" }
+    title: { en: "Follow it into deep networks", ar: "تتبّعه في الشبكات العميقة" }
+    note:
+      en: "Nakkiran and colleagues found the same peak in ResNets and transformers, both across width and across training time. Label noise makes it much larger."
+      ar: "وجد ناكيران وزملاؤه القمّة نفسها في شبكات <bdi dir=\"ltr\">ResNet</bdi> والمحوّلات، سواء عند زيادة العرض أو مع طول التدريب. ويجعلها ضجيج التسميات أكبر بكثير."
+
+  # ── Probe ─────────────────────────────────────────────────────────────
+  - type: exercise
+    id: move-the-peak
+    ref: exercise
+    phase: { en: "Probe", ar: "الاستقصاء" }
+    title: { en: "Predict where the peak moves", ar: "توقّع إلى أين تنتقل القمّة" }
+    prompt:
+      en: >-
+        The next cell doubles the training set to 2n. Before you run it, set
+        my_guess to the width where you expect the new peak. Then try halving
+        the data instead. Here is the question to settle: is the peak's
+        location a property of the model, or of the model and the dataset
+        together? Then read the last line. Near the new peak, the same model
+        does worse with more data.
+      ar: >-
+        الخلية التالية تضاعف مجموعة التدريب إلى <bdi dir="ltr">2n</bdi>.
+        قبل أن تشغّلها، ضع في <bdi dir="ltr">my_guess</bdi> العرض الذي تتوقّع أن تقع عنده القمّة الجديدة.
+        ثم جرّب تنصيف البيانات بدلاً من مضاعفتها.
+        السؤال الذي نريد حسمه: هل موضع القمّة خاصية للنموذج وحده، أم للنموذج والبيانات معاً؟
+        بعد ذلك اقرأ السطر الأخير.
+        ستجد أن النموذج نفسه، قرب القمّة الجديدة، يصبح أسوأ حين نعطيه بيانات أكثر.
+
+    hint: 1
+
+  - type: paperRef
+    slug: grokking
+    phase: { en: "Probe", ar: "الاستقصاء" }
+    title: { en: "Compare a delay over time", ar: "قارن بتأخّر عبر الزمن" }
+    note:
+      en: "Grokking shows a related surprise along a different axis: small networks that have fitted their training set long ago suddenly start to generalize after many more steps of training."
+      ar: "تُظهر ظاهرة الاستيعاب المتأخّر (<bdi dir=\"ltr\">grokking</bdi>) مفاجأة قريبة، لكن على محور مختلف. شبكات صغيرة لاءمت مجموعة تدريبها منذ زمن طويل، ثم تبدأ فجأة في التعميم بعد خطوات تدريب كثيرة إضافية."
+
+  # ── Verify ────────────────────────────────────────────────────────────
+  - type: cell
+    id: verify
+    ref: verify
+    phase: { en: "Verify", ar: "التحقّق" }
+    title: { en: "Run the checks", ar: "شغّل الفحوص" }
+    caption:
+      en: "The first check is the control. If the widest model did not fit its training data exactly, its low test error would just be underfitting, and the second descent would mean nothing."
+      ar: "الفحص الأول هو فحص الضبط. إذا لم يلائم أعرض نموذج بيانات تدريبه ملاءمة تامّة، فانخفاض خطأ اختباره لا يعني إلا أنه يقصر عن الملاءمة. وعندها لا يعني الهبوط الثاني شيئاً."
+
+  - type: cell
+    id: finish
+    ref: finish
+    phase: { en: "Verify", ar: "التحقّق" }
+    title: { en: "Collect the receipt", ar: "استلم الإيصال" }
+    caption:
+      en: "The receipt records which checks passed, the profile that ran, and the code hash."
+      ar: "يسجّل الإيصال الفحوص التي نجحت، وملفّ التشغيل المستخدم، وبصمة الشيفرة."
+
+  - type: prose
+    phase: { en: "Verify", ar: "التحقّق" }
+    title: { en: "Keep the corrected rule", ar: "احتفظ بالقاعدة المصحّحة" }
+    text:
+      en: >-
+        The rule to take away is not "bigger is always better". The
+        unregularized widest model only matched the classical sweet spot, and
+        the seed decided which side of it it landed on. The corrected rule is
+        narrower and more useful. Test error peaks where the parameter count
+        meets the dataset size and the fit is forced to be exact. Past that
+        point, the optimizer's preference for small, smooth solutions takes
+        over. With a little regularization, the largest model is the best
+        one.
+      ar: >-
+        القاعدة التي نخرج بها ليست «الأكبر أفضل دائماً».
+        فأعرض نموذج بلا تنظيم لم يزد على أن جارى النقطة المثلى الكلاسيكية.
+        والبذرة العشوائية هي التي حدّدت هل وقع فوقها أم تحتها.
+        القاعدة المصحّحة أضيق من ذلك، وأنفع.
+        يبلغ خطأ الاختبار ذروته حين يلتقي عدد المعاملات بعدد نقاط التدريب، وتكون الملاءمة مُجبرة على أن تكون تامّة.
+        بعد تلك النقطة، يتولّى الأمرَ تفضيلُ المُحسِّن للحلول الصغيرة الناعمة.
+        ومع قليل من التنظيم، يصبح أكبر نموذج هو أفضلها.

@@ -1,0 +1,837 @@
+schema: workshop/v1
+id: fit-your-own-scaling-law
+constellation: language
+
+title:
+  en: "Fit Your Own Scaling Law"
+  ar: "قِس قانون التوسّع بنفسك"
+
+concept:
+  en: "A scaling law is a measurement, not a constant"
+  ar: "قانون التوسّع نتيجة قياس، وليس ثابتاً"
+
+scenario:
+  en: >-
+    You can afford one model at a compute budget you have never trained at.
+    How big should it be, and how much data should it see? The literature
+    offers a famous answer: about 20 training tokens per parameter. But that
+    number was measured, on someone else's models, data and tokenizer. In this
+    notebook you measure your own. You train a few dozen tiny byte-level
+    language models, fit power laws to the best of them, and use the fit to
+    choose and predict a model {{scale.holdout_factor}}× beyond anything you
+    trained. On your setup the best split lands at {{run.metrics.tokens_per_param}}
+    tokens per parameter.
+  ar: >-
+    لديك ميزانية حوسبة لم تدرّب عندها أيّ نموذج من قبل، وهي لا تكفي إلا لنموذج واحد.
+    ما الحجم المناسب لهذا النموذج؟ وكم من البيانات يجب أن يقرأ؟
+    في الأدبيات جواب مشهور: نحو 20 رمزاً تدريبياً لكل معامل.
+    لكنّ هذا الرقم جاء من قياس، على نماذج غيرك وبياناته ومُرمِّزه.
+    في هذا الدفتر تقيس رقمك أنت.
+    تدرّب بضع عشرات من النماذج اللغوية الصغيرة التي تقرأ النص بايتاً بايتاً، ثم توفّق قوانين قوة على أفضلها.
+    بعد ذلك تستخدم هذا التوفيق لتختار نموذجاً عند ميزانية أكبر بـ{{scale.holdout_factor}} مرات من كل ما درّبته، وتتوقّع خسارته قبل أن تدرّبه.
+    وفي إعدادك هذا، يقع أفضل تقسيم عند {{run.metrics.tokens_per_param}} رمزاً لكل معامل.
+
+goal:
+  en: >-
+    Predict the loss of a model you have not trained yet, at a budget
+    {{scale.holdout_factor}}× larger than any fitted point, then train it and
+    land within the declared error.
+  ar: >-
+    أن تتوقّع خسارة نموذج لم تدرّبه بعد، عند ميزانية أكبر بـ{{scale.holdout_factor}} مرات من أيّ نقطة دخلت في التوفيق،
+    ثم تدرّبه فعلاً، فيأتي الفرق بين التوقّع والقياس ضمن حدّ الخطأ المعلن.
+
+difficulty: intermediate
+status: draft
+publishedAt: null
+
+maintenance:
+  tier: moderate               # arabic-reshaper and python-bidi, pinned below
+  cadence: quarterly
+
+estimate:
+  gpuMinutes: 20               # placeholder until the first T4 run
+  totalMinutes: 45
+
+papers:
+  - slug: training-compute-optimal-large-language-models
+    role: core
+    label:
+      en: "the IsoFLOP method, the parametric loss surface, and the 20-tokens-per-parameter result we test against"
+      ar: "طريقة منحنيات الحوسبة الثابتة، وسطح الخسارة المعلَمي، ونتيجة الـ20 رمزاً لكل معامل التي نقارن بها قياسنا"
+  - slug: empirical-scaling-laws-for-language-models
+    role: core
+    label:
+      en: "the idea that loss follows power laws in parameters, data and compute, and the non-embedding parameter count"
+      ar: "فكرة أنّ الخسارة تتبع قوانين قوة في المعاملات والبيانات والحوسبة، وطريقة عدّ المعاملات دون جداول التضمين"
+  - slug: language-models-are-few-shot-learners
+    role: supporting
+    label:
+      en: "a model sized by the earlier rule, which the compute-optimal frontier later called undertrained"
+      ar: "نموذج حُدّد حجمه بالقاعدة الأقدم، ثم تبيّن لاحقاً، بمقياس الحدّ الأمثل حوسبياً، أنه لم يُدرَّب بما يكفي"
+
+assets:
+  - name: tinystories-v2-head.txt
+    bytes: null                # written by tools/pin-asset.py
+    sha256: null               # pin before publishing
+    license: "CDLA-Sharing-1.0 — TinyStories (Eldan & Li, 2023)"
+    sources:
+      - "https://raw.githubusercontent.com/<owner>/azimuth-workshops/main/mirror/tinystories-v2-head.txt"
+    description:
+      en: "The first ~48 MB of TinyStoriesV2-GPT4-train.txt, cut at a story boundary. Simple English stories, so small models learn visibly within minutes."
+      ar: >-
+        أول 48 ميغابايت تقريباً من الملف <bdi dir="ltr">TinyStoriesV2-GPT4-train.txt</bdi>، مقطوعةً عند نهاية قصة.
+        وهي قصص إنجليزية بسيطة، لذلك يظهر تعلّم النماذج الصغيرة منها خلال دقائق.
+  - name: NotoNaskhArabic-Regular.ttf
+    bytes: 247336
+    sha256: 6f0a92031367b2f5a2078fe9d24f3433122b61a0bad57c423aad8f3c39aa2e6e
+    license: "SIL Open Font License 1.1 — Noto Project"
+    sources:
+      - "https://raw.githubusercontent.com/notofonts/notofonts.github.io/main/fonts/NotoNaskhArabic/hinted/ttf/NotoNaskhArabic-Regular.ttf"
+      - "https://raw.githubusercontent.com/<owner>/azimuth-workshops/main/mirror/NotoNaskhArabic-Regular.ttf"
+    description:
+      en: "A font with Arabic glyphs, so figure labels render joined and in order in the Arabic notebook."
+      ar: "خطّ يحتوي الحروف العربية، كي تظهر تسميات الرسوم في الدفتر العربي متّصلةً وبترتيبها الصحيح."
+
+dependencies:
+  pip:
+    - "arabic-reshaper==3.0.0"
+    - "python-bidi==0.4.2"
+
+profiles:
+  - id: free
+    default: true
+    name:
+      en: "Free tier (T4)"
+      ar: "المستوى المجاني (<bdi dir=\"ltr\">T4</bdi>)"
+    requires:
+      gpu: true
+      vramGb: 1                # placeholder; the grid cell prints the measured peak
+      ramGb: 3
+    scale:
+      seed: 17
+      corpus_bytes: 48000000
+      val_bytes: 1000000
+      context: 128
+      batch: 16
+      lr: 0.003
+      max_layers: 8
+      max_width: 256
+      aspect_min: 16
+      aspect_max: 48
+      ratios: [4, 16, 64, 256, 1024, 4096]
+      budget_min: 500000000000
+      budget_factor: 2
+      n_budgets: 5
+      min_tokens: 2000000
+      holdout_factor: 4
+
+# Thresholds are placeholders until the first T4 run; reset each one below its
+# measured value with room for hardware variance.
+checks:
+  - id: runs-learned
+    required: true
+    min: 0.5
+    label:
+      en: "Smallest gain over the unigram baseline across all grid runs, in nats per byte"
+      ar: "أصغر تحسّن عن خط الأساس الأحادي بين كل تشغيلات الشبكة، بوحدة نات لكل بايت"
+  - id: optima-bracketed
+    required: true
+    min: 0.8
+    label:
+      en: "Share of budgets whose best model size has a smaller and a larger run on either side"
+      ar: "نسبة الميزانيات التي يقع أفضل حجم فيها بين تشغيل أصغر منه وتشغيل أكبر منه"
+  - id: frontier-fit
+    required: true
+    min: 0.9
+    label:
+      en: "R² of compute-optimal size against compute, in log space"
+      ar: "معامل التحديد <bdi dir=\"ltr\">R²</bdi> للحجم الأمثل مقابل الحوسبة، على المقياس اللوغاريتمي"
+  - id: prediction-error
+    required: true
+    max: 3.0
+    label:
+      en: "Gap between predicted and measured holdout loss, as a percentage"
+      ar: "الفرق بين خسارة نموذج الاختبار المتوقَّعة والمقيسة، كنسبة مئوية"
+
+hints:
+  - en: >-
+      Look at the right panel of the holdout figure. The fitted frontier bends
+      toward the dotted line, the irreducible loss. A pure power law has no
+      such line: it is straight in log-log space and keeps falling forever.
+    ar: >-
+      انظر إلى اللوحة اليمنى في رسم نموذج الاختبار.
+      الحدّ المُوفَّق ينحني باتجاه الخط المنقّط، وهذا الخط هو الخسارة غير القابلة للاختزال.
+      قانون القوة الخالص لا يملك خطاً كهذا.
+      فهو مستقيم على المحورين اللوغاريتميين، ويستمرّ في الهبوط بلا نهاية.
+  - en: >-
+      Compare the two fits on the points they were fitted to, then on the
+      holdout. Two curves can agree inside the fitted range and still disagree
+      a lot once you extrapolate. Which one assumed more about the region
+      beyond your data?
+    ar: >-
+      قارن التوفيقين أولاً على النقاط التي وُفِّقا عليها، ثم على نموذج الاختبار.
+      قد يتطابق منحنيان داخل مدى التوفيق، ثم يفترقان كثيراً حين تستقرئ خارجه.
+      فأيّهما افترض أكثر عن المنطقة التي لا بيانات لديك فيها؟
+  - en: >-
+      The embedding tables hold (256 + context length) × width parameters.
+      For the narrowest models that is a large share of the whole network; for
+      the widest it is a small one. Removing them shrinks small models more
+      than large ones. What does that do to the slope of size against compute?
+    ar: >-
+      في جداول التضمين ‎(256 + طول السياق) × العرض من المعاملات.
+      في أضيق النماذج يشكّل هذا جزءاً كبيراً من الشبكة كلها، وفي أعرضها جزءاً صغيراً.
+      لذلك يُصغّر حذفُها النماذجَ الصغيرة أكثر مما يُصغّر الكبيرة.
+      فماذا يفعل ذلك بميل الحجم مقابل الحوسبة؟
+
+terms:
+  "Scaling Law":
+    en: "An empirical rule, usually a power law, relating a model's loss to its size, its data or its compute. Fitted to measurements, not derived."
+    ar: "قاعدة تجريبية، غالباً على شكل قانون قوة، تربط خسارة النموذج بحجمه أو ببياناته أو بحوسبته. تُستخرج بالتوفيق على قياسات، ولا تُشتقّ نظرياً."
+  "Compute-Optimal":
+    en: "The split of a fixed compute budget between parameters and training tokens that gives the lowest loss."
+    ar: "تقسيم ميزانية حوسبة ثابتة بين المعاملات ورموز التدريب على النحو الذي يعطي أدنى خسارة."
+  "Chinchilla Scaling":
+    en: "The 2022 finding that parameters and training tokens should grow roughly equally with compute, about 20 tokens per parameter for that setup."
+    ar: "نتيجة عام 2022: يجب أن تنمو المعاملات ورموز التدريب بالمعدّل نفسه تقريباً مع الحوسبة، بنحو 20 رمزاً لكل معامل في ذلك الإعداد."
+  "Model Scale":
+    en: "How big a model is, usually counted in parameters."
+    ar: "حجم النموذج، ويُقاس عادةً بعدد معاملاته."
+  "Compute Budget":
+    en: "The total compute you will spend on training, measured in FLOPs. Here, C ≈ 6 × parameters × tokens."
+    ar: "مجموع الحوسبة التي ستنفقها على التدريب، بوحدة <bdi dir=\"ltr\">FLOPs</bdi>. وهي هنا تقارب 6 × عدد المعاملات × عدد الرموز."
+  "Training FLOPs":
+    en: "Floating-point operations spent on training. For a transformer, about 6 per parameter per token: 2 for the forward pass and 4 for the backward pass."
+    ar: "عمليات الفاصلة العائمة المنفقة في التدريب. في المحوّل تبلغ نحو 6 لكل معامل ولكل رمز: 2 في المرور الأمامي، و4 في المرور الخلفي."
+  "Loss":
+    en: "The number training pushes down. Here it is the average cross-entropy per byte on held-out text."
+    ar: "الرقم الذي يدفعه التدريب إلى الأسفل. وهو هنا متوسط الإنتروبيا المتقاطعة لكل بايت، على نص لم يُستخدم في التدريب."
+  "Loss Function":
+    en: "The function that scores a model's predictions against the truth. Training minimizes it."
+    ar: "الدالة التي تقيّم توقّعات النموذج مقارنةً بالحقيقة. والتدريب يسعى إلى تصغيرها."
+  "Cross-Entropy Loss":
+    en: "The average negative log-probability the model gives to the byte that actually came next, measured in nats."
+    ar: "متوسط سالب لوغاريتم الاحتمال الذي يعطيه النموذج للبايت الذي جاء فعلاً، بوحدة النات."
+  "Dataset":
+    en: "The text the models learn from. Here, simple English stories, read as raw bytes."
+    ar: "النص الذي تتعلّم منه النماذج. وهو هنا قصص إنجليزية بسيطة تُقرأ بايتاتٍ خاماً."
+  "Data Efficiency":
+    en: "How much loss a model removes per training token. Larger models are usually more data-efficient."
+    ar: "مقدار الخسارة الذي يزيله النموذج مقابل كل رمز تدريب. والنماذج الأكبر أكفأ عادةً في استخدام البيانات."
+  "Generalization":
+    en: "Performance on data the model did not train on. Every loss in this notebook is measured on held-out bytes."
+    ar: "الأداء على بيانات لم يتدرّب عليها النموذج. كل خسارة في هذا الدفتر تُقاس على بايتات محجوزة خارج التدريب."
+  "Extrapolation (Statistical)":
+    en: "Using a fitted curve outside the range of the data it was fitted to. The holdout run tests exactly this."
+    ar: "استخدام منحنى مُوفَّق خارج مدى البيانات التي وُفِّق عليها. وتشغيل الاختبار يفحص هذا بالضبط."
+  "Interpolation (Statistical)":
+    en: "Using a fitted curve inside the range of its data. Much safer than extrapolation."
+    ar: "استخدام منحنى مُوفَّق داخل مدى بياناته. وهو أكثر أماناً بكثير من الاستقراء الخارجي."
+  "Power Law":
+    en: "A relation y = k · x^p. It is a straight line on log-log axes, with slope p."
+    ar: "علاقة من الشكل <bdi dir=\"ltr\">y = k · x^p</bdi>. تظهر خطاً مستقيماً على محورين لوغاريتميين، ميله <bdi dir=\"ltr\">p</bdi>."
+  "Model Efficiency & Scaling":
+    en: "How a model's quality grows with the resources spent on it, and how to spend those resources well."
+    ar: "كيف تتحسّن جودة النموذج مع الموارد التي تُنفق عليه، وكيف تُنفق هذه الموارد بحكمة."
+  "Compute-Optimal Frontier":
+    en: "The curve of lowest achievable loss at each compute budget, traced by the best model at each budget."
+    ar: "منحنى أدنى خسارة ممكنة عند كل ميزانية حوسبة، ترسمه أفضل النماذج عند كل ميزانية."
+  "IsoFLOP Curve":
+    en: "Loss against model size for runs that all spend the same compute. Its minimum is the best size for that budget."
+    ar: "الخسارة مقابل حجم النموذج، لتشغيلات تنفق كلها الحوسبة نفسها. وأدنى نقطة فيه هي أفضل حجم لتلك الميزانية."
+  "Diminishing Returns":
+    en: "Each doubling of compute buys a smaller drop in loss than the one before."
+    ar: "كل مضاعفة للحوسبة تشتري انخفاضاً في الخسارة أصغر من الانخفاض الذي اشترته المضاعفة السابقة."
+  "Large Language Model":
+    en: "A transformer language model with billions of parameters. The laws measured here on tiny models are the ones used to plan them."
+    ar: "نموذج لغوي من نوع المحوّل فيه مليارات المعاملات. والقوانين التي نقيسها هنا على نماذج صغيرة هي من النوع نفسه الذي يُستخدم للتخطيط لهذه النماذج."
+  "Irreducible Loss":
+    en: "The floor E that a loss curve approaches but never crosses, however much compute is spent. Part of it is the true entropy of the text."
+    ar: "الأرضية <bdi dir=\"ltr\">E</bdi> التي يقترب منها منحنى الخسارة ولا يتجاوزها، مهما زادت الحوسبة. وجزء منها هو الإنتروبيا الحقيقية للنص."
+  "Scaling Coefficient":
+    en: "The exponent of a fitted power law. Here, a in N_opt ∝ C^a and alpha in the loss frontier."
+    ar: "أُسّ قانون القوة المُوفَّق. وهو هنا <bdi dir=\"ltr\">a</bdi> في <bdi dir=\"ltr\">N_opt ∝ C^a</bdi>، و<bdi dir=\"ltr\">alpha</bdi> في حدّ الخسارة."
+  "Parameter Count":
+    en: "How many trainable numbers a model has. Whether embedding tables are counted changes the scaling law you measure."
+    ar: "عدد القيم القابلة للتدريب في النموذج. وإدخال جداول التضمين في العدّ أو استبعادها يغيّر قانون التوسّع الذي تقيسه."
+  "Training Tokens":
+    en: "How many tokens the model reads during training. Here a token is one byte, and no run reads any byte twice."
+    ar: "عدد الرموز التي يقرؤها النموذج أثناء التدريب. والرمز هنا بايت واحد، ولا يقرأ أيّ تشغيل البايت نفسه مرتين."
+
+body:
+  # ── Frame ───────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Start from the claim", ar: "ابدأ من الادّعاء" }
+    phase: { en: "Frame", ar: "التأطير" }
+    text:
+      en: >-
+        In 2020, Kaplan and colleagues measured how a language model's
+        <Term en="Loss">loss</Term> falls as you add parameters, data and
+        compute. Each relation was a <Term en="Power Law">power law</Term>,
+        and their advice was to spend most of a growing budget on bigger
+        models. In 2022, the Chinchilla paper ran the measurement again, more
+        carefully, and reached a different answer: grow parameters and
+        <Term en="Training Tokens">training tokens</Term> together, at about
+        20 tokens per parameter.
+
+
+        Neither result was derived from first principles. Both came from
+        training many models, plotting the results, and fitting curves. That
+        means you can do the same thing on a single GPU. The numbers you get
+        will be your own, and that is the point of this notebook.
+      ar: >-
+        في عام 2020 قاس <bdi dir="ltr">Kaplan</bdi> وزملاؤه كيف تنخفض <Term en="Loss">خسارة</Term> النموذج اللغوي
+        كلما زادت المعاملات والبيانات والحوسبة.
+        جاءت كل علاقة من هذه العلاقات على شكل <Term en="Power Law">قانون قوة</Term>.
+        وكانت نصيحتهم: إذا كبرت الميزانية، فأنفق معظم الزيادة على تكبير النموذج.
+        في عام 2022 أعادت ورقة <bdi dir="ltr">Chinchilla</bdi> القياس بعناية أكبر، فوصلت إلى جواب مختلف.
+        الجواب الجديد: كبّر المعاملات و<Term en="Training Tokens">رموز التدريب</Term> معاً، بنحو 20 رمزاً لكل معامل.
+
+
+        لم يُستنتج أيٌّ من الجوابين من مبادئ أولى.
+        كلاهما جاء من تدريب نماذج كثيرة، ثم رسم نتائجها، ثم توفيق منحنيات عليها.
+        وهذا يعني أنك تستطيع أن تفعل الشيء نفسه على معالج رسومي واحد.
+        الأرقام التي ستحصل عليها ستكون أرقامك أنت، وهذا بالضبط ما يريد هذا الدفتر أن يريك إياه.
+
+  - type: paperRef
+    slug: training-compute-optimal-large-language-models
+    title: { en: "Read the Chinchilla method", ar: "اقرأ طريقة <bdi dir=\"ltr\">Chinchilla</bdi>" }
+    phase: { en: "Frame", ar: "التأطير" }
+    note:
+      en: "Section 3 describes the three approaches. This notebook runs Approach 2 (IsoFLOP curves) and Approach 3 (a parametric loss surface) on the same runs."
+      ar: >-
+        يصف القسم الثالث من الورقة الطرق الثلاث.
+        ينفّذ هذا الدفتر الطريقة الثانية، أي منحنيات الحوسبة الثابتة،
+        والطريقة الثالثة، أي سطح الخسارة المعلَمي، وكلتاهما على التشغيلات نفسها.
+
+  - type: paperRef
+    slug: empirical-scaling-laws-for-language-models
+    title: { en: "Read the earlier law", ar: "اقرأ القانون الأقدم" }
+    phase: { en: "Frame", ar: "التأطير" }
+    note:
+      en: "Kaplan et al. counted parameters without the embedding tables. The last exercise shows what that choice does to the exponent."
+      ar: >-
+        عدّ <bdi dir="ltr">Kaplan</bdi> وزملاؤه المعاملات دون جداول التضمين.
+        ويبيّن التمرين الأخير ما يفعله هذا الاختيار بالأُسّ.
+
+  - type: cell
+    id: setup
+    ref: setup
+    title: { en: "Load the workshop", ar: "حمّل الورشة" }
+    phase: { en: "Frame", ar: "التأطير" }
+    caption:
+      en: "Check the code hash and that a GPU is attached. The grid needs one."
+      ar: "تحقّق من بصمة الشيفرة، ومن أنّ معالجاً رسومياً متّصل. فالشبكة تحتاج إليه."
+
+  # ── Measure ─────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Read text as bytes", ar: "اقرأ النص بايتات" }
+    phase: { en: "Measure", ar: "القياس" }
+    text:
+      en: >-
+        The models read raw bytes, so the vocabulary is 256 symbols and there
+        is no tokenizer to train or argue about. Every loss is measured in nats
+        per byte on text the models never trained on.
+
+
+        The first number to note is the unigram baseline. It is the loss of a
+        model that ignores context and predicts each byte from its overall
+        frequency. Every trained model should beat it by a wide margin. If one
+        does not, it learned nothing, and a curve fitted through it would be a
+        curve through noise.
+      ar: >-
+        تقرأ النماذج البايتات الخام كما هي.
+        لذلك تتكوّن المفردات من 256 رمزاً فقط، ولا يوجد مُرمِّز نحتاج إلى تدريبه أو إلى الاختلاف حوله.
+        وكل خسارة تُقاس بوحدة نات لكل بايت، على نص لم تتدرّب عليه النماذج أبداً.
+
+
+        أول رقم يستحقّ الانتباه هو خط الأساس الأحادي.
+        وهو خسارة نموذج يتجاهل السياق تماماً، ويتوقّع كل بايت من تكراره العام في النص.
+        كل نموذج مدرَّب يجب أن يتفوّق على هذا الخط بفارق واضح.
+        فإذا لم يتفوّق عليه نموذج ما، فهذا النموذج لم يتعلّم شيئاً.
+        وأيّ منحنى نوفّقه عبر نقطة كهذه هو منحنى يمرّ عبر ضجيج.
+
+  - type: cell
+    id: data
+    ref: data
+    captures: [unigram_loss]
+    title: { en: "Load the stories", ar: "حمّل القصص" }
+    phase: { en: "Measure", ar: "القياس" }
+    caption:
+      en: "The baseline lands near 3 nats per byte. Remember that number; every trained model should end well below it."
+      ar: "يقع خط الأساس قرب 3 نات لكل بايت. احفظ هذا الرقم، فكل نموذج مدرَّب يجب أن ينتهي أدنى منه بكثير."
+
+  - type: prose
+    title: { en: "Build a family of models", ar: "ابنِ عائلة من النماذج" }
+    phase: { en: "Measure", ar: "القياس" }
+    text:
+      en: >-
+        A scaling law compares models of different sizes, so we need a family
+        of them. The pool below grows width and depth together, from a few
+        thousand <Term en="Parameter Count">parameters</Term> to a few million.
+        Each shape is listed with two parameter counts: the total, as
+        Chinchilla counted, and the count without the embedding tables, as
+        Kaplan counted. For now we use the total. The difference returns in
+        the last exercise.
+      ar: >-
+        قانون التوسّع يقارن بين نماذج بأحجام مختلفة، لذلك نحتاج إلى عائلة كاملة منها.
+        المجموعة أدناه تُكبّر العرض والعمق معاً، من بضعة آلاف من <Term en="Parameter Count">المعاملات</Term> إلى بضعة ملايين.
+        وبجانب كل شكل عددان للمعاملات.
+        الأول هو العدد الكلي، كما عدّتها ورقة <bdi dir="ltr">Chinchilla</bdi>.
+        والثاني هو العدد بعد حذف جداول التضمين، كما عدّها <bdi dir="ltr">Kaplan</bdi>.
+        نستخدم العدد الكلي الآن، ونعود إلى الفرق بين العددين في التمرين الأخير.
+
+  - type: cell
+    id: model
+    ref: model
+    title: { en: "Define the model pool", ar: "عرّف مجموعة النماذج" }
+    phase: { en: "Measure", ar: "القياس" }
+    caption:
+      en: "Look at the smallest shapes: the embedding tables are a large fraction of their total count."
+      ar: "انظر إلى أصغر الأشكال: جداول التضمين فيها تمثّل جزءاً كبيراً من عددها الكلي."
+
+  - type: prose
+    title: { en: "Price a run in FLOPs", ar: "احسب كلفة التشغيل" }
+    phase: { en: "Measure", ar: "القياس" }
+    text:
+      en: >-
+        Training a transformer with N parameters on D tokens costs about
+        C ≈ 6·N·D <Term en="Training FLOPs">floating-point operations</Term>:
+        two per parameter per token for the forward pass, four for the
+        backward pass. That approximation is what lets us trade N against D at
+        a fixed <Term en="Compute Budget">compute budget</Term>.
+
+
+        One detail in the trainer matters more than it looks. Each run's
+        learning-rate schedule is stretched to that run's own length. The
+        Chinchilla authors identified a schedule set for a longer run as one
+        reason the earlier law favored large models: the short runs never
+        finished cooling down, so they looked worse than they were.
+      ar: >-
+        تدريب محوّل فيه <bdi dir="ltr">N</bdi> معاملاً على <bdi dir="ltr">D</bdi> رمزاً
+        يكلّف تقريباً <bdi dir="ltr">C ≈ 6·N·D</bdi> من <Term en="Training FLOPs">عمليات الفاصلة العائمة</Term>.
+        ومصدر الرقم 6: عمليتان لكل معامل ولكل رمز في المرور الأمامي، وأربع عمليات في المرور الخلفي.
+        هذا التقريب هو ما يسمح لنا بالمقايضة بين <bdi dir="ltr">N</bdi> و<bdi dir="ltr">D</bdi>
+        عند <Term en="Compute Budget">ميزانية حوسبة</Term> ثابتة.
+
+
+        في المدرِّب تفصيل صغير، أهميته أكبر مما يبدو.
+        جدول معدّل التعلّم في كل تشغيل يمتدّ على طول ذلك التشغيل نفسه، لا أكثر.
+        أشار مؤلفو <bdi dir="ltr">Chinchilla</bdi> إلى أنّ ضبط الجدول على تشغيل أطول
+        كان أحد أسباب ميل القانون الأقدم إلى النماذج الكبيرة.
+        فالتشغيلات القصيرة لم يكتمل فيها خفض معدّل التعلّم.
+        ولذلك بدت نتائجها أسوأ من حقيقتها.
+
+  - type: cell
+    id: trainer
+    ref: trainer
+    captures: [probe_loss]
+    title: { en: "Train one probe model", ar: "درّب نموذجاً تجريبياً" }
+    phase: { en: "Measure", ar: "القياس" }
+    caption:
+      en: "One small run before the grid. Its loss should already be under the unigram baseline."
+      ar: "تشغيل صغير واحد قبل الشبكة. ويجب أن تكون خسارته أدنى من خط الأساس الأحادي منذ الآن."
+
+  - type: prose
+    title: { en: "Hold compute fixed", ar: "ثبّت الحوسبة" }
+    phase: { en: "Measure", ar: "القياس" }
+    text:
+      en: >-
+        Here is the core of the method. Pick a compute budget C. Train several
+        models that all spend exactly C, from a large model on few tokens to a
+        small model on many. Plot their losses against size. The result is an
+        <Term en="IsoFLOP Curve">IsoFLOP curve</Term>, and its lowest point is
+        the best size for that budget. Repeat for several budgets.
+
+
+        We choose the splits by their tokens-per-parameter ratio, D / N, and
+        spread those ratios widely on purpose. We do not know in advance where
+        the best split lies, and the method only works if each budget's best
+        run has worse runs on both sides of it.
+      ar: >-
+        هنا قلب الطريقة.
+        اختر ميزانية حوسبة <bdi dir="ltr">C</bdi>.
+        ثم درّب عدّة نماذج تنفق كلها <bdi dir="ltr">C</bdi> بالضبط:
+        من نموذج كبير يقرأ رموزاً قليلة، إلى نموذج صغير يقرأ رموزاً كثيرة.
+        بعد ذلك ارسم خسائرها مقابل أحجامها.
+        الناتج هو <Term en="IsoFLOP Curve">منحنى الحوسبة الثابتة</Term>
+        (<bdi dir="ltr">IsoFLOP</bdi>)، وأدنى نقطة فيه هي أفضل حجم لتلك الميزانية.
+        وتكرّر ذلك لعدّة ميزانيات.
+
+
+        نختار طرق التقسيم بحسب نسبة الرموز إلى المعاملات، <bdi dir="ltr">D / N</bdi>.
+        ونوزّع هذه النسب على مدى واسع عن قصد.
+        فنحن لا نعرف مسبقاً أين يقع أفضل تقسيم.
+        والطريقة لا تنجح إلا إذا وُجدت، في كل ميزانية، تشغيلات أسوأ من أفضل تشغيل على جانبيه كليهما.
+
+  - type: cell
+    id: plan
+    ref: plan
+    title: { en: "Lay out the grid", ar: "ارسم خطة الشبكة" }
+    phase: { en: "Measure", ar: "القياس" }
+    caption:
+      en: "Each budget gets several model sizes. The largest sizes drop out at small budgets, where they would see too few tokens to learn."
+      ar: "تحصل كل ميزانية على عدّة أحجام. وتغيب الأحجام الكبرى عن الميزانيات الصغيرة، لأنها ستقرأ هناك رموزاً أقلّ من أن تتعلّم منها."
+
+  - type: scaleNote
+    title: { en: "Size the grid", ar: "حدّد حجم الشبكة" }
+    phase: { en: "Measure", ar: "القياس" }
+    text:
+      en: >-
+        The free profile trains across {{scale.n_budgets}} budgets, each
+        {{scale.budget_factor}}× the one before. Any split that would give a
+        run fewer than {{scale.min_tokens}} tokens is skipped, because a run
+        with too few optimizer steps measures the optimizer rather than the
+        model. Any split that needs more tokens than the corpus holds is also
+        skipped: no run reads the same byte twice, so repeated data cannot
+        bend the curves.
+      ar: >-
+        يدرّب المستوى المجاني عبر {{scale.n_budgets}} ميزانيات،
+        وكل ميزانية تساوي السابقة مضروبةً في {{scale.budget_factor}}.
+        يُستبعَد أيّ تقسيم يعطي التشغيل أقلّ من {{scale.min_tokens}} رمزاً.
+        والسبب أنّ التشغيل ذا الخطوات القليلة يقيس المُحسِّن، لا النموذج.
+        ويُستبعَد كذلك أيّ تقسيم يحتاج رموزاً أكثر مما في النص.
+        فلا يقرأ أيّ تشغيل البايت نفسه مرتين، وبذلك لا تستطيع البيانات المكرّرة أن تحرف المنحنيات.
+
+  - type: cell
+    id: grid
+    ref: grid
+    captures: [n_runs, grid_minutes, worst_margin, peak_vram_gb]
+    title: { en: "Train the whole grid", ar: "درّب الشبكة كاملة" }
+    phase: { en: "Measure", ar: "القياس" }
+    caption:
+      en: "The longest cell. Read the table one budget at a time: loss should fall and then rise again as N grows."
+      ar: "أطول خلية في الدفتر. اقرأ الجدول ميزانيةً ميزانية: يجب أن تنخفض الخسارة ثم ترتفع من جديد كلما كبر <bdi dir=\"ltr\">N</bdi>."
+
+  # ── Fit ─────────────────────────────────────────────────────────────────
+  - type: cell
+    id: figures
+    ref: figures
+    title: { en: "Prepare the figures", ar: "جهّز الرسوم" }
+    phase: { en: "Fit", ar: "التوفيق" }
+    caption:
+      en: "Plot setup only. In the Arabic notebook it also loads a font that has Arabic glyphs."
+      ar: "إعداد للرسوم فقط. وفي الدفتر العربي يحمّل أيضاً خطاً يحتوي الحروف العربية."
+
+  - type: cell
+    id: isoflop
+    ref: isoflop
+    captures: [bracketed_share]
+    thumbnail: true
+    title: { en: "Find each budget's best size", ar: "جِد أفضل حجم لكل ميزانية" }
+    phase: { en: "Fit", ar: "التوفيق" }
+    caption:
+      en: "Each colour is one budget. The stars mark the bottom of each valley. Watch them move right as compute grows."
+      ar: "كل لون يمثّل ميزانية واحدة، والنجوم تحدّد قاع كل وادٍ. راقبها وهي تتحرّك نحو اليمين كلما زادت الحوسبة."
+
+  - type: prose
+    title: { en: "Read the valleys", ar: "اقرأ الوديان" }
+    phase: { en: "Fit", ar: "التوفيق" }
+    text:
+      en: >-
+        Each curve is a valley. Left of the bottom, models are too small: they
+        saw plenty of data but had no room to use it. Right of the bottom,
+        models are too large: they had the capacity but ran out of compute
+        before seeing enough data. The star is the
+        <Term en="Compute-Optimal">compute-optimal</Term> balance between the
+        two.
+
+
+        A star only counts if it sits between real runs. A parabola can always
+        be extended past the last point, but its vertex out there is a guess,
+        not a measurement. That is what the bracketing check guards.
+      ar: >-
+        كل منحنى يشبه وادياً.
+        على يسار القاع نماذج أصغر من اللازم: قرأت بيانات وفيرة، لكن لم تكن لديها سعة كافية للاستفادة منها.
+        وعلى يمين القاع نماذج أكبر من اللازم: لديها السعة، لكنّ الحوسبة نفدت قبل أن تقرأ بيانات كافية.
+        النجمة هي نقطة التوازن <Term en="Compute-Optimal">الأمثل حوسبياً</Term> بين الحالتين.
+
+
+        لا تُحتسب النجمة إلا إذا وقعت بين تشغيلات حقيقية.
+        يمكن دائماً مدّ القطع المكافئ إلى ما بعد آخر نقطة.
+        لكنّ رأسه هناك تخمين، وليس قياساً.
+        وهذا ما يحرسه فحص الحصر.
+
+  - type: cell
+    id: frontier
+    ref: frontier
+    captures: [a_measured, tokens_per_param, frontier_r2, E_frontier]
+    title: { en: "Fit the frontier", ar: "وفّق الحدّ الأمثل" }
+    phase: { en: "Fit", ar: "التوفيق" }
+    caption:
+      en: "Three fits through the stars: best size, best data, and best loss, each against compute."
+      ar: "ثلاثة توفيقات عبر النجوم: أفضل حجم، وأفضل كمية بيانات، وأفضل خسارة، كلٌّ منها مقابل الحوسبة."
+
+  - type: prose
+    title: { en: "Compare with Chinchilla", ar: "قارن بنتيجة <bdi dir=\"ltr\">Chinchilla</bdi>" }
+    phase: { en: "Fit", ar: "التوفيق" }
+    text:
+      en: >-
+        The stars lie close to a straight line in log space: N_opt ∝ C^a, with
+        a = {{run.metrics.a_measured}}. Chinchilla measured a ≈ 0.5, which
+        means parameters and data should grow at the same rate.
+
+
+        The more striking number is the ratio. At your largest fitted budget,
+        the best model reads {{run.metrics.tokens_per_param}} tokens per
+        parameter. Chinchilla's 20 was a measurement of their models, their
+        tokenizer and their data. It does not carry over automatically. One
+        likely reason is the unit itself: a byte carries much less information
+        than a tokenizer's token, which usually spans several characters, so a
+        byte model needs more of them. A second reason is size: at a few
+        hundred thousand parameters, the embedding tables are a large share of
+        every model.
+
+
+        The third fit, the loss frontier L_opt(C) = E + A·C^(−α), shows
+        <Term en="Diminishing Returns">diminishing returns</Term>. Each
+        doubling of compute removes less loss than the one before, and the
+        curve bends toward a floor E = {{run.metrics.E_frontier}} nats per
+        byte. That floor is the <Term en="Irreducible Loss">irreducible
+        loss</Term>.
+      ar: >-
+        تقع النجوم قرب خط مستقيم على المقياس اللوغاريتمي.
+        أي أنّ <bdi dir="ltr">N_opt ∝ C^a</bdi>، حيث <bdi dir="ltr">a = {{run.metrics.a_measured}}</bdi>.
+        أما <bdi dir="ltr">Chinchilla</bdi> فقاست <bdi dir="ltr">a ≈ 0.5</bdi>.
+        ومعنى ذلك أنّ المعاملات والبيانات يجب أن تنمو بالمعدّل نفسه.
+
+
+        لكنّ الرقم الأهمّ هو النسبة.
+        عند أكبر ميزانية في التوفيق، يقرأ أفضل نموذج {{run.metrics.tokens_per_param}} رمزاً لكل معامل.
+        رقم الـ20 في <bdi dir="ltr">Chinchilla</bdi> كان قياساً لنماذجهم ومُرمِّزهم وبياناتهم.
+        ولا ينتقل هذا الرقم تلقائياً إلى إعداد آخر.
+        أحد الأسباب المرجّحة هو وحدة القياس نفسها.
+        فالبايت يحمل معلومات أقلّ بكثير من رمز المُرمِّز، الذي يغطّي عادةً عدّة أحرف.
+        لذلك يحتاج نموذج البايتات إلى عدد أكبر منها.
+        وسبب ثانٍ هو الحجم: عند بضع مئات الآلاف من المعاملات، تشكّل جداول التضمين جزءاً كبيراً من كل نموذج.
+
+
+        أما التوفيق الثالث، أي حدّ الخسارة <bdi dir="ltr">L_opt(C) = E + A·C^(−α)</bdi>،
+        فيُظهر <Term en="Diminishing Returns">تناقص العوائد</Term>.
+        كل مضاعفة للحوسبة تُزيل من الخسارة أقلّ مما أزالته المضاعفة التي قبلها.
+        ولهذا ينحني المنحنى نحو أرضية <bdi dir="ltr">E = {{run.metrics.E_frontier}}</bdi> نات لكل بايت.
+        هذه الأرضية هي <Term en="Irreducible Loss">الخسارة غير القابلة للاختزال</Term>.
+
+  # ── Predict ─────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Commit before training", ar: "التزم قبل التدريب" }
+    phase: { en: "Predict", ar: "التوقّع" }
+    text:
+      en: >-
+        A law that only describes the points it was fitted to is
+        <Term en="Interpolation (Statistical)">interpolation</Term>. The
+        reason to fit one is
+        <Term en="Extrapolation (Statistical)">extrapolation</Term>: choosing
+        a model at a budget you have not tried yet. So the next cell commits
+        to a model size and a loss, in writing, for a budget
+        {{scale.holdout_factor}}× larger than any fitted point. Only then
+        does the following cell train it.
+      ar: >-
+        القانون الذي لا يصف إلا النقاط التي وُفِّق عليها هو مجرّد <Term en="Interpolation (Statistical)">استيفاء</Term>.
+        أما سبب توفيقه أصلاً فهو <Term en="Extrapolation (Statistical)">الاستقراء الخارجي</Term>،
+        أي اختيار نموذج عند ميزانية لم تجرّبها بعد.
+        لذلك تلتزم الخلية التالية، كتابةً، بحجم نموذج وبقيمة خسارة،
+        لميزانية أكبر بـ{{scale.holdout_factor}} مرات من أيّ نقطة في التوفيق.
+        وبعدها فقط تدرّبه الخلية التي تليها.
+
+  - type: cell
+    id: predict
+    ref: predict
+    captures: [predicted_loss, holdout_params, holdout_tokens_m]
+    title: { en: "Predict the holdout model", ar: "توقّع نموذج الاختبار" }
+    phase: { en: "Predict", ar: "التوقّع" }
+    caption:
+      en: "Nothing trains here. Note the predicted loss before you run the next cell."
+      ar: "لا تدريب في هذه الخلية. سجّل الخسارة المتوقَّعة قبل أن تشغّل الخلية التالية."
+
+  - type: cell
+    id: holdout
+    ref: holdout
+    captures: [measured_loss, prediction_error_pct, holdout_minutes]
+    title: { en: "Train it and compare", ar: "درّبه وقارن" }
+    phase: { en: "Predict", ar: "التوقّع" }
+    caption:
+      en: "The orange diamond is the only point that played no part in the fit. Check how close it falls to the dashed line."
+      ar: "المعيّن البرتقالي هو النقطة الوحيدة التي لم تشارك في التوفيق. لاحظ مدى قربه من الخط المتقطّع."
+
+  - type: prose
+    title: { en: "Score the prediction", ar: "قيّم التوقّع" }
+    phase: { en: "Predict", ar: "التوقّع" }
+    text:
+      en: >-
+        The fit predicted {{run.metrics.predicted_loss}} nats per byte. The
+        trained model measured {{run.metrics.measured_loss}}, a gap of
+        {{run.metrics.prediction_error_pct}}%.
+
+
+        This is the same reasoning that sized Chinchilla before it was
+        trained, only at a much smaller scale. Train small models, fit the
+        frontier, extrapolate, then check the extrapolation against one larger
+        run.
+      ar: >-
+        توقّع التوفيق {{run.metrics.predicted_loss}} نات لكل بايت.
+        وقاس النموذج بعد تدريبه {{run.metrics.measured_loss}}، أي بفارق {{run.metrics.prediction_error_pct}}%.
+
+
+        هذا هو المنطق نفسه الذي حُدّد به حجم <bdi dir="ltr">Chinchilla</bdi> قبل تدريبها، لكن على مقياس أصغر بكثير.
+        تدرّب نماذج صغيرة، ثم توفّق الحدّ الأمثل، ثم تستقرئ خارجه.
+        وفي النهاية تفحص هذا الاستقراء بتشغيل واحد أكبر.
+
+  # ── Stress-test ─────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Fit a second way", ar: "وفّق بطريقة ثانية" }
+    phase: { en: "Stress-test", ar: "اختبار الصمود" }
+    text:
+      en: >-
+        Chinchilla's Approach 3 uses every run at once instead of only the
+        stars. It fits one surface, L(N, D) = E + A/N^α + B/D^β, and reads the
+        allocation exponent off it as a = β / (α + β). If both methods describe
+        the same reality, they should roughly agree. In the paper they did:
+        0.49 from the IsoFLOP method and 0.46 from the surface.
+      ar: >-
+        الطريقة الثالثة في <bdi dir="ltr">Chinchilla</bdi> تستخدم كل التشغيلات معاً، لا النجوم وحدها.
+        فهي توفّق سطحاً واحداً: <bdi dir="ltr">L(N, D) = E + A/N^α + B/D^β</bdi>.
+        ثم تقرأ منه أُسّ التوزيع: <bdi dir="ltr">a = β / (α + β)</bdi>.
+        إذا كانت الطريقتان تصفان الواقع نفسه، فيجب أن تتقاربا.
+        وفي الورقة تقاربتا فعلاً: 0.49 بطريقة الحوسبة الثابتة، و0.46 من السطح.
+
+  - type: cell
+    id: parametric
+    ref: parametric
+    captures: [param_exponent_a, param_E, surface_pred]
+    title: { en: "Fit the loss surface", ar: "وفّق سطح الخسارة" }
+    phase: { en: "Stress-test", ar: "اختبار الصمود" }
+    caption:
+      en: "Compare the two exponents and the two floors. They come from the same runs."
+      ar: "قارن الأُسّين، وقارن الأرضيّتين. فكلها مأخوذة من التشغيلات نفسها."
+
+  - type: prose
+    title: { en: "Weigh the two methods", ar: "وازن بين الطريقتين" }
+    phase: { en: "Stress-test", ar: "اختبار الصمود" }
+    text:
+      en: >-
+        The surface gives a = {{run.metrics.param_exponent_a}} and a floor
+        E = {{run.metrics.param_E}}. The IsoFLOP method gave
+        a = {{run.metrics.a_measured}} and E = {{run.metrics.E_frontier}}.
+        Whatever the gap is, it is not noise in the training runs, because both
+        methods read the same runs. It comes from the assumptions each method
+        makes. The surface assumes one functional form holds everywhere. The
+        IsoFLOP method assumes only that each valley has a bottom near the
+        stars.
+      ar: >-
+        يعطي السطح <bdi dir="ltr">a = {{run.metrics.param_exponent_a}}</bdi>
+        وأرضيةً <bdi dir="ltr">E = {{run.metrics.param_E}}</bdi>.
+        وأعطت طريقة الحوسبة الثابتة <bdi dir="ltr">a = {{run.metrics.a_measured}}</bdi>
+        و<bdi dir="ltr">E = {{run.metrics.E_frontier}}</bdi>.
+        أياً كان الفرق بين الطريقتين، فهو ليس ضجيجاً في التدريب، لأنهما تقرآن التشغيلات نفسها.
+        مصدر الفرق هو الافتراضات التي تبنيها كل طريقة.
+        السطح يفترض أنّ صيغة رياضية واحدة تصحّ في كل مكان.
+        أما طريقة الحوسبة الثابتة فتفترض فقط أنّ لكل وادٍ قاعاً قريباً من نجمته.
+
+  - type: exercise
+    id: drop-the-floor
+    ref: exercise_floor
+    title: { en: "Remove the floor", ar: "احذف الأرضية" }
+    phase: { en: "Stress-test", ar: "اختبار الصمود" }
+    prompt:
+      en: >-
+        This cell refits the loss frontier without the irreducible loss, as a
+        pure power law. Before you run it, predict: will it place the holdout
+        loss too high or too low? Then compare the error on the fitted points
+        with the error on the holdout. A fit can look perfect inside its range
+        and still miss outside it.
+      ar: >-
+        تعيد هذه الخلية توفيق حدّ الخسارة دون الخسارة غير القابلة للاختزال، أي كقانون قوة خالص.
+        قبل أن تشغّلها، توقّع: هل سيضع خسارة نموذج الاختبار أعلى من الحقيقة أم أدنى منها؟
+        بعد ذلك قارن خطأه على نقاط التوفيق بخطئه على نموذج الاختبار.
+        قد يبدو التوفيق مثالياً داخل مداه، ثم يخطئ خارجه.
+    hint: 1
+
+  - type: exercise
+    id: count-like-kaplan
+    ref: exercise_count
+    title: { en: "Count parameters like Kaplan", ar: "عُدّ المعاملات كما عدّها <bdi dir=\"ltr\">Kaplan</bdi>" }
+    phase: { en: "Stress-test", ar: "اختبار الصمود" }
+    prompt:
+      en: >-
+        This cell refits the frontier using the non-embedding parameter count.
+        Nothing is retrained; only the number written next to each model
+        changes. Before you run it, guess whether the exponent a goes up or
+        down. Then compare it with Kaplan's reported 0.73 and Chinchilla's
+        0.50.
+      ar: >-
+        تعيد هذه الخلية توفيق الحدّ الأمثل باستخدام عدد المعاملات دون جداول التضمين.
+        لا يُعاد تدريب أيّ شيء، والذي يتغيّر هو الرقم المكتوب بجانب كل نموذج فقط.
+        قبل أن تشغّلها، خمّن: هل يرتفع الأُسّ <bdi dir="ltr">a</bdi> أم ينخفض؟
+        ثم قارنه بالقيمة التي نشرها <bdi dir="ltr">Kaplan</bdi>، أي 0.73، وبقيمة <bdi dir="ltr">Chinchilla</bdi>، أي 0.50.
+    hint: 3
+
+  - type: prose
+    title: { en: "Reconcile the two laws", ar: "صالِح بين القانونين" }
+    phase: { en: "Stress-test", ar: "اختبار الصمود" }
+    text:
+      en: >-
+        Kaplan and Chinchilla disagreed by a wide margin on the same question.
+        Later work traced a large part of the gap to choices like the one in
+        this exercise: counting parameters without embeddings, measuring at
+        small sizes where embeddings dominate, and using learning-rate
+        schedules that did not match each run's length. A
+        <Term en="Scaling Law">scaling law</Term> is a property of a whole
+        measurement setup: the models, the data, the tokenizer, the optimizer
+        and the bookkeeping. Change one of them and you should measure again.
+      ar: >-
+        اختلف <bdi dir="ltr">Kaplan</bdi> و<bdi dir="ltr">Chinchilla</bdi> اختلافاً كبيراً في جواب السؤال نفسه.
+        وقد أرجعت أعمال لاحقة جزءاً كبيراً من هذا الفرق إلى اختيارات تشبه اختيار هذا التمرين.
+        منها عدّ المعاملات دون جداول التضمين.
+        ومنها القياس عند أحجام صغيرة تهيمن فيها هذه الجداول.
+        ومنها جداول معدّل تعلّم لا تطابق طول كل تشغيل.
+        ما نستخلصه أنّ <Term en="Scaling Law">قانون التوسّع</Term> خاصيةٌ لإعداد القياس كله:
+        النماذج، والبيانات، والمُرمِّز، والمُحسِّن، وطريقة العدّ.
+        فإذا غيّرت واحداً منها، فعليك أن تقيس من جديد.
+
+  - type: paperRef
+    slug: language-models-are-few-shot-learners
+    title: { en: "See the cost of the rule", ar: "انظر إلى كلفة القاعدة" }
+    phase: { en: "Stress-test", ar: "اختبار الصمود" }
+    note:
+      en: "GPT-3 trained 175B parameters on about 300B tokens, under 2 tokens per parameter. By Chinchilla's later measurement, it was far larger than its compute budget justified."
+      ar: >-
+        درّب <bdi dir="ltr">GPT-3</bdi> نموذجاً فيه 175 مليار معامل على نحو 300 مليار رمز، أي أقلّ من رمزين لكل معامل.
+        وبحسب قياس <bdi dir="ltr">Chinchilla</bdi> اللاحق، كان النموذج أكبر بكثير مما تبرّره ميزانية حوسبته.
+
+  # ── Verify ──────────────────────────────────────────────────────────────
+  - type: cell
+    id: verify
+    ref: verify
+    title: { en: "Run the checks", ar: "شغّل الفحوص" }
+    phase: { en: "Verify", ar: "التحقّق" }
+    caption:
+      en: "The first two checks make sure the grid measured something. The last two check what you did with it."
+      ar: "أول فحصين يتأكّدان من أنّ الشبكة قاست شيئاً فعلاً. والفحصان الأخيران يقيّمان ما فعلته بهذا القياس."
+
+  - type: cell
+    id: finish
+    ref: finish
+    title: { en: "Collect your receipt", ar: "استلم إيصالك" }
+    phase: { en: "Verify", ar: "التحقّق" }
+
+  - type: prose
+    title: { en: "Keep the method", ar: "احتفظ بالطريقة" }
+    phase: { en: "Verify", ar: "التحقّق" }
+    text:
+      en: >-
+        What should stay with you is the procedure rather than any one
+        exponent. Fix the compute, vary the split, find the bottom of each
+        valley, fit a line through the bottoms, and test the line on a budget
+        you did not fit. The same procedure was used to plan models with
+        billions of parameters. With your own runs, it gave
+        {{run.metrics.tokens_per_param}} tokens per parameter instead of 20.
+        That difference is not an error. It is what a measured law looks like
+        when the setup changes.
+      ar: >-
+        ما يجب أن يبقى معك هو الإجراء، لا أُسٌّ بعينه.
+        ثبّت الحوسبة، ونوّع التقسيم، وجِد قاع كل وادٍ.
+        ثم مرّر خطاً عبر القيعان، واختبره عند ميزانية لم تدخل في التوفيق.
+        بهذا الإجراء نفسه خُطّط لنماذج فيها مليارات المعاملات.
+        وعلى تشغيلاتك أنت، أعطى {{run.metrics.tokens_per_param}} رمزاً لكل معامل بدلاً من 20.
+        هذا الفرق ليس خطأً.
+        إنه ما يبدو عليه قانون مقيس حين يتغيّر الإعداد.

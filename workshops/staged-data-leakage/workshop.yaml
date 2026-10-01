@@ -1,0 +1,955 @@
+schema: workshop/v1
+id: staged-data-leakage
+constellation: classical-ml
+
+title:
+  en: "Leakage, Staged"
+  ar: "التسرّب، على مراحل"
+
+concept:
+  en: "A leak changes what you believe, not what you ship"
+  ar: "التسريب يغيّر ما تصدّقه عن النموذج، لا النموذج الذي تُطلقه"
+
+scenario:
+  en: >-
+    A hospital wants a model that flags, at discharge, the patients likely to be
+    readmitted within 30 days. The care team can phone {{run.metrics.alert_rate_pct}}%
+    of them. You have two years of admissions. You build an honest evaluation,
+    then take four shortcuts that real projects take every week, one at a time.
+    Each shortcut raises the cross-validated score. The admissions from the
+    following year, from patients the model has never met, stay sealed until the
+    end. When they are opened, three of the four shortcuts turn out to have
+    changed nothing but the number on the report, and the fourth does something
+    the report's own metric barely registers: the alert goes silent.
+  ar: >-
+    يريد مستشفى نموذجاً يحدّد، لحظةَ خروج المريض، مَن يُرجَّح أن يعود إليه خلال
+    30 يوماً. ويستطيع فريق الرعاية الاتصال بـ{{run.metrics.alert_rate_pct}}٪ من
+    المرضى فقط. بين يديك سجلّ حالات الدخول لسنتين. تبني أولاً تقييماً نزيهاً، ثم
+    تأخذ أربعة اختصارات تأخذها مشاريع حقيقية كل أسبوع، واحداً بعد آخر. كل اختصار
+    منها يرفع درجة التحقّق المتقاطع. أمّا حالات دخول السنة التالية، لمرضى لم يرهم
+    النموذج قطّ، فتبقى مختومة حتى النهاية. وحين تُفتح، يتبيّن أن ثلاثة من
+    الاختصارات الأربعة لم تغيّر شيئاً سوى الرقم المكتوب في التقرير. أمّا الرابع
+    فيفعل شيئاً لا يكاد مقياس التقرير نفسه يلحظه: يتوقّف التنبيه عن العمل.
+
+goal:
+  en: >-
+    Score one model under five protocols, each adding a leak to the last, and
+    compare every cross-validated score with performance on sealed, later
+    admissions from new patients. Show that the honest protocol's estimate tracks
+    reality, identify which leaks inflate only the estimate and which change the
+    model, and measure what the leaked column does to the alert once it is live.
+  ar: >-
+    قيّم نموذجاً واحداً بخمسة بروتوكولات، يضيف كلٌّ منها تسريباً إلى ما قبله. ثم
+    قارن كل درجة تحقّق متقاطع بالأداء على حالات دخول لاحقة لمرضى جدد، بقيت مختومة
+    طوال العمل. بيّن أن تقدير البروتوكول النزيه يطابق الواقع، وميّز التسريبات التي
+    تضخّم التقدير وحده من تلك التي تغيّر النموذج نفسه. وأخيراً قِس ما يفعله العمود
+    المُسرَّب بالتنبيه بعد إطلاقه.
+
+difficulty: intermediate
+status: draft
+publishedAt: null
+
+maintenance:
+  tier: moderate
+  cadence: quarterly
+
+estimate:
+  gpuMinutes: 0
+  totalMinutes: 30
+
+papers:
+  - slug: leakage-and-the-reproducibility-crisis
+    role: core
+    label:
+      en: "the catalogue of leaks this workshop stages one at a time"
+      ar: "قائمة التسريبات التي تعرضها هذه الورشة واحداً بعد آخر"
+  - slug: k-fold-cross-validation
+    role: core
+    label:
+      en: "the estimator every stage reports, and the independence it assumes"
+      ar: "المقدِّر الذي تُبلغ عنه كل مرحلة، والاستقلال الذي يفترضه"
+  - slug: lightgbm
+    role: supporting
+    label:
+      en: "histogram gradient boosting, the main model at every stage"
+      ar: "التعزيز التدرّجي القائم على المدرّجات التكرارية، وهو النموذج الرئيسي في كل المراحل"
+  - slug: xgboost
+    role: supporting
+    label:
+      en: "the boosted-tree family the main model belongs to"
+      ar: "عائلة الأشجار المعزَّزة التي ينتمي إليها النموذج الرئيسي"
+  - slug: random-forests
+    role: supporting
+    label:
+      en: "the second model, swapped in to show the leak belongs to the protocol"
+      ar: "النموذج الثاني، نضعه مكان الأول لنُظهر أن التسريب في البروتوكول لا في النموذج"
+
+assets: []
+
+dependencies:
+  apt: [fonts-hosny-amiri]     # Arabic glyphs for figures; matplotlib's DejaVu has none
+  pip:
+    - "scikit-learn==1.8.0"
+    - "arabic-reshaper==3.0.0"
+    - "python-bidi==0.6.6"
+
+profiles:
+  - id: free
+    default: true
+    name:
+      en: "Free tier (CPU)"
+      ar: "المستوى المجاني (بلا معالج رسومي)"
+    requires:
+      gpu: false
+      vramGb: 0
+      ramGb: 2
+    scale:
+      dev_patients: 800
+      holdout_patients: 1500
+      visits_mean: 3.5
+      n_markers: 400
+      k_select: 20
+      folds: 5
+      trees: 300
+      alert_rate: 0.2
+      shuffles: 3
+      seed: 17
+
+checks:
+  # Thresholds set from a pre-run of this exact code (seed 17, CPU, scikit-learn
+  # 1.8.0): honest holdout AUC 0.749, honest gap -0.001, recall lost 0.321.
+  # Confirm against the first Colab run before publishing.
+  - id: honest-model-learns
+    required: true
+    min: 0.68
+    label:
+      en: "Honest model: AUC on admissions from new patients"
+      ar: "النموذج النزيه: قيمة AUC على حالات دخول لمرضى جدد"
+  - id: honest-cv-tracks-holdout
+    required: true
+    min: -0.05
+    max: 0.05
+    label:
+      en: "Honest protocol: cross-validated AUC minus holdout AUC"
+      ar: "البروتوكول النزيه: قيمة AUC بالتحقّق المتقاطع ناقص قيمتها على البيانات المحجوزة"
+  - id: leak-costs-recall
+    required: true
+    min: 0.2
+    label:
+      en: "Readmissions caught after launch: honest model minus leaky model"
+      ar: "حالات العودة الملتقطة بعد الإطلاق: النموذج النزيه ناقص النموذج المُسرِّب"
+
+hints:
+  - en: >-
+      Lower SUSPICIOUS_AUC until a second column is flagged, and look at which
+      column it is.
+    ar: >-
+      اخفض قيمة SUSPICIOUS_AUC حتى يُعلَّم عمود ثانٍ، ثم انظر أيّ عمود هو.
+  - en: >-
+      chronic is recorded when the patient is admitted. followup_calls is
+      written after they leave. Both score high on their own. The screen cannot
+      tell them apart; the time each field is written can.
+    ar: >-
+      العمود chronic يُسجَّل عند دخول المريض. أمّا العمود followup_calls فيُكتب
+      بعد خروجه. كلاهما يحقّق درجة عالية وحده. الفحص لا يستطيع التمييز بينهما، لكنّ
+      وقت كتابة كل حقل يستطيع.
+  - en: >-
+      A leak spread thinly over five columns would pass a one-column screen.
+      That is why the screen is a prompt for a question, never a verdict.
+    ar: >-
+      لو توزّع التسريب بخفّة على خمسة أعمدة، لمرّ من فحص يختبر عموداً واحداً في
+      كل مرة. لهذا يبقى الفحص دعوةً إلى طرح سؤال، لا حكماً نهائياً.
+
+terms:
+  data-leakage:
+    en: "Information reaching a model during training or evaluation that it will not have when it is used for real."
+    ar: "وصول معلومات إلى النموذج أثناء التدريب أو التقييم، لن تكون متاحة له حين يُستخدم فعلاً."
+  target-leakage:
+    en: "A feature that is caused by, or recorded after, the outcome it is meant to predict."
+    ar: "ميزة تنتج عن النتيجة التي يُفترض أن تتنبّأ بها، أو تُسجَّل بعدها."
+  label-leakage:
+    en: "The label, or a near-copy of it, entering the inputs through a feature, a join, or a preprocessing step."
+    ar: "دخول التسمية، أو ما يكاد يكون نسخة منها، إلى المدخلات عبر ميزة أو عملية ربط جداول أو خطوة معالجة مسبقة."
+  information-leakage:
+    en: "Any path by which evaluation data influences the fitted model or the choices made about it."
+    ar: "أيّ طريق تؤثّر عبره بيانات التقييم في النموذج المُلاءَم، أو في القرارات المتّخذة بشأنه."
+  data-snooping:
+    en: "Letting the data used to judge a model shape the model's design, so the judgement is no longer independent."
+    ar: "السماح للبيانات التي يُحكم بها على النموذج بأن تشكّل تصميمه، فيفقد الحكم استقلاله."
+  train-test-split:
+    en: "Dividing data into a part to fit on and a part to measure on, which must stay unseen by the fit."
+    ar: "تقسيم البيانات إلى جزء للملاءمة وجزء للقياس، على أن يبقى الثاني بعيداً عن الملاءمة تماماً."
+  cross-validation:
+    en: "Estimating performance by fitting on part of the data and scoring on the rest, rotating the roles."
+    ar: "تقدير الأداء بملاءمة النموذج على جزء من البيانات وتقييمه على الباقي، مع تبادل الأدوار بين الأجزاء."
+  k-fold-cross-validation:
+    en: "Cross-validation with the data cut into k folds; each fold is scored once by a model fitted on the other k-1."
+    ar: "تحقّق متقاطع تُقسَّم فيه البيانات إلى k طيّة، وتُقيَّم كل طيّة مرة واحدة بنموذج لوئم على الطيّات الأخرى."
+  validation-set:
+    en: "Data held out from fitting and used to make choices: features, settings, thresholds."
+    ar: "بيانات تُستبعد من الملاءمة وتُستخدم لاتخاذ القرارات: الميزات، والإعدادات، والعتبات."
+  test-set:
+    en: "Data used once, after every choice is made, to estimate performance."
+    ar: "بيانات تُستخدم مرة واحدة، بعد اتخاذ كل القرارات، لتقدير الأداء."
+  holdout-set:
+    en: "Data sealed away from the whole development process and opened only to score the final protocol."
+    ar: "بيانات تُختم بعيداً عن عملية التطوير كلها، ولا تُفتح إلا لتقييم البروتوكول النهائي."
+  feature-engineering:
+    en: "Building model inputs from raw data; every step that learns from data must learn inside the training fold."
+    ar: "بناء مدخلات النموذج من البيانات الخام. وكل خطوة فيه تتعلّم من البيانات يجب أن تتعلّم داخل طيّة التدريب."
+  data-preprocessing:
+    en: "Transforming raw data before modelling: imputing, scaling, encoding, selecting."
+    ar: "تحويل البيانات الخام قبل النمذجة: تعويض القيم الناقصة، وتوحيد المقاييس، والترميز، والانتقاء."
+  feature-scaling:
+    en: "Rescaling features to comparable ranges. Tree models are unaffected by it; distance-based models are not."
+    ar: "إعادة تحجيم الميزات إلى نطاقات متقاربة. نماذج الأشجار لا تتأثّر به، أمّا النماذج القائمة على المسافات فتتأثّر."
+  pipeline:
+    en: "Preprocessing and model chained into one object, so cross-validation refits every step inside every fold."
+    ar: "ربط المعالجة المسبقة والنموذج في كيان واحد، كي يعيد التحقّق المتقاطع ملاءمة كل خطوة داخل كل طيّة."
+  overfitting:
+    en: "Fitting the particulars of the training data rather than the pattern that will hold on new data."
+    ar: "أن يحفظ النموذج تفاصيل بيانات التدريب، بدل النمط الذي سيصمد على بيانات جديدة."
+  generalization:
+    en: "How well a model performs on data drawn the way deployment data will be drawn."
+    ar: "مدى جودة أداء النموذج على بيانات تُسحب بالطريقة التي ستُسحب بها بيانات الاستخدام الفعلي."
+  distribution-shift:
+    en: "A change between the data a model learned from and the data it meets; held constant in this workshop so it cannot be blamed."
+    ar: "تغيّر بين البيانات التي تعلّم منها النموذج والبيانات التي يواجهها. ثبّتناه في هذه الورشة كي لا يُحمَّل المسؤولية."
+  evaluation-metric:
+    en: "The number used to judge a model. AUC judges ranking only, so it cannot see a threshold that has stopped working."
+    ar: "الرقم الذي يُحكم به على النموذج. مقياس AUC يحكم على الترتيب فقط، فلا يرى عتبة توقّفت عن العمل."
+  model-selection:
+    en: "Choosing between models or settings by their estimated performance, which inherits every leak in the estimate."
+    ar: "المفاضلة بين النماذج أو الإعدادات حسب أدائها المقدَّر. وهي ترث كل تسريب موجود في هذا التقدير."
+  confounding-variable:
+    en: "A factor that drives both a feature and the outcome, making the feature look predictive for the wrong reason."
+    ar: "عامل يؤثّر في الميزة وفي النتيجة معاً، فتبدو الميزة تنبّؤية لسبب غير السبب الصحيح."
+  reproducibility:
+    en: "Whether a reported result holds when the work is rerun, or when the model meets data it has not seen."
+    ar: "هل تصمد النتيجة المُبلَغ عنها حين يُعاد العمل، أو حين يواجه النموذج بيانات لم يرها؟"
+  benchmark:
+    en: "A shared dataset and protocol for comparing models; a leak in the protocol is inherited by every comparison."
+    ar: "مجموعة بيانات وبروتوكول مشتركان للمقارنة بين النماذج. وأيّ تسريب في البروتوكول ترثه كل مقارنة."
+  failure-mode:
+    en: "A characteristic way a system goes wrong. Leakage's is a score that looks like success."
+    ar: "طريقة مميّزة يفشل بها النظام. وطريقة التسرّب هي درجة تبدو نجاحاً."
+
+body:
+  # ── Setup ────────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Start with the alert", ar: "ابدأ من التنبيه" }
+    phase: { en: "Setup", ar: "الإعداد" }
+    text:
+      en: >-
+        A model that leaks does not look broken. It looks excellent. Nothing
+        errors, the folds agree with each other, and the score is the best the
+        project has seen. That is why leakage is the most common way real
+        projects fail: every warning sign looks like success.
+
+
+        This workshop stages that failure on purpose. It begins with an
+        evaluation that is honest, then adds four leaks one at a time. Each leak
+        is a single line of code that an analyst might write on an ordinary day.
+        Every stage is scored twice: once by its own cross-validation, and once
+        on data that was sealed before any of it began.
+      ar: >-
+        النموذج الذي يتسرّب إليه الجواب لا يبدو معطوباً. إنه يبدو ممتازاً. لا يظهر
+        أيّ خطأ، والطيّات تتّفق فيما بينها، والدرجة هي الأفضل منذ بدأ المشروع. لهذا
+        يُعدّ التسرّب أكثر الطرق شيوعاً لفشل المشاريع الحقيقية: كل علامة تحذير فيه
+        تشبه النجاح.
+
+
+        هذه الورشة تعرض هذا الفشل عن قصد. تبدأ بتقييم نزيه، ثم تضيف أربعة تسريبات،
+        واحداً في كل مرة. كل تسريب سطرٌ واحد من الشيفرة، قد يكتبه محلّل في يوم عمل
+        عادي. وكل مرحلة تُقيَّم مرّتين: مرة بالتحقّق المتقاطع الخاص بها، ومرة على
+        بيانات خُتمت قبل أن يبدأ أيّ من ذلك.
+
+  - type: cell
+    id: setup
+    ref: setup
+    title: { en: "Load the workshop", ar: "حمّل الورشة" }
+    phase: { en: "Setup", ar: "الإعداد" }
+    caption:
+      en: "The printed code hash should match the one on this page."
+      ar: "يجب أن تطابق بصمةُ الشيفرة المطبوعة البصمةَ المعروضة في هذه الصفحة."
+
+  - type: prose
+    title: { en: "Meet the hospital", ar: "تعرّف إلى المستشفى" }
+    phase: { en: "Setup", ar: "الإعداد" }
+    text:
+      en: >-
+        The data is synthetic, generated so that the true answer is known. Each
+        patient has a hidden frailty that raises the risk of every one of their
+        admissions. It is never a column, but it makes one patient's visits
+        resemble each other. The real signal sits in eight clinical columns.
+        Around them sit hundreds of lab markers that carry no signal at all, the
+        way a wide hospital extract does.
+
+
+        One more column comes from the warehouse: care-coordination calls logged
+        in the 30 days after discharge. Readmitted patients receive many of these
+        calls, because the readmission is what triggers them. At the moment the
+        model has to decide, no call has happened yet.
+
+
+        The sealed holdout is built the way the model will meet the world: a
+        later year, patients never seen before, and every column as it exists at
+        discharge. Its readmission rate is close to the development rate
+        ({{run.metrics.holdout_rate_pct}}% against {{run.metrics.dev_rate_pct}}%).
+        The world does not change between the two periods, by design, so any
+        collapse later in this workshop cannot be blamed on distribution shift.
+      ar: >-
+        البيانات اصطناعية، وُلّدت بحيث يكون الجواب الصحيح معروفاً. لكل مريض هشاشة
+        خفيّة ترفع خطر كل حالة دخول له. هذه الهشاشة ليست عموداً في البيانات، لكنها
+        تجعل زيارات المريض الواحد متشابهة فيما بينها. الإشارة الحقيقية موجودة في
+        ثمانية أعمدة سريرية. وحولها مئات المؤشّرات المخبرية التي لا تحمل أيّ إشارة،
+        كما يحدث في أيّ استخراج واسع من قاعدة بيانات مستشفى.
+
+
+        وهناك عمود آخر يأتي من مستودع البيانات: عدد اتصالات تنسيق الرعاية المسجّلة
+        خلال الثلاثين يوماً التي تلي الخروج. المرضى الذين عادوا إلى المستشفى يتلقّون
+        كثيراً من هذه الاتصالات، لأن عودتهم هي ما يُطلقها. لكن في اللحظة التي يجب أن
+        يقرّر فيها النموذج، لم يحدث أيّ اتصال بعد.
+
+
+        أمّا البيانات المحجوزة فبُنيت كما سيلقى النموذجُ العالمَ فعلاً: سنة لاحقة،
+        ومرضى لم يُرَوا من قبل، وكل عمود بالقيمة التي يحملها لحظة الخروج. نسبة العودة
+        فيها قريبة من نسبتها في بيانات التطوير
+        ({{run.metrics.holdout_rate_pct}}٪ مقابل {{run.metrics.dev_rate_pct}}٪).
+        العالم لا يتغيّر بين الفترتين، وهذا مقصود. فإذا انهار شيء لاحقاً في هذه
+        الورشة، فلا يمكن ردّه إلى انزياح التوزيع.
+
+  - type: cell
+    id: build-world
+    ref: build_world
+    title: { en: "Generate both periods", ar: "ولّد الفترتين" }
+    phase: { en: "Setup", ar: "الإعداد" }
+    captures: [dev_admissions, holdout_admissions, dev_rate_pct, holdout_rate_pct]
+    caption:
+      en: >-
+        Two cohorts with no patient in common. Note that the post-discharge
+        column exists in both, but is zero in the holdout.
+      ar: >-
+        مجموعتان لا يشترك فيهما أيّ مريض. لاحظ أن عمود ما بعد الخروج موجود في
+        الاثنتين، لكنه صفر في البيانات المحجوزة.
+
+  - type: scaleNote
+    title: { en: "What sets the size", ar: "ما الذي يحدّد الحجم" }
+    phase: { en: "Setup", ar: "الإعداد" }
+    text:
+      en: >-
+        {{scale.dev_patients}} development patients and
+        {{scale.holdout_patients}} holdout patients, {{scale.n_markers}} noise
+        markers, {{scale.folds}}-fold cross-validation, and
+        {{scale.trees}} boosting rounds. The whole notebook runs on a CPU in a
+        few minutes. Fewer development patients make the selection leak larger,
+        because chance correlations grow as rows shrink.
+      ar: >-
+        عدد مرضى التطوير {{scale.dev_patients}}، وعدد مرضى البيانات المحجوزة
+        {{scale.holdout_patients}}، وعدد مؤشّرات الضجيج {{scale.n_markers}}، وعدد
+        الطيّات {{scale.folds}}، وعدد جولات التعزيز {{scale.trees}}. يعمل الدفتر
+        كله على معالج مركزي في بضع دقائق. وكلما قلّ عدد مرضى التطوير كبُر تسريب
+        الانتقاء، لأن الارتباطات العارضة تقوى كلما قلّت الصفوف.
+
+  # ── Baseline ─────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Build the honest protocol", ar: "ابنِ البروتوكول النزيه" }
+    phase: { en: "Baseline", ar: "خط الأساس" }
+    text:
+      en: >-
+        The honest protocol follows two rules. First, every step that learns from
+        data (imputing, scaling, choosing {{scale.k_select}} features) sits
+        inside a pipeline, so it is refitted within each training fold and never
+        sees the fold it is scored on. Second, folds are split by patient. At
+        deployment the model meets new patients, so the evaluation must too.
+
+
+        The same function produces every stage. Each leak is one `if` branch,
+        marked `LEAK` in the code, so you can see exactly which line changes.
+      ar: >-
+        يتبع البروتوكول النزيه قاعدتين. الأولى: كل خطوة تتعلّم من البيانات توضع
+        داخل خط معالجة (<bdi dir="ltr">pipeline</bdi>). والمقصود هنا تعويض القيم
+        الناقصة، وتوحيد المقاييس، واختيار {{scale.k_select}} ميزة. بهذا يُعاد
+        ملاءمة كل خطوة داخل كل طيّة تدريب، فلا ترى أبداً الطيّة التي ستُقيَّم عليها.
+        القاعدة الثانية: تُقسَّم الطيّات حسب المريض. فالنموذج سيلقى بعد إطلاقه مرضى
+        جدداً، والتقييم يجب أن يفعل الشيء نفسه.
+
+
+        الدالّة نفسها تُنتج كل المراحل. وكل تسريب فرعٌ واحد من نوع
+        <bdi dir="ltr">if</bdi>، مُعلَّم بالكلمة <bdi dir="ltr">LEAK</bdi> في
+        الشيفرة، فترى بالضبط أيّ سطر يتغيّر.
+
+  - type: cell
+    id: protocol
+    ref: protocol
+    title: { en: "Score the honest protocol", ar: "قيّم البروتوكول النزيه" }
+    phase: { en: "Baseline", ar: "خط الأساس" }
+    captures: [cv_auc_honest, holdout_auc_honest, honest_gap]
+    caption:
+      en: >-
+        Look at the gap, not the AUC. An honest estimate is not a high one; it
+        is one that the sealed data agrees with.
+      ar: >-
+        انظر إلى الفرق، لا إلى قيمة <bdi dir="ltr">AUC</bdi>. التقدير النزيه ليس
+        بالضرورة تقديراً مرتفعاً. إنه التقدير الذي تؤكّده البيانات المحجوزة.
+
+  - type: prose
+    title: { en: "Read the baseline", ar: "اقرأ خط الأساس" }
+    phase: { en: "Baseline", ar: "خط الأساس" }
+    text:
+      en: >-
+        Cross-validation reported {{run.metrics.cv_auc_honest}} and the sealed
+        holdout returned {{run.metrics.holdout_auc_honest}}, a gap of
+        {{run.metrics.honest_gap}}. That agreement is the whole point of the
+        baseline. It shows that this data can be evaluated honestly, so every
+        gap that opens from here on is caused by a leak, not by the data.
+      ar: >-
+        أعطى التحقّق المتقاطع {{run.metrics.cv_auc_honest}}، وأعطت البيانات
+        المحجوزة {{run.metrics.holdout_auc_honest}}، والفرق بينهما
+        {{run.metrics.honest_gap}}. هذا التطابق هو الغرض من خط الأساس كله. فهو يثبت
+        أن هذه البيانات قابلة لتقييم نزيه. لذلك فإن أيّ فرق يظهر من الآن فصاعداً
+        سببه تسريب، لا البيانات نفسها.
+
+  # ── The leaks ────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Add four leaks", ar: "أضف أربعة تسريبات" }
+    phase: { en: "The leaks", ar: "التسريبات" }
+    text:
+      en: >-
+        The leaks are cumulative: each stage keeps the ones before it.
+
+
+        1. **Scale before splitting.** Imputation and scaling are fitted on all
+        development rows, then cross-validation runs on the transformed data.
+
+        2. **Select before splitting.** The {{scale.k_select}} features most
+        associated with the label are chosen using every row, including the rows
+        each fold will later be scored on.
+
+        3. **Split rows, not patients.** Admissions are shuffled into folds, so
+        the same patient appears on both sides of a split.
+
+        4. **Keep the post-discharge column.** It ranks first in feature
+        selection, so an analyst keeps it.
+
+
+        Predict before you run it: which of the four will raise the
+        cross-validated score the most, and which will hurt the holdout?
+      ar: >-
+        التسريبات تراكمية: كل مرحلة تحتفظ بتسريبات ما قبلها.
+
+
+        1. **التوحيد قبل التقسيم.** يُلاءَم تعويض القيم الناقصة وتوحيد المقاييس على
+        كل صفوف التطوير، ثم يجري التحقّق المتقاطع على البيانات بعد تحويلها.
+
+        2. **الانتقاء قبل التقسيم.** تُختار الميزات الأكثر ارتباطاً بالتسمية، وعددها
+        {{scale.k_select}}، باستخدام كل الصفوف. ويشمل ذلك الصفوف التي ستُقيَّم عليها
+        كل طيّة لاحقاً.
+
+        3. **تقسيم الزيارات لا المرضى.** تُخلط حالات الدخول في الطيّات عشوائياً،
+        فيظهر المريض نفسه على جانبي التقسيم.
+
+        4. **إبقاء عمود ما بعد الخروج.** يحتلّ هذا العمود المرتبة الأولى في انتقاء
+        الميزات، فيُبقيه المحلّل.
+
+
+        توقّع قبل التشغيل: أيّ التسريبات الأربعة سيرفع درجة التحقّق المتقاطع أكثر من
+        غيره؟ وأيّها سيضرّ الأداء على البيانات المحجوزة؟
+
+  - type: cell
+    id: ladder
+    ref: ladder
+    title: { en: "Climb the leak ladder", ar: "اصعد سلّم التسريب" }
+    phase: { en: "The leaks", ar: "التسريبات" }
+    thumbnail: true
+    captures:
+      - cv_auc_leaky
+      - holdout_auc_leaky
+      - leaky_gap
+      - cv_auc_stage3
+      - cv_gain_stage1
+      - cv_gain_stage2
+      - cv_gain_stage3
+      - cv_gain_stage4
+      - holdout_drop_leaky
+    caption:
+      en: >-
+        Two lines, one per question. The orange line is what each protocol
+        claimed. The blue line is what its model did on the sealed year. The
+        axis starts at 0.5 because that is a coin flip.
+      ar: >-
+        خطّان، لكل سؤال خطّ. البرتقالي هو ما ادّعاه كل بروتوكول. والأزرق هو ما فعله
+        نموذجه في السنة المحجوزة. يبدأ المحور من 0.5 لأنها قيمة رمي قطعة نقود.
+
+  - type: prose
+    title: { en: "Read the ladder", ar: "اقرأ السلّم" }
+    phase: { en: "The leaks", ar: "التسريبات" }
+    text:
+      en: >-
+        The orange line rises at every stage. The blue line stays exactly flat
+        for three stages and then drops.
+
+
+        The leak that tutorials warn about first, scaling before the split, moved
+        the score by {{run.metrics.cv_gain_stage1}}. That is because tree models
+        split on the order of values, and scaling does not change the order. With
+        a distance-based model the same line can matter, so it is still worth
+        fixing; it is simply not where the damage is here.
+
+
+        Selecting features on every row added {{run.metrics.cv_gain_stage2}}.
+        Among {{scale.n_markers}} markers of pure noise, some correlate with these
+        particular labels by chance, and selection finds exactly those. Inside
+        each fold they look predictive, because they were chosen with that
+        fold's labels in view. Splitting rows instead of patients added
+        {{run.metrics.cv_gain_stage3}}: the model scores admissions of patients
+        whose other admissions it has trained on.
+
+
+        The post-discharge column added {{run.metrics.cv_gain_stage4}} on its
+        own, lifting the reported AUC to {{run.metrics.cv_auc_leaky}}. On the
+        sealed year, that same model scored {{run.metrics.holdout_auc_leaky}},
+        which is {{run.metrics.holdout_drop_leaky}} below the honest model. The
+        protocol with the best score shipped the worst model.
+      ar: >-
+        الخط البرتقالي يرتفع في كل مرحلة. أمّا الخط الأزرق فيبقى مستوياً تماماً
+        ثلاث مراحل، ثم ينخفض.
+
+
+        التسريب الذي تحذّر منه الدروس أولاً هو توحيد المقاييس قبل التقسيم. وقد
+        غيّر الدرجة بمقدار {{run.metrics.cv_gain_stage1}} فقط. السبب أن نماذج
+        الأشجار تقسم البيانات حسب ترتيب القيم، وتوحيد المقاييس لا يغيّر هذا الترتيب.
+        مع نموذج يعتمد على المسافات قد يكون للسطر نفسه أثر، لذا يبقى إصلاحه
+        مستحقّاً. لكنّ الضرر هنا ليس فيه.
+
+
+        انتقاء الميزات على كل الصفوف أضاف {{run.metrics.cv_gain_stage2}}. فبين
+        {{scale.n_markers}} مؤشّر من الضجيج الخالص، يرتبط بعضها بهذه التسميات
+        بالذات عن طريق المصادفة. والانتقاء يعثر على هذه المؤشّرات تحديداً. وداخل كل
+        طيّة تبدو هذه المؤشّرات تنبّؤية، لأنها اختيرت وتسميات تلك الطيّة معروضة
+        أمام الانتقاء.
+
+
+        تقسيم الزيارات بدل المرضى أضاف {{run.metrics.cv_gain_stage3}}. فالنموذج هنا
+        يقيّم حالات دخول لمرضى سبق أن تدرّب على حالاتهم الأخرى.
+
+
+        عمود ما بعد الخروج أضاف وحده {{run.metrics.cv_gain_stage4}}، ورفع قيمة
+        <bdi dir="ltr">AUC</bdi> المُعلنة إلى {{run.metrics.cv_auc_leaky}}. لكنّ
+        النموذج نفسه سجّل {{run.metrics.holdout_auc_leaky}} على السنة المحجوزة، أي
+        أقلّ من النموذج النزيه بمقدار {{run.metrics.holdout_drop_leaky}}. البروتوكول
+        صاحب أفضل درجة أطلق أسوأ نموذج.
+
+  - type: cell
+    id: same-model
+    ref: same_model
+    title: { en: "Compare the shipped models", ar: "قارن النماذج المُطلَقة" }
+    phase: { en: "The leaks", ar: "التسريبات" }
+    captures: [same_model_max_diff, cv_inflation_stage3]
+    caption:
+      en: >-
+        Stages 0 to 3 each produce a model to ship. Before running this, decide
+        how different you expect their predictions to be.
+      ar: >-
+        كل مرحلة من 0 إلى 3 تُنتج نموذجاً للإطلاق. قبل تشغيل هذه الخلية، قرّر مقدار
+        الاختلاف الذي تتوقّعه بين تنبّؤاتها.
+
+  - type: prose
+    title: { en: "Separate two kinds of leak", ar: "ميّز نوعين من التسريب" }
+    phase: { en: "The leaks", ar: "التسريبات" }
+    text:
+      en: >-
+        The largest difference between the predictions of those four models is
+        {{run.metrics.same_model_max_diff}}. They are the same model. Whichever
+        protocol you follow, the model you ship is fitted on every development
+        row, so scaling and selecting on every row is exactly what happens at the
+        end anyway. The first three leaks changed only the estimate, which rose
+        by {{run.metrics.cv_inflation_stage3}} without the model changing at all.
+
+
+        That gives two kinds of leak. A leak in the **evaluation** leaves the
+        model untouched and corrupts what you believe about it. The damage
+        arrives later, through decisions made with that belief: which model to
+        ship, which features to keep, what performance to promise. A leak in the
+        **data** changes the model itself. The post-discharge column is the
+        second kind, and the next cell shows what it does once the model is live.
+      ar: >-
+        أكبر فرق بين تنبّؤات هذه النماذج الأربعة هو
+        {{run.metrics.same_model_max_diff}}. أي أنها نموذج واحد.
+
+
+        والسبب أن النموذج الذي تُطلقه يُلاءَم على كل صفوف التطوير، أيّاً كان
+        البروتوكول الذي تتبعه. فالتوحيد والانتقاء على كل الصفوف هو ما يحدث في
+        النهاية على أيّ حال. التسريبات الثلاثة الأولى غيّرت التقدير وحده: ارتفع
+        بمقدار {{run.metrics.cv_inflation_stage3}}، ولم يتغيّر النموذج إطلاقاً.
+
+
+        هذا يعطينا نوعين من التسريب. التسريب في **التقييم** لا يمسّ النموذج، لكنه
+        يُفسد ما تعتقده عنه. والضرر يأتي لاحقاً، عبر قرارات تُبنى على هذا الاعتقاد:
+        أيّ نموذج تُطلق، وأيّ ميزات تُبقي، وأيّ أداء تَعِد به. أمّا التسريب في
+        **البيانات** فيغيّر النموذج نفسه. وعمود ما بعد الخروج من هذا النوع الثاني.
+        الخلية التالية تُظهر ما يفعله حين يصبح النموذج قيد التشغيل.
+
+  # ── The collapse ─────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Set the alert threshold", ar: "اضبط عتبة التنبيه" }
+    phase: { en: "The collapse", ar: "الانهيار" }
+    text:
+      en: >-
+        A risk score becomes an action only through a threshold. The care team
+        can call {{run.metrics.alert_rate_pct}}% of patients, so the threshold is
+        set where the cross-validated scores put {{run.metrics.alert_rate_pct}}%
+        of admissions above it. This is exactly how it would be set before
+        launch. Then the same threshold is applied to the sealed year.
+      ar: >-
+        درجة الخطر لا تتحوّل إلى فعل إلا عبر عتبة. فريق الرعاية يستطيع الاتصال
+        بـ{{run.metrics.alert_rate_pct}}٪ من المرضى. لذلك تُوضع العتبة عند النقطة
+        التي تجعل {{run.metrics.alert_rate_pct}}٪ من حالات الدخول فوقها، حسب درجات
+        التحقّق المتقاطع. وهكذا تماماً كانت ستُضبط قبل الإطلاق. ثم تُطبَّق العتبة
+        نفسها على السنة المحجوزة.
+
+  - type: cell
+    id: alert
+    ref: alert
+    title: { en: "Launch the alert", ar: "أطلق التنبيه" }
+    phase: { en: "The collapse", ar: "الانهيار" }
+    captures:
+      - recall_cv_leaky
+      - recall_holdout_leaky
+      - recall_cv_honest
+      - recall_holdout_honest
+      - recall_lost
+      - recall_cv_leaky_pct
+      - recall_holdout_leaky_pct
+      - flagged_holdout_leaky_pct
+      - recall_cv_honest_pct
+      - recall_holdout_honest_pct
+      - alert_rate_pct
+    caption:
+      en: >-
+        Recall is the share of real readmissions the alert catches. Compare each
+        orange bar with the blue bar beside it.
+      ar: >-
+        نسبة الالتقاط (<bdi dir="ltr">recall</bdi>) هي حصّة حالات العودة الحقيقية
+        التي يلتقطها التنبيه. قارن كل عمود برتقالي بالعمود الأزرق إلى جانبه.
+
+  - type: prose
+    title: { en: "Read the collapse", ar: "اقرأ الانهيار" }
+    phase: { en: "The collapse", ar: "الانهيار" }
+    text:
+      en: >-
+        In cross-validation, the leaky model caught
+        {{run.metrics.recall_cv_leaky_pct}}% of readmissions, more than the
+        honest model's {{run.metrics.recall_cv_honest_pct}}%. After launch it
+        caught {{run.metrics.recall_holdout_leaky_pct}}%, and alerted on
+        {{run.metrics.flagged_holdout_leaky_pct}}% of patients. The honest model
+        still caught {{run.metrics.recall_holdout_honest_pct}}%.
+
+
+        This is the part AUC did not show. AUC only asks whether readmitted
+        patients are ranked above the others. The leaky model still ranks them
+        nearly as well, which is why its holdout AUC dropped by only
+        {{run.metrics.holdout_drop_leaky}}. What changed is the level of every
+        score. The model learned that calls after discharge mean risk, and at
+        discharge every patient has zero calls. So every score moved down, and
+        the threshold, set on scores where the column was filled in, now sits
+        above almost all of them.
+
+
+        On the dashboard this looks like a small drop in AUC. On the ward, the
+        alert has gone silent.
+      ar: >-
+        في التحقّق المتقاطع، التقط النموذج المُسرِّب
+        {{run.metrics.recall_cv_leaky_pct}}٪ من حالات العودة. هذا أكثر من النموذج
+        النزيه، الذي التقط {{run.metrics.recall_cv_honest_pct}}٪. لكنه بعد الإطلاق
+        التقط {{run.metrics.recall_holdout_leaky_pct}}٪ فقط، ولم يُنبّه إلا على
+        {{run.metrics.flagged_holdout_leaky_pct}}٪ من المرضى. أمّا النموذج النزيه
+        فبقي يلتقط {{run.metrics.recall_holdout_honest_pct}}٪.
+
+
+        هذا هو الجزء الذي لم يُظهره مقياس <bdi dir="ltr">AUC</bdi>. فهذا المقياس
+        يطرح سؤالاً واحداً: هل رُتّب المرضى العائدون فوق غيرهم؟ والنموذج المُسرِّب
+        ما زال يرتّبهم بشكل شبه جيّد. لهذا انخفضت قيمته على البيانات المحجوزة بمقدار
+        {{run.metrics.holdout_drop_leaky}} فقط.
+
+
+        الذي تغيّر هو مستوى الدرجات كلها. تعلّم النموذج أن الاتصالات بعد الخروج تعني
+        خطراً. ولحظةَ الخروج، عدد الاتصالات صفر عند كل المرضى. لذلك انخفضت كل
+        الدرجات. أمّا العتبة فضُبطت على درجات كان العمود فيها ممتلئاً، فصارت الآن
+        فوق كل الدرجات تقريباً.
+
+
+        في لوحة المتابعة، يبدو هذا انخفاضاً صغيراً في <bdi dir="ltr">AUC</bdi>.
+        أمّا في جناح المستشفى، فقد صمت التنبيه.
+
+  - type: cell
+    id: model-swap
+    ref: model_swap
+    title: { en: "Swap in a forest", ar: "جرّب غابة عشوائية" }
+    phase: { en: "The collapse", ar: "الانهيار" }
+    captures: [rf_gap_honest, rf_gap_leaky, rf_cv_auc_leaky, rf_recall_holdout_leaky_pct]
+    caption:
+      en: >-
+        A different model family, the same two protocols. Look at whether the
+        gaps follow the model or the protocol.
+      ar: >-
+        عائلة نماذج مختلفة، والبروتوكولان أنفسهما. انظر: هل تتبع الفروقُ النموذجَ أم
+        البروتوكول؟
+
+  - type: prose
+    title: { en: "Blame the protocol", ar: "حمّل البروتوكول المسؤولية" }
+    phase: { en: "The collapse", ar: "الانهيار" }
+    text:
+      en: >-
+        The random forest repeats the pattern. Its honest gap is
+        {{run.metrics.rf_gap_honest}} and its leaky gap is
+        {{run.metrics.rf_gap_leaky}}, with a cross-validated AUC of
+        {{run.metrics.rf_cv_auc_leaky}} and
+        {{run.metrics.rf_recall_holdout_leaky_pct}}% recall after launch.
+        Changing the model does not remove the leak, because the leak is in the
+        evaluation and the data, not in the learner.
+      ar: >-
+        الغابة العشوائية تكرّر النمط نفسه. الفرق في بروتوكولها النزيه
+        {{run.metrics.rf_gap_honest}}، وفي بروتوكولها المُسرِّب
+        {{run.metrics.rf_gap_leaky}}. وقيمة <bdi dir="ltr">AUC</bdi> بالتحقّق
+        المتقاطع {{run.metrics.rf_cv_auc_leaky}}، أمّا نسبة الالتقاط بعد الإطلاق
+        فهي {{run.metrics.rf_recall_holdout_leaky_pct}}٪. تغيير النموذج لا يزيل
+        التسريب، لأن التسريب في التقييم وفي البيانات، لا في خوارزمية التعلّم.
+
+  # ── Catching it ──────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Shuffle the labels", ar: "اخلط التسميات" }
+    phase: { en: "Catching it", ar: "كشف التسرّب" }
+    text:
+      en: >-
+        You will not usually have a sealed future year. One cheap test needs no
+        extra data: shuffle the labels and rerun the whole protocol. With the
+        labels shuffled, nothing can be predicted, so an honest protocol must
+        score about 0.5. A score reliably above that was produced by the
+        procedure, not learned from the patients. The cell averages
+        {{scale.shuffles}} shuffles for each stage.
+      ar: >-
+        في الغالب لن تملك سنةً مستقبلية مختومة. لكن هناك اختباراً رخيصاً لا يحتاج
+        إلى بيانات إضافية: اخلط التسميات عشوائياً، ثم أعد تشغيل البروتوكول كاملاً.
+        بعد الخلط لا يبقى شيء يمكن التنبّؤ به. لذلك يجب أن يسجّل البروتوكول النزيه
+        قرابة 0.5. وإذا جاءت الدرجة فوق ذلك بثبات، فمصدرها الإجراء نفسه، لا ما تعلّمه
+        النموذج من المرضى. وتأخذ الخلية متوسّط {{scale.shuffles}} عمليات خلط لكل
+        مرحلة.
+
+  - type: cell
+    id: shuffle-audit
+    ref: shuffle_audit
+    title: { en: "Audit every stage", ar: "دقّق كل مرحلة" }
+    phase: { en: "Catching it", ar: "كشف التسرّب" }
+    captures: [audit_auc_honest, audit_auc_stage2, audit_auc_leaky]
+    caption:
+      en: >-
+        The first column should sit near 0.5. Compare stage 2 with stage 4:
+        their reported AUCs are far apart.
+      ar: >-
+        يجب أن يقترب العمود الأول من 0.5. قارن المرحلة 2 بالمرحلة 4: قيمتا
+        <bdi dir="ltr">AUC</bdi> المُعلنتان لهما متباعدتان كثيراً.
+
+  - type: prose
+    title: { en: "See what the audit misses", ar: "انظر ما يفوت التدقيق" }
+    phase: { en: "Catching it", ar: "كشف التسرّب" }
+    text:
+      en: >-
+        The honest protocol scored {{run.metrics.audit_auc_honest}} on shuffled
+        labels, as it should. Selecting before the split pushed that to
+        {{run.metrics.audit_auc_stage2}}: the procedure found signal in noise,
+        and the audit caught it.
+
+
+        Stage 4 scored {{run.metrics.audit_auc_leaky}}, about the same as stage
+        2. The audit did not see the post-discharge column, even though that
+        column was worth {{run.metrics.cv_gain_stage4}} of reported AUC. The
+        reason is that the column copies the real outcomes. Once the labels are
+        shuffled, the column no longer matches them, so it has nothing to leak.
+        Row-level shuffling also hides the patient overlap from stage 3, because
+        shuffled labels no longer belong to patients. An audit for that leak has
+        to keep each patient's labels together while it shuffles.
+
+
+        So the shuffle audit tests the procedure. To test the columns, you need
+        a different screen.
+      ar: >-
+        سجّل البروتوكول النزيه {{run.metrics.audit_auc_honest}} على التسميات
+        المخلوطة، كما ينبغي. أمّا الانتقاء قبل التقسيم فرفع هذه القيمة إلى
+        {{run.metrics.audit_auc_stage2}}. أي أن الإجراء وجد إشارة في الضجيج، والتدقيق
+        كشف ذلك.
+
+
+        المرحلة 4 سجّلت {{run.metrics.audit_auc_leaky}}، أي قرابة ما سجّلته المرحلة
+        2. التدقيق لم يرَ عمود ما بعد الخروج، مع أن هذا العمود أضاف
+        {{run.metrics.cv_gain_stage4}} إلى قيمة <bdi dir="ltr">AUC</bdi> المُعلنة.
+        السبب أن العمود ينسخ النتائج الحقيقية. وبعد خلط التسميات لم يعد العمود
+        يطابقها، فلم يبقَ لديه ما يسرّبه.
+
+
+        وخلط الصفوف يخفي أيضاً تداخل المرضى في المرحلة 3. فالتسميات المخلوطة لم تعد
+        تنتمي إلى مرضاها. وأيّ تدقيق لهذا التسريب يجب أن يُبقي تسميات كل مريض معاً
+        أثناء الخلط.
+
+
+        إذن، تدقيق الخلط يختبر الإجراء. أمّا اختبار الأعمدة فيحتاج إلى فحص آخر.
+
+  - type: exercise
+    id: screen-columns
+    ref: screen_columns
+    title: { en: "Screen the columns", ar: "افحص الأعمدة" }
+    phase: { en: "Catching it", ar: "كشف التسرّب" }
+    captures: [solo_auc_post_discharge, solo_auc_best_clinical, solo_auc_best_marker]
+    prompt:
+      en: >-
+        This screen scores every column on its own against the label and flags
+        any column above SUSPICIOUS_AUC. Run it once as it is. Then lower the
+        threshold until a second column is flagged. Is that column a leak? What
+        would you need to know about each flagged column to decide, and where
+        would you find it?
+      ar: >-
+        يقيّم هذا الفحص كل عمود وحده مقابل التسمية، ويعلّم كل عمود تتجاوز درجته
+        قيمة <bdi dir="ltr">SUSPICIOUS_AUC</bdi>. شغّله أولاً كما هو. ثم اخفض
+        العتبة حتى يُعلَّم عمود ثانٍ. هل هذا العمود تسريب؟ ما الذي تحتاج إلى معرفته
+        عن كل عمود مُعلَّم كي تقرّر؟ وأين ستجد هذه المعلومة؟
+    hint: 1
+
+  - type: prose
+    title: { en: "Ask when it was written", ar: "اسأل متى كُتب الحقل" }
+    phase: { en: "Catching it", ar: "كشف التسرّب" }
+    text:
+      en: >-
+        On its own, the post-discharge column scored
+        {{run.metrics.solo_auc_post_discharge}}, higher than the entire honest
+        model ({{run.metrics.cv_auc_honest}}). A single field that beats the
+        whole model is the clearest warning a dataset can give. The best clinical
+        column scored {{run.metrics.solo_auc_best_clinical}}, and the best of the
+        {{scale.n_markers}} noise markers scored
+        {{run.metrics.solo_auc_best_marker}}.
+
+
+        The number alone cannot settle it. A strong legitimate feature and a
+        leak can score alike. What settles it is a fact outside the data: when
+        each field is written, compared with when the decision is made. Every
+        column needs that timestamp, and finding it usually means asking the
+        people who own the field.
+      ar: >-
+        سجّل عمود ما بعد الخروج وحده {{run.metrics.solo_auc_post_discharge}}، أي
+        أكثر من النموذج النزيه كاملاً ({{run.metrics.cv_auc_honest}}). وحقل واحد
+        يتفوّق على النموذج كله هو أوضح تحذير يمكن أن تعطيه مجموعة بيانات. للمقارنة،
+        سجّل أفضل عمود سريري {{run.metrics.solo_auc_best_clinical}}، وسجّل أفضل
+        مؤشّر بين مؤشّرات الضجيج الـ{{scale.n_markers}}
+        {{run.metrics.solo_auc_best_marker}}.
+
+
+        لكنّ الرقم وحده لا يحسم المسألة. فقد تسجّل ميزة مشروعة قوية وتسريبٌ درجتين
+        متقاربتين. ما يحسمها حقيقة من خارج البيانات: متى يُكتب كل حقل، مقارنةً بلحظة
+        اتخاذ القرار. كل عمود يحتاج إلى هذا الطابع الزمني. والعثور عليه يعني عادةً
+        سؤال الأشخاص المسؤولين عن الحقل.
+
+  # ── Close ────────────────────────────────────────────────────────────────
+  - type: cell
+    id: verify
+    ref: verify
+    title: { en: "Verify the run", ar: "تحقّق من التشغيل" }
+    phase: { en: "Close", ar: "الخلاصة" }
+    caption:
+      en: >-
+        The control comes first: an honest model that never learned would make
+        every comparison after it meaningless.
+      ar: >-
+        يأتي فحص النموذج المرجعي أولاً. فلو لم يتعلّم النموذج النزيه شيئاً، لفقدت
+        كل مقارنة بعده معناها.
+
+  - type: prose
+    title: { en: "Design the evaluation", ar: "صمّم التقييم" }
+    phase: { en: "Close", ar: "الخلاصة" }
+    text:
+      en: >-
+        Every leak in this workshop raised the reported score, and none of them
+        improved the model. That is the shape leakage takes in practice. It
+        rarely looks like a bug; it looks like the best result so far.
+
+
+        The evaluation is a system in its own right, and it needs the same care
+        as the model:
+
+
+        - **Split by whatever is new at deployment.** Here that meant patients
+        and time; elsewhere it may be customers, sites, or devices.
+
+        - **Put every step that learns from data inside the pipeline**, so it is
+        refitted in each fold.
+
+        - **Give every column a timestamp** and compare it with the moment of
+        decision.
+
+        - **Seal a holdout built the way the world will deliver data**, and open
+        it once.
+
+        - **Shuffle the labels** to test the procedure, and **screen columns one
+        at a time** to test the data.
+
+        - **Check the decision, not only the ranking.** AUC barely moved here,
+        while the alert stopped working.
+      ar: >-
+        كل تسريب في هذه الورشة رفع الدرجة المُعلنة، ولم يحسّن أيٌّ منها النموذج.
+        هذا هو الشكل الذي يتّخذه التسرّب في العمل الفعلي. نادراً ما يبدو خطأً
+        برمجياً. إنه يبدو أفضل نتيجة حتى الآن.
+
+
+        التقييم نظام قائم بذاته، ويحتاج إلى العناية نفسها التي يحتاجها النموذج:
+
+
+        - **قسّم البيانات حسب ما سيكون جديداً بعد الإطلاق.** هنا كان ذلك المرضى
+        والزمن. وفي مشروع آخر قد يكون العملاء أو المواقع أو الأجهزة.
+
+        - **ضع كل خطوة تتعلّم من البيانات داخل خط المعالجة**، كي يُعاد ملاءمتها في
+        كل طيّة.
+
+        - **أعطِ كل عمود طابعاً زمنياً**، وقارنه بلحظة القرار.
+
+        - **اختم مجموعة محجوزة تُبنى كما سيقدّم العالم البيانات فعلاً**، وافتحها مرة
+        واحدة.
+
+        - **اخلط التسميات** لتختبر الإجراء، و**افحص الأعمدة واحداً واحداً** لتختبر
+        البيانات.
+
+        - **افحص القرار، لا الترتيب وحده.** قيمة <bdi dir="ltr">AUC</bdi> هنا
+        بالكاد تحرّكت، بينما توقّف التنبيه عن العمل.
+
+  - type: paperRef
+    slug: leakage-and-the-reproducibility-crisis
+    title: { en: "Read the leak taxonomy", ar: "اقرأ تصنيف التسريبات" }
+    phase: { en: "Close", ar: "الخلاصة" }
+    note:
+      en: >-
+        The paper surveys leakage across published applied machine-learning
+        work. Each of the four stages here is one entry in its taxonomy: the
+        preprocessing leak, the selection leak, non-independence between train
+        and test, and features unavailable at prediction time.
+      ar: >-
+        تستعرض الورقة التسرّب في أعمال منشورة تطبّق تعلّم الآلة. وكل مرحلة من
+        المراحل الأربع هنا مدخلٌ واحد في تصنيفها: تسرّب المعالجة المسبقة، وتسرّب
+        الانتقاء، وغياب الاستقلال بين التدريب والاختبار، وميزات لا تتوفّر لحظة
+        التنبّؤ.
+
+  - type: paperRef
+    slug: k-fold-cross-validation
+    title: { en: "Revisit the estimator", ar: "راجع المقدِّر" }
+    phase: { en: "Close", ar: "الخلاصة" }
+    note:
+      en: >-
+        K-fold cross-validation estimates performance on new data only when each
+        scored fold is independent of the data the model was fitted on. Stages 2
+        and 3 each break that assumption in a different way.
+      ar: >-
+        لا يقدّر التحقّق المتقاطع بـ<bdi dir="ltr">k</bdi> طيّة الأداءَ على بيانات
+        جديدة إلا إذا كانت كل طيّة تقييم مستقلّة عن البيانات التي لوئم عليها
+        النموذج. والمرحلتان 2 و3 تكسران هذا الافتراض، كلٌّ بطريقة مختلفة.
+
+  - type: cell
+    id: finish
+    ref: finish
+    title: { en: "Collect the receipt", ar: "استلم الإيصال" }
+    phase: { en: "Close", ar: "الخلاصة" }

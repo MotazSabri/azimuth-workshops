@@ -1,0 +1,665 @@
+schema: workshop/v1
+id: shortcut-learning-detector
+constellation: perception
+
+title:
+  en: "Plant a Shortcut, Catch the Model"
+  ar: "ازرع اختصاراً واضبط النموذج متلبّساً"
+
+concept:
+  en: "Accuracy measures agreement with the labels, not the reason for it"
+  ar: "الدقة تقيس اتفاق النموذج مع التسميات، لا سبب هذا الاتفاق"
+
+scenario:
+  en: >-
+    A colleague hands you a cat-vs-dog classifier with excellent test accuracy.
+    You have no reason to doubt it, and that is the problem: a test split drawn
+    from the same collection as the training data shares every accident of that
+    collection. In this workshop you create such an accident on purpose. A
+    coloured square, under one percent of the image, is stamped onto most dogs
+    and a few cats. Two identical networks train on the same photos, one with
+    the square and one without. On the ordinary test split the network that saw
+    the square wins by {{run.metrics.leaderboard_gap}} in accuracy. Reverse
+    where the square appears and the same network falls to
+    {{run.metrics.shortcut_flipped_acc}}, worse than a coin flip. Grad-CAM then
+    shows you where it was looking.
+  ar: >-
+    يسلّمك زميلٌ مصنِّفاً يميّز القطط من الكلاب، ودقّته على بيانات الاختبار
+    ممتازة. لا شيء يدعوك إلى الشك فيه، وهنا بالضبط تكمن المشكلة. فبيانات
+    الاختبار جُمعت بالطريقة نفسها التي جُمعت بها بيانات التدريب، ولذلك تحمل
+    كلَّ مصادفات تلك الطريقة. في هذه الورشة تصنع مصادفةً كهذه عن قصد: مربّعاً
+    ملوّناً صغيراً، أقلّ من واحد بالمئة من مساحة الصورة، نضعه على معظم الكلاب
+    وعلى قلّة من القطط. ثم ندرّب شبكتين متطابقتين على الصور نفسها، إحداهما ترى
+    المربّع والأخرى لا تراه. على بيانات الاختبار المعتادة تتفوّق الشبكة التي
+    رأت المربّع بفارق {{run.metrics.leaderboard_gap}} في الدقة. لكن اعكس
+    توزيع المربّع، فتهبط الشبكة نفسها إلى {{run.metrics.shortcut_flipped_acc}}،
+    أي أسوأ من رمي قطعة نقود. بعد ذلك يُريك <bdi dir="ltr">Grad-CAM</bdi> أين
+    كانت تنظر.
+
+goal:
+  en: >-
+    Train an honest model that genuinely separates cats from dogs, show that
+    the shortcut model's accuracy collapses once the square no longer agrees
+    with the label, and use Grad-CAM to show that its decision draws on the
+    square far more than the honest model's does.
+  ar: >-
+    درِّب نموذجاً نزيهاً يميّز القطط من الكلاب فعلاً. ثم أثبت أن دقة نموذج
+    الاختصار تنهار حين يكفّ المربّع عن موافقة التسمية. وأخيراً استخدم
+    <bdi dir="ltr">Grad-CAM</bdi> لتُظهر أن قرار هذا النموذج يعتمد على المربّع
+    أكثر بكثير مما يعتمد عليه النموذج النزيه.
+
+difficulty: intermediate
+status: draft
+publishedAt: null
+
+maintenance:
+  tier: moderate               # torch + numpy + matplotlib, plus two pinned
+  cadence: quarterly           # Arabic text-shaping libraries for figure labels
+
+estimate:
+  gpuMinutes: 4                # placeholder: measure on the first Colab run
+  totalMinutes: 25
+
+papers:
+  - slug: grad-cam
+    role: core
+    label:
+      en: "the attribution method used to ask where the decision came from"
+      ar: "طريقة الإسناد التي نسأل بها: من أين جاء القرار؟"
+  - slug: deep-residual-learning-for-image-recognition
+    role: core
+    label:
+      en: "the residual blocks both classifiers are built from"
+      ar: "الكتل المتبقية التي بُني منها المصنِّفان كلاهما"
+  - slug: visualizing-and-understanding-convolutional-networks
+    role: supporting
+    label:
+      en: "the habit of opening a CNN to see what its features respond to"
+      ar: "عادة فتح الشبكة الالتفافية لنرى ما الذي تستجيب له خصائصها"
+  - slug: imagenet-classification-with-deep-convolutional-neural-networks
+    role: supporting
+    label:
+      en: "the recipe of convolution, data and augmentation the training loop follows"
+      ar: "وصفة الالتفاف والبيانات وتوسيعها التي تتبعها حلقة التدريب"
+
+assets:
+  - name: cifar-10-python.tar.gz
+    bytes: 170498071           # run tools/pin-asset.py to confirm and write sha256
+    sha256: null               # null only while authoring; pin before publishing
+    license: "CIFAR-10 — Krizhevsky, Nair & Hinton (2009); free for research and teaching"
+    sources:
+      - "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
+    description:
+      en: "CIFAR-10, Python version. Only the cat and dog classes are used."
+      ar: "نسخة بايثون من <bdi dir=\"ltr\">CIFAR-10</bdi>. نستخدم منها فئتي القطط والكلاب فقط."
+
+dependencies:
+  apt: [fonts-noto-core]       # Noto Naskh Arabic for figure labels in the Arabic build
+  pip:
+    - "arabic-reshaper==3.0.1"
+    - "python-bidi==0.6.11"
+
+profiles:
+  - id: free
+    default: true
+    name:
+      en: "Free tier"
+      ar: "المستوى المجاني"
+    requires:
+      gpu: true
+      vramGb: 1                # placeholder: replace with the peak the verify cell prints
+      ramGb: 3
+    scale:
+      seed: 17
+      epochs: 20
+      batch_size: 256
+      lr: 0.003
+      width: 32
+      patch_px: 3
+      shortcut_rate: 0.95
+
+# Thresholds are placeholders until the first real run, then set below the
+# measured values with room for hardware variance.
+checks:
+  - id: honest-model-learns
+    required: true
+    min: 0.75
+    label:
+      en: "Honest model accuracy on clean test images"
+      ar: "دقة النموذج النزيه على صور اختبار نظيفة"
+  - id: shortcut-collapses
+    required: true
+    min: 0.3
+    label:
+      en: "Shortcut model accuracy lost when the square's rule is reversed"
+      ar: "ما يخسره نموذج الاختصار من دقّته حين تنعكس قاعدة المربّع"
+  - id: gradcam-finds-square
+    required: true
+    min: 0.1
+    label:
+      en: "Extra share of the shortcut model's Grad-CAM map on the square, over the honest model's"
+      ar: "الحصّة الزائدة من خريطة <bdi dir=\"ltr\">Grad-CAM</bdi> على المربّع لدى نموذج الاختصار مقارنةً بالنموذج النزيه"
+
+hints:
+  - en: >-
+      Compare the matched and flipped columns, not the matched column alone.
+      The matched column is what an ordinary test split reports; the gap
+      between the two is how much of that score belonged to the square.
+    ar: >-
+      قارن عمود «مطابق» بعمود «معكوس»، ولا تكتفِ بالأول. عمود «مطابق» هو ما
+      تعطيك إياه بيانات اختبار عادية. أما الفارق بين العمودين فهو الجزء من
+      تلك الدقة الذي كان يعود إلى المربّع.
+  - en: >-
+      At a rate of 0.5 the square appears on cats and dogs equally often, so
+      it carries no information and there is nothing to exploit. Try a value
+      between 0.5 and 0.75 before going higher, and watch whether the collapse
+      shrinks gradually or vanishes at once.
+    ar: >-
+      عند النسبة 0.5 يظهر المربّع على القطط والكلاب بالقدر نفسه. لا يحمل
+      حينها أيّ معلومة عن التسمية، فلا يبقى ما يُستغَلّ. جرّب قيمة بين 0.5
+      و0.75 قبل أن ترفعها، وراقب الانهيار: هل يصغر تدريجياً أم يختفي دفعة
+      واحدة؟
+
+terms:
+  shortcut-learning:
+    en: "Solving a task through a cue that happens to predict the label in the training data, instead of the property the task is about."
+    ar: "أن يحلّ النموذج المهمة عبر إشارة تتنبّأ بالتسمية مصادفةً في بيانات التدريب، بدلاً من الخاصية التي تدور حولها المهمة."
+  spurious-correlation:
+    en: "A statistical link between a feature and the label that holds in the collected data but not in the world the model will face."
+    ar: "علاقة إحصائية بين خاصيةٍ والتسمية، تصحّ في البيانات التي جمعناها ولا تصحّ في العالم الذي سيواجهه النموذج."
+  dataset-bias:
+    en: "Systematic ways in which a dataset differs from the situations a model will be used in."
+    ar: "اختلافات منهجية بين مجموعة البيانات والمواقف التي سيُستخدم فيها النموذج."
+  data-leakage:
+    en: "Information about the label reaching the model through a route that will not exist at prediction time."
+    ar: "وصول معلومات عن التسمية إلى النموذج من طريقٍ لن يكون موجوداً وقت التنبّؤ."
+  confounding-variable:
+    en: "A factor that influences both an input feature and the label, creating a correlation between them that is not causal."
+    ar: "عاملٌ يؤثّر في خاصية من المُدخلات وفي التسمية معاً، فيصنع بينهما ارتباطاً ليس سببياً."
+  distribution-shift:
+    en: "A change between the data a model was trained on and the data it is applied to."
+    ar: "تغيّرٌ بين البيانات التي تدرّب عليها النموذج والبيانات التي يُطبَّق عليها."
+  generalization:
+    en: "How well a model performs on data it did not see during training."
+    ar: "مدى جودة أداء النموذج على بيانات لم يرها أثناء التدريب."
+  overfitting:
+    en: "Fitting the training data so closely that performance on new data suffers."
+    ar: "أن يطابق النموذج بيانات التدريب إلى حدّ يضرّ بأدائه على البيانات الجديدة."
+  classification:
+    en: "Assigning each input to one of a fixed set of categories."
+    ar: "إسناد كلّ مُدخل إلى فئة واحدة من مجموعة فئات محدّدة سلفاً."
+  feature-attribution:
+    en: "Methods that assign a model's output to parts of its input."
+    ar: "طرقٌ تنسب مُخرَج النموذج إلى أجزاء من مُدخله."
+  saliency-map:
+    en: "An image-shaped map showing which pixels or regions most affected a prediction."
+    ar: "خريطة بحجم الصورة تبيّن أيّ البكسلات أو المناطق أثّرت في التنبّؤ أكثر من غيرها."
+  grad-cam:
+    en: "An attribution method that weights a CNN's last convolutional feature maps by the gradient of a class score and keeps the positive part."
+    ar: "طريقة إسناد تَزِن خرائط الخصائص في آخر طبقة التفافية بتدرّج درجة الفئة، ثم تُبقي الجزء الموجب."
+  explainable-ai:
+    en: "Techniques for making a model's decisions understandable to people."
+    ar: "تقنياتٌ تجعل قرارات النموذج مفهومة للبشر."
+  model-interpretability:
+    en: "The degree to which a person can understand why a model produces a given output."
+    ar: "مدى قدرة الإنسان على فهم سبب إنتاج النموذج لمُخرَج معيّن."
+  heatmap:
+    en: "A grid of values drawn as colours, used here to overlay attribution on an image."
+    ar: "شبكة من القيم تُرسم ألواناً، ونستخدمها هنا لنضع الإسناد فوق الصورة."
+  activation-map:
+    en: "The output of one convolutional channel: where in the image that channel responded."
+    ar: "مُخرَج قناة التفافية واحدة: أين استجابت هذه القناة في الصورة."
+  convolutional-neural-network:
+    en: "A neural network built from learned filters slid across the image, so the same pattern is detected wherever it appears."
+    ar: "شبكة عصبية مبنية من مرشّحات متعلَّمة تنزلق على الصورة، فتلتقط النمط نفسه أينما ظهر."
+  training-set:
+    en: "The examples a model's parameters are fitted to."
+    ar: "الأمثلة التي تُضبط عليها معاملات النموذج."
+  test-set:
+    en: "Held-out examples used only to measure performance after training."
+    ar: "أمثلة محجوزة لا تُستخدم إلا لقياس الأداء بعد التدريب."
+  out-of-distribution:
+    en: "Inputs that differ systematically from anything in the training data."
+    ar: "مُدخلاتٌ تختلف اختلافاً منهجياً عن كلّ ما في بيانات التدريب."
+  robustness:
+    en: "How well a model's performance holds up when its inputs change."
+    ar: "مدى صمود أداء النموذج حين تتغيّر مُدخلاته."
+  failure-mode:
+    en: "A specific, repeatable way in which a model goes wrong."
+    ar: "طريقة محدّدة ومتكرّرة يخطئ بها النموذج."
+  decision-boundary:
+    en: "The surface in input space where a classifier's prediction changes from one class to another."
+    ar: "السطح في فضاء المُدخلات الذي يتغيّر عنده تنبّؤ المصنِّف من فئة إلى أخرى."
+
+body:
+  # ── Frame ────────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Start from suspicion", ar: "ابدأ من الشك" }
+    phase: { en: "Frame", ar: "التأطير" }
+    text:
+      en: >-
+        A test set answers one question: does the model agree with the labels
+        on examples it has not seen? It does not answer why. If the training
+        photos and the test photos were collected the same way, any accident
+        of that collection — a watermark, a background, a camera — sits in
+        both, and a model that learned the accident scores just as well as one
+        that learned the object.
+
+
+        This is <Term en="Shortcut Learning">shortcut learning</Term>, and it
+        is hard to see from outside because nothing fails. The usual advice is
+        to be sceptical of your data. Advice like that is easy to agree with
+        and easy to forget. So instead of reading about a shortcut, you will
+        build one, measure what it does to the numbers, and then look inside
+        the model to see it being used.
+      ar: >-
+        تجيب <Term en="Test Set">مجموعة الاختبار</Term> عن سؤال واحد: هل يتفق
+        النموذج مع التسميات على أمثلة لم يرها من قبل؟ لكنها لا تجيب عن سؤال
+        «لماذا».
+
+
+        افترض أن صور التدريب وصور الاختبار جُمعت بالطريقة نفسها. عندها تنتقل
+        أيّ مصادفة في طريقة الجمع إلى المجموعتين معاً: علامة مائية، أو خلفية
+        متكرّرة، أو كاميرا بعينها. والنموذج الذي تعلّم المصادفة سيحصل على
+        الدرجة نفسها التي يحصل عليها نموذجٌ تعلّم الشيء المقصود.
+
+
+        هذا ما نسمّيه <Term en="Shortcut Learning">التعلّم بالاختصار</Term>.
+        ويصعب أن تلاحظه من الخارج، لأن شيئاً لا يتعطّل. النصيحة المعتادة هي أن
+        تشكّ في بياناتك، وهي نصيحة يسهل أن توافق عليها ويسهل أن تنساها. لذلك لن
+        نقرأ عن الاختصار هنا. سنبنيه بأيدينا، ونقيس أثره في الأرقام، ثم ننظر
+        داخل النموذج لنراه وهو يستخدمه.
+
+  - type: cell
+    id: setup
+    ref: setup
+    title: { en: "Connect the notebook", ar: "اربط الدفتر" }
+    phase: { en: "Frame", ar: "التأطير" }
+    caption:
+      en: "Check that the code hash matches the notebook and that a GPU is attached."
+      ar: "تأكّد أن بصمة الشيفرة تطابق الدفتر، وأن وحدة <bdi dir=\"ltr\">GPU</bdi> متّصلة."
+
+  - type: cell
+    id: fig_text
+    ref: fig_text
+    title: { en: "Prepare figure labels", ar: "جهّز نصوص الرسوم" }
+    phase: { en: "Frame", ar: "التأطير" }
+    caption:
+      en: "In the Arabic build this should name a Noto Arabic font. If it does not, figure labels will draw as empty boxes."
+      ar: "في النسخة العربية يجب أن يظهر هنا اسم خطّ <bdi dir=\"ltr\">Noto</bdi> عربي. إن لم يظهر، فستُرسم نصوص الرسوم مربّعات فارغة."
+
+  # ── Plant ────────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Pick a hard pair", ar: "اختر زوجاً صعباً" }
+    phase: { en: "Plant", ar: "الزرع" }
+    text:
+      en: >-
+        We use two classes from CIFAR-10: cat and dog. They are the pair small
+        networks confuse most often — similar size, similar fur, similar poses
+        at 32 by 32 pixels. That matters here. A shortcut is most tempting when
+        the real task is hard, because the cheap cue reduces the loss faster
+        than the genuine features do.
+      ar: >-
+        نأخذ من <bdi dir="ltr">CIFAR-10</bdi> فئتين فقط: القطط والكلاب. وهما
+        الزوج الذي تخلط بينه الشبكات الصغيرة أكثر من أيّ زوج آخر، فالحجم متقارب
+        والفرو متشابه، والوضعيات متشابهة في صورة من 32 في 32 بكسلاً.
+
+
+        لهذا الاختيار سبب. يكون الاختصار أكثر إغراءً حين تكون المهمة الحقيقية
+        صعبة. فالإشارة الرخيصة تُنزل الخسارة أسرع مما تفعله الخصائص الحقيقية،
+        والتدريب يتبع ما يُنزل الخسارة أسرع.
+
+  - type: cell
+    id: load_data
+    ref: load_data
+    title: { en: "Load cats and dogs", ar: "حمّل القطط والكلاب" }
+    phase: { en: "Plant", ar: "الزرع" }
+    captures: [n_train, n_test, dog_share]
+    caption:
+      en: "The classes are found by name in the archive's metadata, not by position. The dog share should be close to one half."
+      ar: "نبحث عن الفئتين باسميهما في بيانات الأرشيف الوصفية، لا بموقعهما. ويجب أن تكون نسبة الكلاب قريبة من النصف."
+
+  - type: prose
+    title: { en: "Design the shortcut", ar: "صمّم الاختصار" }
+    phase: { en: "Plant", ar: "الزرع" }
+    text:
+      en: >-
+        The shortcut is a small magenta square in the bottom-right corner. It
+        is not attached to every dog, and it is not kept off every cat. A dog
+        carries it with some probability, and a cat carries it with the
+        complementary probability. That is a <Term en="Spurious Correlation">spurious
+        correlation</Term>: strong, but imperfect, the way real ones are. A
+        hospital's scanner model correlates with diagnosis; a photographer's
+        watermark correlates with subject. Neither is the thing being
+        classified.
+
+
+        The square is stamped after augmentation, so it never moves. Every
+        image is drawn once with a fixed seed, so both models below see exactly
+        the same training images.
+      ar: >-
+        الاختصار مربّع صغير بلون أرجواني في الزاوية السفلى اليمنى من الصورة.
+
+
+        لا نضعه على كلّ كلب، ولا نمنعه عن كلّ قطة. يحمله الكلب باحتمال معيّن،
+        وتحمله القطة بالاحتمال المكمّل. النتيجة <Term en="Spurious Correlation">ارتباط
+        زائف</Term>: قويّ لكنه ليس تاماً، وهكذا تكون الارتباطات الزائفة في
+        البيانات الحقيقية.
+
+
+        ولهذا أمثلة مألوفة. قد يرتبط طراز جهاز التصوير في مستشفى ما بالتشخيص،
+        وقد ترتبط العلامة المائية لمصوّر ما بموضوع صوره. لا طراز الجهاز ولا
+        العلامة المائية هو ما نريد تصنيفه.
+
+
+        نضع المربّع بعد توسيع البيانات، فلا يتحرّك من مكانه أبداً. ونحدّد أيّ
+        الصور تحمله مرة واحدة، ببذرة ثابتة، فيرى النموذجان التاليان صور التدريب
+        نفسها تماماً.
+
+  - type: cell
+    id: plant
+    ref: plant
+    title: { en: "Stamp the square", ar: "اطبع المربّع" }
+    phase: { en: "Plant", ar: "الزرع" }
+    captures: [patch_pixel_share, dogs_with_patch, cats_with_patch]
+    caption:
+      en: "Look at the grid before reading the numbers. Would you have noticed the square if no one had told you it was there?"
+      ar: "انظر إلى الشبكة قبل أن تقرأ الأرقام. هل كنت ستلاحظ المربّع لو لم يخبرك أحد بوجوده؟"
+
+  - type: scaleNote
+    title: { en: "How strong the cue is", ar: "ما قوة الإشارة" }
+    phase: { en: "Plant", ar: "الزرع" }
+    text:
+      en: >-
+        The square is {{scale.patch_px}} pixels on a side and appears on dogs
+        at a rate of {{scale.shortcut_rate}}. Both are in the profile's scale,
+        so you can change them without touching the code. The exercise near the
+        end asks how low the rate can go before the model stops exploiting it.
+      ar: >-
+        طول ضلع المربّع {{scale.patch_px}} بكسل، ويظهر على الكلاب بنسبة
+        {{scale.shortcut_rate}}. القيمتان كلتاهما في إعدادات الملف الشخصي، فيمكنك
+        تغييرهما دون أن تلمس الشيفرة. وفي التمرين قرب النهاية سؤال عن هذه النسبة:
+        إلى أيّ حدّ يمكن أن تنخفض قبل أن يكفّ النموذج عن استغلال المربّع؟
+
+  # ── Train ────────────────────────────────────────────────────────────────
+  - type: cell
+    id: model
+    ref: model
+    title: { en: "Define a small ResNet", ar: "عرّف شبكة متبقية صغيرة" }
+    phase: { en: "Train", ar: "التدريب" }
+    caption:
+      en: "Note the last stage: an 8 by 8 feature map. That map is what Grad-CAM reads later, so each of its cells covers a 4 by 4 patch of the image."
+      ar: "لاحظ المرحلة الأخيرة: خريطة خصائص من 8 في 8. هذه الخريطة هي ما سيقرؤه <bdi dir=\"ltr\">Grad-CAM</bdi> لاحقاً، وكلّ خلية فيها تغطّي رقعة من 4 في 4 بكسلات من الصورة."
+
+  - type: prose
+    title: { en: "Change exactly one thing", ar: "غيّر شيئاً واحداً فقط" }
+    phase: { en: "Train", ar: "التدريب" }
+    text:
+      en: >-
+        Both models start from the same initial weights, see the same batches
+        in the same order, and train for the same number of epochs. The only
+        difference is whether the square is stamped. Whatever separates their
+        results below is caused by the square and nothing else.
+      ar: >-
+        يبدأ النموذجان من الأوزان الابتدائية نفسها، ويريان الدفعات نفسها بالترتيب
+        نفسه، ويتدرّبان العدد نفسه من الحقب. الفرق الوحيد بينهما هو وجود المربّع
+        أو غيابه.
+
+
+        هذا الضبط هو ما يجعل المقارنة ذات معنى. فأيّ فرق يظهر في نتائجهما لاحقاً
+        سببه المربّع، ولا شيء غيره.
+
+  - type: cell
+    id: train_honest
+    ref: train_honest
+    title: { en: "Train the honest model", ar: "درّب النموذج النزيه" }
+    phase: { en: "Train", ar: "التدريب" }
+    captures: [honest_clean_acc]
+    caption:
+      en: "This model is the control. If its clean accuracy is low, the comparison that follows is meaningless."
+      ar: "هذا النموذج هو مرجع المقارنة. إن كانت دقته على الصور النظيفة منخفضة، فلا معنى للمقارنة التي تليه."
+
+  - type: cell
+    id: train_shortcut
+    ref: train_shortcut
+    title: { en: "Train the shortcut model", ar: "درّب نموذج الاختصار" }
+    phase: { en: "Train", ar: "التدريب" }
+    captures: [shortcut_matched_acc, honest_matched_acc, leaderboard_gap]
+    caption:
+      en: "Watch how fast its training accuracy rises compared with the honest model's. Then read the matched-test comparison as a reviewer would."
+      ar: "راقب سرعة ارتفاع دقة التدريب لديه مقارنةً بالنموذج النزيه. ثم اقرأ مقارنة الاختبار المطابق كما يقرؤها مراجعٌ لا يعرف شيئاً عن المربّع."
+
+  - type: prose
+    title: { en: "Read the leaderboard", ar: "اقرأ لوحة النتائج" }
+    phase: { en: "Train", ar: "التدريب" }
+    text:
+      en: >-
+        On a test split drawn the same way as the training data, the shortcut
+        model scores {{run.metrics.shortcut_matched_acc}} and the honest model
+        {{run.metrics.honest_matched_acc}}. If these two were entries in a
+        model comparison, the shortcut model would be chosen.
+
+
+        Nothing about this number is wrong. The test images are genuinely
+        unseen, and the labels are correct. The problem is that the test set
+        carries the same correlation as the training set, so it rewards the
+        model for using it. A test split only checks <Term en="Generalization">generalization</Term>
+        to more of the same data.
+      ar: >-
+        على بيانات اختبار سُحبت بالطريقة نفسها التي سُحبت بها بيانات التدريب،
+        يحقّق نموذج الاختصار دقة {{run.metrics.shortcut_matched_acc}}، ويحقّق
+        النموذج النزيه {{run.metrics.honest_matched_acc}}. لو كانا متسابقَين في
+        مقارنة بين النماذج، لوقع الاختيار على نموذج الاختصار.
+
+
+        ليس في هذا الرقم خطأ. صور الاختبار لم يرها النموذج فعلاً، والتسميات
+        صحيحة. المشكلة في مكان آخر: مجموعة الاختبار تحمل الارتباط نفسه الذي
+        تحمله مجموعة التدريب. ولذلك تكافئ النموذج على استخدامه.
+
+
+        ماذا يعني ذلك عملياً؟
+
+
+        يعني أن بيانات الاختبار المعتادة لا تقيس إلا
+        <Term en="Generalization">التعميم</Term> إلى مزيد من البيانات نفسها.
+        أما التعميم إلى عالم يختلف عن طريقة الجمع، فلا تقيسه.
+
+  # ── Break ────────────────────────────────────────────────────────────────
+  - type: cell
+    id: stress_test
+    ref: stress_test
+    title: { en: "Break the correlation", ar: "اكسر الارتباط" }
+    phase: { en: "Break", ar: "الكسر" }
+    captures: [shortcut_clean_acc, shortcut_flipped_acc, honest_flipped_acc, shortcut_collapse]
+    caption:
+      en: "The three groups use the same photos. Only the square changes. Look at the honest model's bars first: if they are level, the photos themselves did not get harder."
+      ar: "المجموعات الثلاث تستخدم الصور نفسها، والذي يتغيّر هو المربّع وحده. انظر أولاً إلى أعمدة النموذج النزيه: إن كانت متساوية، فالصور نفسها لم تصبح أصعب."
+
+  - type: prose
+    title: { en: "Read the collapse", ar: "اقرأ الانهيار" }
+    phase: { en: "Break", ar: "الكسر" }
+    text:
+      en: >-
+        When the square's rule is reversed, the shortcut model drops to
+        {{run.metrics.shortcut_flipped_acc}}. The honest model, given the same
+        images, scores {{run.metrics.honest_flipped_acc}}.
+
+
+        A score below one half matters. A model that simply ignored the photo
+        would land near chance. Falling below chance means the model is still
+        following a rule, and the rule is now wrong. Most of its decisions were
+        coming from the square, so reversing the square reverses most of its
+        decisions.
+
+
+        With the square removed altogether, the shortcut model scores
+        {{run.metrics.shortcut_clean_acc}}. This is the realistic case: a model
+        trained on watermarked photos, deployed on photos without one. It is
+        a <Term en="Distribution Shift">distribution shift</Term> that no
+        ordinary test split would have shown you.
+      ar: >-
+        حين تنعكس قاعدة المربّع، تهبط دقة نموذج الاختصار إلى
+        {{run.metrics.shortcut_flipped_acc}}. أما النموذج النزيه، على الصور
+        نفسها، فيحقّق {{run.metrics.honest_flipped_acc}}.
+
+
+        انتبه إلى أن الدقة نزلت تحت النصف. النموذج الذي يتجاهل الصورة ببساطة
+        سيقف قرب التخمين العشوائي، أي قرب النصف. النزول تحت ذلك يعني أن النموذج
+        ما زال يتبع قاعدة، لكنها صارت قاعدة خاطئة. معظم قراراته كانت تأتي من
+        المربّع، فلما انعكس المربّع انعكس معظمها.
+
+
+        وحين نزيل المربّع كلياً، يحقّق نموذج الاختصار
+        {{run.metrics.shortcut_clean_acc}}. هذه هي الحالة الواقعية: نموذج تدرّب
+        على صور تحمل علامة مائية، ثم استُخدم على صور خالية منها. إنه
+        <Term en="Distribution Shift">انزياح في التوزيع</Term>، ولم تكن أيّ بيانات
+        اختبار عادية لتكشفه لك.
+
+  # ── Look inside ──────────────────────────────────────────────────────────
+  - type: paperRef
+    slug: grad-cam
+    title: { en: "Where Grad-CAM comes from", ar: "من أين جاءت هذه الطريقة" }
+    phase: { en: "Look inside", ar: "النظر إلى الداخل" }
+    note:
+      en: >-
+        Grad-CAM asks how much the predicted class's score depends on each
+        channel of the last convolutional layer, then sums those channels with
+        that weight. The paper explains why the last layer is the right place
+        to ask.
+      ar: >-
+        يسأل <bdi dir="ltr">Grad-CAM</bdi>: إلى أيّ حدّ تعتمد درجة الفئة
+        المتنبَّأ بها على كلّ قناة في آخر طبقة التفافية؟ ثم يجمع تلك القنوات،
+        كلّ قناة بوزنها. وتشرح الورقة لماذا تكون الطبقة الأخيرة هي المكان
+        المناسب لطرح هذا السؤال.
+
+  - type: cell
+    id: gradcam
+    ref: gradcam
+    thumbnail: true
+    title: { en: "Ask where it looked", ar: "اسأل أين نظر" }
+    phase: { en: "Look inside", ar: "النظر إلى الداخل" }
+    captures: [uniform_share, patch_attention_honest, patch_attention_shortcut, attention_gap]
+    caption:
+      en: "Each column is one cat with the square stamped on. Compare the bottom row with the middle row: where does the shortcut model's map concentrate?"
+      ar: "كلّ عمود قطةٌ طُبع عليها المربّع. قارن الصف السفلي بالصف الأوسط: أين تتركّز خريطة نموذج الاختصار؟"
+
+  - type: prose
+    title: { en: "Read the maps", ar: "اقرأ الخرائط" }
+    phase: { en: "Look inside", ar: "النظر إلى الداخل" }
+    text:
+      en: >-
+        Across every test photo with the square stamped on, the corner block
+        around the square holds {{run.metrics.patch_attention_shortcut}} of the
+        shortcut model's <Term en="Grad-CAM">Grad-CAM</Term> map. For the honest
+        model the figure is {{run.metrics.patch_attention_honest}}. A map spread
+        evenly over the image would put {{run.metrics.uniform_share}} there.
+
+
+        The accuracy table told you that something was wrong. The maps tell you
+        what it is, and they would have told you even without the stress test.
+        That is the practical value of <Term en="Feature Attribution">feature
+        attribution</Term>: you can inspect a model you have no flipped test
+        for.
+
+
+        Keep one caution. Grad-CAM reads an 8 by 8 map, so it can locate the
+        corner but not the exact square. A coarse map is evidence about where
+        to look next, not proof of what the model computes.
+      ar: >-
+        طبعنا المربّع على كلّ صور الاختبار، ثم قسنا حصّة الزاوية المحيطة به من
+        خريطة <Term en="Grad-CAM"><bdi dir="ltr">Grad-CAM</bdi></Term>. لدى نموذج
+        الاختصار تبلغ هذه الحصّة {{run.metrics.patch_attention_shortcut}}، ولدى
+        النموذج النزيه {{run.metrics.patch_attention_honest}}. ولو توزّعت الخريطة
+        على الصورة بالتساوي، لكانت حصّة الزاوية {{run.metrics.uniform_share}}.
+
+
+        جدول الدقة أخبرك أن هناك خللاً. أما الخرائط فتخبرك ما هو هذا الخلل.
+        والأهم أنها كانت ستخبرك به حتى لو لم تبنِ اختبار القاعدة المعكوسة.
+
+
+        هذه هي القيمة العملية لـ<Term en="Feature Attribution">إسناد الخصائص</Term>.
+        في المشاريع الحقيقية لن تملك غالباً اختباراً معكوساً جاهزاً، لأنك لا تعرف
+        الاختصار مسبقاً. لكنك تستطيع دائماً أن تسأل النموذج أين نظر.
+
+
+        وتبقى ملاحظة واحدة للحذر. يقرأ <bdi dir="ltr">Grad-CAM</bdi> خريطة من 8
+        في 8، فيستطيع أن يحدّد الزاوية لكنه لا يحدّد المربّع بدقة. الخريطة الخشنة
+        دليلٌ على المكان الذي ينبغي أن تفحصه بعد ذلك، وليست برهاناً على ما يحسبه
+        النموذج.
+
+  # ── Your turn ────────────────────────────────────────────────────────────
+  - type: exercise
+    id: weaker-shortcut
+    ref: exercise
+    title: { en: "Weaken the cue", ar: "أضعِف الإشارة" }
+    phase: { en: "Your turn", ar: "دورك" }
+    hint: 2
+    prompt:
+      en: >-
+        The square agreed with the label {{scale.shortcut_rate}} of the time.
+        Real spurious correlations are often far weaker. Set my_rate lower and
+        re-run the cell. Before you do, write down a guess: at what rate does
+        the gap between matched and flipped accuracy disappear? Does the
+        attention on the square fall with it?
+      ar: >-
+        وافق المربّع التسمية بنسبة {{scale.shortcut_rate}}. والارتباطات الزائفة
+        في البيانات الحقيقية كثيراً ما تكون أضعف من ذلك بكثير. خفّض قيمة
+        <bdi dir="ltr">my_rate</bdi> وأعد تشغيل الخلية.
+
+
+        لكن قبل التشغيل، اكتب تخمينك: عند أيّ نسبة يختفي الفارق بين دقة الاختبار
+        المطابق ودقة الاختبار المعكوس؟ وهل ينخفض انتباه النموذج إلى المربّع معه؟
+
+  # ── Verify ───────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Keep the habit", ar: "احتفظ بالعادة" }
+    phase: { en: "Verify", ar: "التحقّق" }
+    text:
+      en: >-
+        The square was easy to find because you planted it. Real shortcuts are
+        not announced. What carries over is a set of questions to ask of any
+        result that looks good:
+
+
+        Was the test set collected the same way as the training set? If so,
+        it shares the training set's accidents.
+
+
+        What would the score be if one suspicious feature were removed, or
+        reversed? Build that test even when it is awkward.
+
+
+        Where does the model look? An attribution map takes seconds to draw,
+        and it is the only check here that does not require knowing the
+        shortcut in advance.
+      ar: >-
+        كان العثور على المربّع سهلاً لأنك أنت من زرعه. الاختصارات الحقيقية لا
+        تعلن عن نفسها. لكن ما تعلّمته هنا ينتقل معك في صورة أسئلة تطرحها على
+        أيّ نتيجة تبدو جيدة.
+
+
+        هل جُمعت مجموعة الاختبار بالطريقة نفسها التي جُمعت بها مجموعة التدريب؟
+        إن كان الجواب نعم، فهي تحمل مصادفات مجموعة التدريب نفسها.
+
+
+        كم ستكون الدقة لو أزلنا خاصية مشبوهة واحدة، أو عكسناها؟ ابنِ هذا الاختبار
+        حتى لو كان بناؤه مزعجاً.
+
+
+        أين ينظر النموذج؟ رسم خريطة إسناد يستغرق ثوانيَ. وهو الفحص الوحيد بين
+        هذه الثلاثة الذي لا يتطلّب أن تعرف الاختصار مسبقاً.
+
+  - type: cell
+    id: verify
+    ref: verify
+    title: { en: "Run the checks", ar: "شغّل الفحوص" }
+    phase: { en: "Verify", ar: "التحقّق" }
+    caption:
+      en: "The control is checked first. The peak GPU memory printed at the end is the number the profile should declare."
+      ar: "نفحص مرجع المقارنة أولاً. أما ذروة ذاكرة <bdi dir=\"ltr\">GPU</bdi> المطبوعة في النهاية، فهي الرقم الذي ينبغي أن يُعلنه الملف الشخصي."
+
+  - type: cell
+    id: finish
+    ref: finish
+    title: { en: "Get your receipt", ar: "احصل على إيصالك" }
+    phase: { en: "Verify", ar: "التحقّق" }

@@ -1,0 +1,832 @@
+schema: workshop/v1
+id: kv-cache-memory-explorer
+constellation: systems
+
+title:
+  en: "The KV Cache Is the Real Memory Bill"
+  ar: "ذاكرة المفاتيح والقيم: فاتورة الذاكرة الحقيقية"
+
+concept:
+  en: "Memory is three bills, and only one grows with every token served"
+  ar: "للذاكرة ثلاث فواتير، وواحدة منها فقط تكبر مع كل رمز يُخدَم"
+
+scenario:
+  en: >-
+    Someone asks whether a GPU can serve a model, and the answer comes from
+    the parameter count: a billion parameters in fp16 is two gigabytes, so it
+    fits. That arithmetic prices the model and forgets the conversations.
+    Every sequence being generated keeps a key vector and a value vector for
+    every token it has seen, in every layer, and that store grows with both
+    context length and the number of users. Here you build a Llama-shaped
+    decoder, measure its three memory bills separately, and find where the
+    cache overtakes the weights: about {{run.metrics.crossover_tokens}} tokens
+    in flight on this model, and {{run.metrics.llama7b_crossover_tokens}} on
+    Llama-2-7B by the same formula once you have checked it against the GPU.
+  ar: >-
+    يسألك أحدهم: هل تكفي هذه البطاقة الرسومية لتشغيل النموذج؟ وغالباً يأتي
+    الجواب من عدد المعاملات وحده. مليار معامل بدقة <bdi dir="ltr">fp16</bdi>
+    يعني غيغابايتين تقريباً، إذن البطاقة تكفي. هذا الحساب صحيح، لكنه يقدّر كلفة
+    تحميل النموذج فقط، وينسى المحادثات التي سيخدمها. فكل تسلسل قيد التوليد
+    يحتفظ، في كل طبقة، بمتجه مفتاح ومتجه قيمة لكل رمز مرّ عليه. وهذا المخزون
+    يكبر كلما طال السياق، ويكبر كلما زاد عدد المستخدمين. في هذه الورشة تبني
+    نموذجاً بأبعاد <bdi dir="ltr">Llama</bdi>، وتقيس فواتير ذاكرته الثلاث كلاً
+    على حدة، ثم تبحث عن اللحظة التي تتجاوز فيها الذاكرة المؤقتة حجم الأوزان. في
+    هذا النموذج تحدث عندما يبلغ عدد الرموز قيد المعالجة نحو
+    {{run.metrics.crossover_tokens}}. وفي <bdi dir="ltr">Llama-2-7B</bdi> تحدث
+    عند {{run.metrics.llama7b_crossover_tokens}}، بالمعادلة نفسها بعد أن تتحقق
+    منها على البطاقة.
+
+goal:
+  en: >-
+    Measure weights, activations and KV cache separately; confirm the cache
+    matches its formula to within one percent; watch it pass the weights
+    inside an ordinary context sweep; and show which levers move which bill —
+    grouped-query attention shrinks the cache, FlashAttention removes
+    activations and leaves the cache exactly where it was.
+  ar: >-
+    أن تقيس الأوزان والتفعيلات والذاكرة المؤقتة كلاً على حدة، وتتأكد أن الذاكرة
+    المؤقتة تطابق معادلتها بفارق لا يتجاوز واحداً بالمئة. ثم أن تراها تتجاوز
+    الأوزان ضمن أطوال سياق عادية تماماً. وأخيراً أن تبيّن أيّ أداة تخفّض أيّ
+    فاتورة: الانتباه المجمّع يقلّص الذاكرة المؤقتة، أما
+    <bdi dir="ltr">FlashAttention</bdi> فيزيل التفعيلات ويترك الذاكرة المؤقتة
+    على حالها.
+
+difficulty: intermediate
+status: draft
+publishedAt: null
+
+maintenance:
+  tier: moderate               # torch is asserted; two pinned libraries for Arabic figures
+  cadence: quarterly
+
+estimate:
+  gpuMinutes: 3                # estimate; measure on the first Colab run
+  totalMinutes: 40
+
+papers:
+  - slug: grouped-query-attention
+    role: core
+    label:
+      en: "sharing keys and values across query heads, the lever that shrinks the cache"
+      ar: "مشاركة المفاتيح والقيم بين رؤوس الاستعلام، وهي الأداة التي تقلّص الذاكرة المؤقتة"
+  - slug: flashattention
+    role: core
+    label:
+      en: "attention that never stores the score matrix, the lever that removes activations"
+      ar: "انتباه لا يخزّن مصفوفة الدرجات أبداً، وهي الأداة التي تزيل التفعيلات"
+  - slug: llama-2
+    role: core
+    label:
+      en: "the real model shapes the formula is projected onto, and the reason 70B uses GQA"
+      ar: "أبعاد النماذج الحقيقية التي نطبّق عليها المعادلة، وسبب اعتماد النموذج الأكبر على الانتباه المجمّع"
+  - slug: attention-is-all-you-need
+    role: supporting
+    label:
+      en: "where the keys and values come from in the first place"
+      ar: "من أين تأتي المفاتيح والقيم أصلاً"
+  - slug: flashattention-2
+    role: supporting
+    label:
+      en: "the kernel PyTorch's fused attention uses on Ampere and newer GPUs"
+      ar: 'النواة التي يستخدمها الانتباه المدمج في <bdi dir="ltr">PyTorch</bdi> على بطاقات <bdi dir="ltr">Ampere</bdi> وما بعدها'
+
+assets: []
+
+dependencies:
+  apt: [fonts-noto-core]       # Arabic glyphs for figures; matplotlib's default has none
+  pip:
+    - "arabic-reshaper==3.0.0"
+    - "python-bidi==0.4.2"
+
+profiles:
+  - id: free
+    default: true
+    name:
+      en: "Free tier (T4)"
+      ar: "المستوى المجاني"
+    requires:
+      gpu: true
+      vramGb: 10.2             # estimate (the plan cell fills to the budget); replace with the measured peak
+      ramGb: 4
+    scale:
+      seed: 17
+      d_model: 2048
+      n_layers: 16
+      n_heads: 16
+      ffn: 5504
+      vocab: 32000
+      batch: 8
+      probe_ctx: 2048
+      contexts: [512, 1024, 2048, 4096]
+      flash_batch: 4
+      flash_ctx: 2048
+      kv_variants: [16, 4, 1]
+      gqa_kv: 4
+      decode_batch: 8
+      decode_contexts: [256, 1024, 4096]
+      decode_warmup: 3
+      decode_steps: 20
+      plan_ctx: 4096
+      budget_gib: 10
+      headroom_gib: 0.5
+      project_batch: 8
+      project_ctx: 4096
+  - id: large
+    name:
+      en: "Large GPU (A100 40 GB class)"
+      ar: "بطاقة كبيرة بسعة 40 غيغابايت"
+    requires:
+      gpu: true
+      vramGb: 30.6             # estimate; replace with the measured peak
+      ramGb: 4
+    scale:
+      seed: 17
+      d_model: 2048
+      n_layers: 16
+      n_heads: 16
+      ffn: 5504
+      vocab: 32000
+      batch: 16
+      probe_ctx: 4096
+      contexts: [1024, 2048, 4096, 8192]
+      flash_batch: 4
+      flash_ctx: 4096
+      kv_variants: [16, 4, 1]
+      gqa_kv: 4
+      decode_batch: 8
+      decode_contexts: [256, 2048, 8192]
+      decode_warmup: 3
+      decode_steps: 20
+      plan_ctx: 8192
+      budget_gib: 30
+      headroom_gib: 0.5
+      project_batch: 8
+      project_ctx: 4096
+
+checks:
+  # The control: if the measured cache does not match the formula, the
+  # measurement is miswired (an expanded GQA copy kept, logits counted as
+  # cache, a leaked tensor) and nothing after it means anything.
+  - id: cache-matches-formula
+    required: true
+    min: 0.99
+    max: 1.01
+    label:
+      en: "Measured KV cache over the formula's prediction, summed across the sweep"
+      ar: "الذاكرة المؤقتة المقيسة مقسومةً على تنبؤ المعادلة، مجموعةً على كل نقاط المسح"
+  # Placeholder floor: the shapes predict about 2.3 at the free profile's
+  # largest point. Set below the measured value after the first run.
+  - id: cache-overtakes-weights
+    required: true
+    min: 1.5
+    label:
+      en: "KV cache over weights at the largest point of the sweep"
+      ar: "الذاكرة المؤقتة مقسومةً على الأوزان عند أكبر نقطة في المسح"
+  # Exactly n_heads / gqa_kv if the cache stores un-expanded heads.
+  - id: gqa-shrinks-cache
+    required: true
+    min: 3.8
+    label:
+      en: "MHA cache over GQA cache, same batch and context"
+      ar: "ذاكرة الانتباه متعدد الرؤوس مقسومةً على ذاكرة الانتباه المجمّع، بالدفعة والسياق نفسيهما"
+
+hints:
+  - en: >-
+      The cache per sequence is 2 × layers × kv heads × head size × 2 bytes ×
+      context. Halving the kv heads halves it; the weights barely move. Work
+      out the per-sequence megabytes before you touch the code.
+    ar: >-
+      حجم الذاكرة المؤقتة لكل تسلسل هو: 2 × عدد الطبقات × عدد رؤوس المفاتيح ×
+      حجم الرأس × 2 بايت × طول السياق. إذا خفّضت رؤوس المفاتيح إلى النصف، انخفض
+      هذا الحجم إلى النصف أيضاً، بينما تكاد الأوزان لا تتغير. احسب عدد
+      الميغابايتات لكل تسلسل قبل أن تلمس الشيفرة.
+  - en: >-
+      The number of sequences is (budget − weights − headroom) ÷ cache per
+      sequence. Going from 16 kv heads to 4 does not add a few sequences, it
+      multiplies them by four.
+    ar: >-
+      عدد التسلسلات = (الميزانية − الأوزان − الهامش) ÷ الذاكرة المؤقتة لكل
+      تسلسل. والانتقال من 16 رأساً للمفاتيح إلى 4 لا يضيف بضعة تسلسلات فحسب. إنه
+      يضاعف عددها أربع مرات.
+
+terms:
+  "Key-Value Cache (KV Cache)":
+    en: "The stored key and value vectors of every past token, per layer, kept so each new token does not recompute them."
+    ar: "متجهات المفاتيح والقيم المحفوظة لكل رمز سابق في كل طبقة، حتى لا يُعاد حسابها مع كل رمز جديد."
+  "Attention":
+    en: "Each token builds its output as a weighted mix of value vectors, weighted by how well its query matches each key."
+    ar: "يبني كل رمز مخرجه بمزج متجهات القيم، ويعطي كلاً منها وزناً بحسب تطابق استعلامه مع المفتاح المقابل لها."
+  "Self-Attention":
+    en: "Attention in which queries, keys and values all come from the same sequence."
+    ar: "انتباه تأتي فيه الاستعلامات والمفاتيح والقيم كلها من التسلسل نفسه."
+  "Transformer":
+    en: "The architecture built from stacked attention and feed-forward blocks; every LLM measured here is one."
+    ar: "معمارية مبنية من طبقات انتباه وطبقات تغذية أمامية متراصّة، وكل نموذج لغوي كبير نقيسه هنا من هذا النوع."
+  "Autoregressive Generation":
+    en: "Producing text one token at a time, each new token conditioned on all the tokens before it."
+    ar: "توليد النص رمزاً بعد رمز، بحيث يعتمد كل رمز جديد على كل الرموز التي سبقته."
+  "Context Window":
+    en: "The maximum number of tokens a model can attend over at once."
+    ar: "أقصى عدد من الرموز يستطيع النموذج أن ينتبه إليها في وقت واحد."
+  "Sequence Length":
+    en: "The number of tokens in one sequence; the cache grows linearly with it."
+    ar: "عدد الرموز في تسلسل واحد، والذاكرة المؤقتة تكبر معه خطياً."
+  "Token":
+    en: "The unit a model reads and writes; each one adds a key and a value per layer to the cache."
+    ar: "الوحدة التي يقرؤها النموذج ويكتبها، وكل رمز يضيف إلى الذاكرة المؤقتة مفتاحاً وقيمة في كل طبقة."
+  "Memory Footprint":
+    en: "The total memory a workload occupies; here, weights plus activations plus KV cache."
+    ar: "مجموع الذاكرة التي يشغلها حمل العمل، وهي هنا الأوزان والتفعيلات والذاكرة المؤقتة معاً."
+  "GPU Memory":
+    en: "The memory attached to the GPU, where weights, activations and the cache must all fit."
+    ar: "الذاكرة الملحقة بالمعالج الرسومي، ويجب أن تتسع للأوزان والتفعيلات والذاكرة المؤقتة كلها."
+  "VRAM":
+    en: "Video RAM: the GPU's own memory, the budget every bill in this workshop is paid from."
+    ar: "ذاكرة البطاقة الرسومية نفسها، وهي الميزانية التي تُدفع منها كل فواتير هذه الورشة."
+  "Inference":
+    en: "Running a trained model to produce outputs, as opposed to training it."
+    ar: "تشغيل نموذج مدرَّب لإنتاج المخرجات، في مقابل تدريبه."
+  "Latency":
+    en: "How long one request, or one generated token, takes."
+    ar: "الزمن الذي يستغرقه طلب واحد، أو توليد رمز واحد."
+  "Throughput":
+    en: "How much work completes per unit time, such as tokens per second across all users."
+    ar: "مقدار العمل المنجز في وحدة الزمن، مثل عدد الرموز في الثانية لكل المستخدمين معاً."
+  "Batch Size":
+    en: "How many sequences are processed together; the cache grows linearly with it."
+    ar: "عدد التسلسلات التي تُعالج معاً، والذاكرة المؤقتة تكبر معه خطياً."
+  "Quantization":
+    en: "Storing numbers with fewer bits, trading a small error for less memory."
+    ar: "تخزين الأعداد بعدد أقل من البتات، مقابل خطأ صغير وذاكرة أقل."
+  "FP16":
+    en: "16-bit floating point: two bytes per number, the default precision for weights and cache here."
+    ar: "صيغة الفاصلة العائمة بستة عشر بتاً: بايتان لكل عدد، وهي الدقة الافتراضية للأوزان والذاكرة المؤقتة هنا."
+  "INT8":
+    en: "8-bit integers: one byte per number, plus a scale to map them back to real values."
+    ar: "أعداد صحيحة بثمانية بتات: بايت واحد لكل عدد، مع معامل تحجيم يعيدها إلى قيمها الحقيقية."
+  "Grouped Query Attention (GQA)":
+    en: "Attention in which groups of query heads share one key head and one value head, shrinking the cache by the group size."
+    ar: "انتباه تتشارك فيه كل مجموعة من رؤوس الاستعلام رأس مفاتيح واحداً ورأس قيم واحداً، فتصغر الذاكرة المؤقتة بقدر حجم المجموعة."
+  "Multi-Head Attention (MHA)":
+    en: "Attention in which every query head has its own key head and value head."
+    ar: "انتباه يملك فيه كل رأس استعلام رأس مفاتيح ورأس قيم خاصين به."
+  "Multi-Query Attention (MQA)":
+    en: "The extreme of GQA: all query heads share a single key head and a single value head."
+    ar: "الحالة القصوى من الانتباه المجمّع: كل رؤوس الاستعلام تتشارك رأس مفاتيح واحداً ورأس قيم واحداً."
+  "FlashAttention":
+    en: "An attention kernel that computes the score matrix in tiles and never stores it whole."
+    ar: "نواة انتباه تحسب مصفوفة الدرجات على شكل كتل صغيرة، ولا تخزّنها كاملة أبداً."
+  "FlashAttention-2":
+    en: "A faster revision of FlashAttention with better work partitioning across the GPU."
+    ar: "نسخة أسرع من نواة الانتباه المدمج، توزّع العمل على المعالج الرسومي بشكل أفضل."
+  "Memory Bandwidth":
+    en: "How many bytes per second can move between GPU memory and its compute cores."
+    ar: "عدد البايتات التي يمكن نقلها في الثانية بين ذاكرة المعالج الرسومي ووحدات الحساب فيه."
+  "Scaling Law":
+    en: "An empirical rule relating model quality to parameters, data and compute."
+    ar: "علاقة تجريبية تربط جودة النموذج بعدد معاملاته وحجم بياناته ومقدار الحوسبة."
+
+body:
+  # ── Phase 1 ─────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Price the conversations", ar: "سعِّر المحادثات لا النموذج" }
+    phase: { en: "Frame the question", ar: "طرح السؤال" }
+    text:
+      en: >-
+        Ask how much memory a language model needs and you will usually hear
+        its parameter count multiplied by two bytes. That is the price of
+        loading the model. It is not the price of using it. During
+        <Term en="Inference">inference</Term>, every conversation the model is
+        serving carries its own growing store of keys and values, the
+        <Term en="Key-Value Cache (KV Cache)">KV cache</Term>, and at long
+        contexts or large batches that store becomes the largest thing in
+        <Term en="GPU Memory">GPU memory</Term>. This workshop measures it
+        directly rather than asserting it.
+      ar: >-
+        اسأل أيّ مهندس كم ذاكرةً يحتاج نموذج لغوي، وغالباً سيضرب عدد معاملاته في
+        بايتين. هذا الرقم هو كلفة تحميل النموذج. لكنه ليس كلفة استخدامه. فأثناء
+        <Term en="Inference">الاستدلال</Term> تحمل كل محادثة يخدمها النموذج
+        مخزوناً خاصاً بها من المفاتيح والقيم، وهذا المخزون يكبر مع كل رمز. هذا
+        المخزون هو <Term en="Key-Value Cache (KV Cache)">ذاكرة المفاتيح والقيم
+        المؤقتة</Term>، وسنسمّيها اختصاراً «الذاكرة المؤقتة». ومع السياقات
+        الطويلة أو الدفعات الكبيرة تصبح أكبر ما في
+        <Term en="GPU Memory">ذاكرة المعالج الرسومي</Term>. في هذه الورشة لن
+        نكتفي بقول ذلك، بل سنقيسه.
+
+  - type: cell
+    id: setup
+    ref: setup
+    title: { en: "Start the environment", ar: "جهّز بيئة التشغيل" }
+    phase: { en: "Frame the question", ar: "طرح السؤال" }
+    caption:
+      en: "Check that the runtime has a GPU; every number below is read from its memory allocator."
+      ar: "تأكد أن بيئة التشغيل فيها معالج رسومي، فكل رقم في هذه الورشة نقرؤه من مُخصِّص ذاكرته."
+
+  # ── Phase 2 ─────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "See why the cache exists", ar: "افهم سبب وجود الذاكرة المؤقتة" }
+    phase: { en: "Measure three bills", ar: "قياس الفواتير الثلاث" }
+    text:
+      en: >-
+        In <Term en="Autoregressive Generation">autoregressive generation</Term>
+        a model writes one <Term en="Token">token</Term> at a time, and each new
+        token must pay <Term en="Attention">attention</Term> to every token
+        before it. In <Term en="Self-Attention">self-attention</Term> that means comparing
+        the new token's query against the key of every earlier token, then
+        mixing their values. The keys and values of earlier tokens never
+        change, so recomputing them at every step would be wasted work. The
+        model keeps them instead. That saving is real, and so is its cost:
+        two vectors per token, per layer, for as long as the conversation
+        lasts.
+      ar: >-
+        في <Term en="Autoregressive Generation">التوليد الذاتي الانحدار</Term>
+        يكتب النموذج <Term en="Token">رمزاً</Term> واحداً في كل خطوة. وكل رمز
+        جديد يحتاج إلى <Term en="Attention">الانتباه</Term> إلى كل الرموز التي سبقته. في
+        <Term en="Self-Attention">الانتباه الذاتي</Term> يعني هذا أن نقارن
+        استعلام الرمز الجديد بمفتاح كل رمز سابق، ثم نمزج قيم تلك الرموز. لكن
+        مفاتيح الرموز السابقة وقيمها لا تتغير من خطوة إلى أخرى. فلو أعدنا
+        حسابها في كل خطوة لأهدرنا عملاً كاملاً بلا فائدة. لذلك يحتفظ بها
+        النموذج. هذا التوفير حقيقي، وكلفته حقيقية أيضاً: متجهان لكل رمز، في كل
+        طبقة، ما دامت المحادثة مستمرة.
+
+  - type: paperRef
+    slug: attention-is-all-you-need
+    title: { en: "Revisit where keys come from", ar: "عُد إلى مصدر المفاتيح" }
+    phase: { en: "Measure three bills", ar: "قياس الفواتير الثلاث" }
+    note:
+      en: "Queries, keys and values are introduced here; the cache is what generation does with the last two."
+      ar: "في هذه الورقة ظهرت الاستعلامات والمفاتيح والقيم. والذاكرة المؤقتة هي ما يفعله التوليد بالمفاتيح والقيم."
+
+  - type: cell
+    id: model
+    ref: model
+    title: { en: "Build a Llama-shaped decoder", ar: "ابنِ نموذج فكّ ترميز مصغّراً" }
+    phase: { en: "Measure three bills", ar: "قياس الفواتير الثلاث" }
+    captures: [n_params_m, weights_gib, kv_kib_per_token]
+    caption:
+      en: >-
+        Compare the two numbers at the end: the weights are a fixed size,
+        while the cache is quoted per token. The whole workshop is the
+        question of how many tokens it takes for the second to catch the first.
+      ar: >-
+        قارن الرقمين في آخر المخرجات. الأوزان حجمها ثابت، أما الذاكرة المؤقتة
+        فحجمها مذكور لكل رمز. والورشة كلها تدور حول سؤال واحد: كم رمزاً نحتاج
+        حتى يلحق الرقم الثاني بالأول؟
+
+  - type: scaleNote
+    title: { en: "Note the model's scale", ar: "لاحظ حجم النموذج" }
+    phase: { en: "Measure three bills", ar: "قياس الفواتير الثلاث" }
+    text:
+      en: >-
+        The model has {{scale.n_layers}} layers, a width of {{scale.d_model}}
+        and {{scale.n_heads}} attention heads: the proportions of a small
+        Llama, sized so that the weights fit a free GPU with room left for the
+        cache. Its weights are random. Memory and time depend on a
+        <Term en="Transformer">transformer</Term>'s shapes, not on what it has
+        learned, so training it would change nothing measured here.
+      ar: >-
+        عدد طبقات النموذج {{scale.n_layers}}، وعرضه {{scale.d_model}}، وعدد رؤوس
+        الانتباه فيه {{scale.n_heads}}. هذه نِسَب نموذج
+        <bdi dir="ltr">Llama</bdi> صغير، اخترناها بحيث تتسع الأوزان لبطاقة مجانية
+        ويبقى مكان للذاكرة المؤقتة. أوزان النموذج عشوائية، وهذا مقصود. فالذاكرة
+        والزمن في <Term en="Transformer">المُحوِّل</Term> يعتمدان على أبعاده، لا
+        على ما تعلّمه. لذلك لو درّبناه لما تغيّر شيء مما نقيسه هنا.
+
+  - type: prose
+    title: { en: "Split memory into three bills", ar: "قسّم الذاكرة إلى ثلاث فواتير" }
+    phase: { en: "Measure three bills", ar: "قياس الفواتير الثلاث" }
+    text:
+      en: >-
+        The model's <Term en="Memory Footprint">memory footprint</Term> during
+        a forward pass has three parts. The weights are allocated once and
+        stay. Activations are the intermediate tensors of the pass itself;
+        they exist while it runs and are freed when it ends, so they show up
+        only as a peak. The cache is what the pass leaves behind. The
+        measurement below separates them by reading the allocator three
+        times: before the pass, at its peak, and after it.
+      ar: >-
+        تتكوّن <Term en="Memory Footprint">البصمة الذاكرية</Term> للنموذج أثناء
+        التمرير الأمامي من ثلاثة أجزاء. الجزء الأول هو الأوزان: تُحجز مرة واحدة
+        وتبقى. الجزء الثاني هو التفعيلات، أي الموترات الوسيطة التي يحتاجها
+        التمرير نفسه. هذه توجد أثناء التمرير وتُحرَّر بعد انتهائه، لذلك لا نراها
+        إلا على شكل ذروة. الجزء الثالث هو الذاكرة المؤقتة، وهي ما يتركه التمرير
+        خلفه بعد أن ينتهي. وللفصل بين الثلاثة نقرأ المُخصِّص ثلاث مرات: قبل
+        التمرير، وعند ذروته، وبعده.
+
+  - type: cell
+    id: measure
+    ref: measure
+    title: { en: "Measure one serving moment", ar: "قِس لحظة خدمة واحدة" }
+    phase: { en: "Measure three bills", ar: "قياس الفواتير الثلاث" }
+    captures: [probe_weights_gib, probe_act_gib, probe_cache_gib]
+    caption:
+      en: >-
+        One moment of serving: {{scale.batch}} sequences that have just read
+        a prompt of {{scale.probe_ctx}} tokens each. Look at how close the
+        cache already is to the weights.
+      ar: >-
+        هذه لحظة واحدة من الخدمة: دفعة حجمها {{scale.batch}}، قرأ كل تسلسل فيها
+        للتو موجّهاً طوله {{scale.probe_ctx}}. انظر كم صارت الذاكرة المؤقتة قريبة
+        من الأوزان منذ الآن.
+
+  - type: cell
+    id: sweep
+    ref: sweep
+    thumbnail: true
+    title: { en: "Sweep the context length", ar: "وسّع طول السياق تدريجياً" }
+    phase: { en: "Measure three bills", ar: "قياس الفواتير الثلاث" }
+    captures: [sweep_max_ctx, cache_gib_max, act_gib_max, cache_over_weights, crossover_tokens, crossover_ctx]
+    caption:
+      en: >-
+        The grey base never moves. Watch the orange band, and the dotted line
+        where the cache would equal the weights.
+      ar: >-
+        القاعدة الرمادية لا تتحرك أبداً. راقب الشريط البرتقالي، والخط المنقّط
+        الذي تتساوى عنده الذاكرة المؤقتة مع الأوزان.
+
+  # DRAFT: rewrite around the first run's numbers.
+  - type: prose
+    title: { en: "Read the crossover", ar: "اقرأ نقطة التعادل" }
+    phase: { en: "Measure three bills", ar: "قياس الفواتير الثلاث" }
+    text:
+      en: >-
+        At a context of {{run.metrics.sweep_max_ctx}} tokens the cache is
+        {{run.metrics.cache_gib_max}} GiB, {{run.metrics.cache_over_weights}}
+        times the weights. Nothing about that context is unusual: it is a
+        typical <Term en="Context Window">context window</Term> served to
+        {{scale.batch}} users at once. The two bills are equal at about
+        {{run.metrics.crossover_tokens}} tokens in flight, which across a
+        <Term en="Batch Size">batch</Term> of {{scale.batch}} is a
+        <Term en="Sequence Length">sequence length</Term> of only about
+        {{run.metrics.crossover_ctx}} each. The cache depends on the product
+        of batch and context, so doubling the users costs the same as
+        doubling the context. Activations, meanwhile, peaked at
+        {{run.metrics.act_gib_max}} GiB; they are real, but they are paid
+        once per pass and then returned.
+      ar: >-
+        عند سياق طوله {{run.metrics.sweep_max_ctx}} بلغت الذاكرة المؤقتة
+        {{run.metrics.cache_gib_max}} <bdi dir="ltr">GiB</bdi>. هذا يساوي
+        {{run.metrics.cache_over_weights}} ضعف الأوزان. ولا شيء غريب في هذا
+        السياق: إنه <Term en="Context Window">نافذة سياق</Term> عادية، تُخدَم
+        لدفعة من المستخدمين حجمها {{scale.batch}} في وقت واحد. تتساوى الفاتورتان عندما يبلغ عدد
+        الرموز قيد المعالجة نحو {{run.metrics.crossover_tokens}}. ومع
+        <Term en="Batch Size">دفعة</Term> حجمها {{scale.batch}}، يعني هذا
+        <Term en="Sequence Length">طول تسلسل</Term> لا يتجاوز نحو
+        {{run.metrics.crossover_ctx}} لكل واحد منها. السبب أن الذاكرة المؤقتة
+        تعتمد على حاصل ضرب حجم الدفعة في طول السياق. لذلك فمضاعفة عدد المستخدمين
+        تكلّف تماماً ما تكلّفه مضاعفة طول السياق. أما التفعيلات فبلغت ذروتها
+        {{run.metrics.act_gib_max}} <bdi dir="ltr">GiB</bdi>. هي كلفة حقيقية،
+        لكنها تُدفع مرة في كل تمرير، ثم تُستعاد.
+
+  # ── Phase 3 ─────────────────────────────────────────────────────────────
+  - type: cell
+    id: formula
+    ref: formula
+    title: { en: "Check the formula, then project", ar: "تحقّق من المعادلة ثم عمّمها" }
+    phase: { en: "Trust the formula", ar: "الوثوق بالمعادلة" }
+    captures:
+      - formula_ratio
+      - llama7b_crossover_tokens
+      - llama7b_cache_over_weights_b8
+      - llama70b_crossover_tokens
+      - llama70b_mha_crossover_tokens
+    caption:
+      en: >-
+        The first line should read 1.0000: the allocator and the arithmetic
+        agree to the byte. Then compare the last two rows of the table, the
+        same 70B model with and without shared key heads.
+      ar: >-
+        يُفترض أن يُظهر السطر الأول القيمة 1.0000، أي أن المُخصِّص والحساب
+        يتفقان حتى آخر بايت. بعد ذلك قارن آخر صفّين في الجدول: إنهما النموذج
+        الأكبر نفسه، مرة برؤوس مفاتيح مشتركة ومرة بدونها.
+
+  # DRAFT: rewrite around the first run's numbers.
+  - type: prose
+    title: { en: "Scale up to Llama 2", ar: "طبّق المعادلة على نماذج أكبر" }
+    phase: { en: "Trust the formula", ar: "الوثوق بالمعادلة" }
+    text:
+      en: >-
+        A measured ratio of {{run.metrics.formula_ratio}} means the formula is
+        not an estimate: it is the exact size of the cache. That is what lets
+        us apply it to models this GPU could never load. Llama-2-7B matches
+        its own weights at {{run.metrics.llama7b_crossover_tokens}} tokens in
+        flight, so {{scale.project_batch}} users at its full {{scale.project_ctx}}-token context hold
+        {{run.metrics.llama7b_cache_over_weights_b8}} times its weights in
+        cache. Llama-2-70B is ten times larger, yet it holds out until
+        {{run.metrics.llama70b_crossover_tokens}} tokens. The reason is in the
+        last row: with a key head for every query head it would cross at
+        {{run.metrics.llama70b_mha_crossover_tokens}}. The difference is one
+        design decision about attention, not the size of the model.
+      ar: >-
+        نسبة مقيسة قدرها {{run.metrics.formula_ratio}} تعني أن المعادلة ليست
+        تقديراً تقريبياً. إنها الحجم الدقيق للذاكرة المؤقتة. وهذا بالضبط ما يسمح
+        لنا بتطبيقها على نماذج لا تستطيع هذه البطاقة تحميلها أصلاً. نبدأ بـ
+        <bdi dir="ltr">Llama-2-7B</bdi>: تتساوى ذاكرته المؤقتة مع أوزانه عندما
+        يبلغ عدد الرموز قيد المعالجة {{run.metrics.llama7b_crossover_tokens}}.
+        فإذا خدم {{scale.project_batch}} مستخدمين بسياقه الكامل البالغ
+        {{scale.project_ctx}}، حملت ذاكرته المؤقتة
+        {{run.metrics.llama7b_cache_over_weights_b8}} ضعف أوزانه. أما
+        <bdi dir="ltr">Llama-2-70B</bdi> فأكبر منه بعشر مرات، ومع ذلك لا يصل
+        إلى نقطة التعادل قبل {{run.metrics.llama70b_crossover_tokens}}. السبب في
+        الصف الأخير من الجدول. لو كان لكل رأس استعلام رأس مفاتيح خاص به، لوصل
+        إلى التعادل عند {{run.metrics.llama70b_mha_crossover_tokens}} فقط. إذن
+        الفرق لا يأتي من حجم النموذج، بل من قرار تصميمي واحد في طريقة الانتباه.
+
+  - type: paperRef
+    slug: llama-2
+    title: { en: "Revisit Llama 2", ar: "راجع ورقة لاما 2" }
+    phase: { en: "Trust the formula", ar: "الوثوق بالمعادلة" }
+    note:
+      en: "The two larger Llama 2 models use grouped-query attention; the table above shows what that buys at serving time."
+      ar: "يستخدم أكبر نموذجين في عائلة لاما 2 الانتباه المجمّع. والجدول أعلاه يبيّن ما يكسبانه من ذلك وقت الخدمة."
+
+  # ── Phase 4 ─────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "Separate two different fixes", ar: "افصل بين حلّين مختلفين" }
+    phase: { en: "Pull the levers", ar: "تحريك الأدوات" }
+    text:
+      en: >-
+        Two techniques are often filed together as "making attention cheaper
+        on memory", and they act on different bills.
+        <Term en="FlashAttention">FlashAttention</Term> changes how attention
+        is computed: the score matrix, one entry per pair of tokens, is
+        processed in tiles and never stored whole. That is an activation.
+        <Term en="Grouped Query Attention (GQA)">Grouped-query attention</Term>
+        changes what is stored: several query heads share one key head and
+        one value head, so there are fewer keys and values to keep. That is
+        the cache. The next two cells pull each lever on its own, and a third
+        tries a lever that applies to either: storing fewer bits.
+      ar: >-
+        كثيراً ما تُوضع تقنيتان تحت عنوان واحد: «جعل الانتباه أخفّ على الذاكرة».
+        لكن كل واحدة منهما تخفّض فاتورة مختلفة. التقنية الأولى هي
+        <Term en="FlashAttention"><bdi dir="ltr">FlashAttention</bdi></Term>،
+        وهي تغيّر طريقة حساب الانتباه. فمصفوفة الدرجات، التي فيها خانة لكل زوج
+        من الرموز، تُعالَج على شكل كتل صغيرة ولا تُخزَّن كاملة أبداً. وهذه
+        المصفوفة تفعيل، لا جزء من الذاكرة المؤقتة. التقنية الثانية هي
+        <Term en="Grouped Query Attention (GQA)">الانتباه المجمّع</Term>، وهي
+        تغيّر ما نخزّنه. فعدة رؤوس استعلام تتشارك رأس مفاتيح واحداً ورأس قيم
+        واحداً، فيقلّ عدد المفاتيح والقيم التي يجب حفظها. وهذا يمسّ الذاكرة
+        المؤقتة مباشرة. الخليتان التاليتان تجرّبان كل تقنية وحدها. ثم تجرّب
+        خلية ثالثة أداة تنفع مع الاثنتين: التخزين بعدد أقل من البتات.
+
+  - type: cell
+    id: flash
+    ref: flash
+    title: { en: "Remove the score matrix", ar: "تخلّص من مصفوفة الدرجات" }
+    phase: { en: "Pull the levers", ar: "تحريك الأدوات" }
+    captures: [naive_act_gib, fused_act_gib, act_reduction, cache_naive_gib, cache_fused_gib, score_matrix_gib]
+    caption:
+      en: >-
+        Read the two columns separately. One changes by a large factor. The
+        other should not change at all.
+      ar: >-
+        اقرأ العمودين كلاً على حدة. أحدهما يتغيّر بفارق كبير، والآخر يُفترض ألا
+        يتغيّر إطلاقاً.
+
+  - type: paperRef
+    slug: flashattention
+    title: { en: "Revisit FlashAttention", ar: "راجع ورقة الانتباه المدمج" }
+    phase: { en: "Pull the levers", ar: "تحريك الأدوات" }
+    note:
+      en: "The fused kernel here is the idea in this paper: tile the computation so the full score matrix never exists."
+      ar: "النواة المدمجة التي جرّبناها هي فكرة هذه الورقة: نقسّم الحساب إلى كتل، فلا توجد مصفوفة الدرجات الكاملة في أي لحظة."
+
+  - type: paperRef
+    slug: flashattention-2
+    title: { en: "Revisit FlashAttention-2", ar: "راجع الإصدار الثاني منه" }
+    phase: { en: "Pull the levers", ar: "تحريك الأدوات" }
+    note:
+      en: 'On Ampere and newer GPUs, PyTorch''s fused path runs <Term en="FlashAttention-2">FlashAttention-2</Term>; on a T4 it uses a memory-efficient kernel with the same memory behaviour.'
+      ar: >-
+        على بطاقات <bdi dir="ltr">Ampere</bdi> وما بعدها يشغّل
+        <bdi dir="ltr">PyTorch</bdi> نواة
+        <Term en="FlashAttention-2"><bdi dir="ltr">FlashAttention-2</bdi></Term>. أما على بطاقة
+        <bdi dir="ltr">T4</bdi> فيستخدم نواة أخرى موفّرة للذاكرة، وسلوكها في
+        الذاكرة هو نفسه.
+
+  - type: cell
+    id: gqa
+    ref: gqa
+    title: { en: "Share keys across heads", ar: "شارك المفاتيح بين الرؤوس" }
+    phase: { en: "Pull the levers", ar: "تحريك الأدوات" }
+    captures: [gqa_ratio, mqa_ratio, gqa_weight_change_pct]
+    caption:
+      en: >-
+        Three models that differ only in how many key heads they keep:
+        <Term en="Multi-Head Attention (MHA)">multi-head</Term>, grouped,
+        and <Term en="Multi-Query Attention (MQA)">multi-query</Term>.
+        Compare how far the cache falls with how little the weights move.
+      ar: >-
+        ثلاثة نماذج لا تختلف إلا في عدد رؤوس المفاتيح التي تحتفظ بها:
+        <Term en="Multi-Head Attention (MHA)">الانتباه متعدد الرؤوس</Term>،
+        والانتباه المجمّع، و<Term en="Multi-Query Attention (MQA)">انتباه
+        الاستعلامات المتعددة</Term>. قارن بين مقدار انخفاض الذاكرة المؤقتة
+        ومقدار تغيّر الأوزان، وهو تغيّر صغير.
+
+  - type: paperRef
+    slug: grouped-query-attention
+    title: { en: "Revisit grouped-query attention", ar: "راجع ورقة الانتباه المجمّع" }
+    phase: { en: "Pull the levers", ar: "تحريك الأدوات" }
+    note:
+      en: "GQA was proposed as the middle ground between MHA's quality and MQA's cache; the ratios above are its memory side."
+      ar: "اقتُرح الانتباه المجمّع حلاً وسطاً بين جودة الانتباه متعدد الرؤوس وصغر ذاكرة انتباه الاستعلامات المتعددة. والنسب أعلاه هي جانب الذاكرة من هذه المقايضة."
+
+  - type: cell
+    id: int8
+    ref: int8
+    title: { en: "Store the cache in int8", ar: "خزّن الذاكرة المؤقتة بثمانية بتات" }
+    phase: { en: "Pull the levers", ar: "تحريك الأدوات" }
+    captures: [int8_ratio, int8_err_pct]
+    caption:
+      en: >-
+        The ratio will sit a little above one half: each block of values
+        carries its own scale. Note the error, and remember these weights are
+        random.
+      ar: >-
+        ستكون النسبة أعلى من النصف بقليل، لأن كل مجموعة من القيم تحمل معامل
+        تحجيم خاصاً بها. لاحظ مقدار الخطأ، وتذكّر أن أوزان هذا النموذج عشوائية.
+
+  # DRAFT: rewrite around the first run's numbers.
+  - type: prose
+    title: { en: "Compare what each lever moves", ar: "قارن ما تحرّكه كل أداة" }
+    phase: { en: "Pull the levers", ar: "تحريك الأدوات" }
+    text:
+      en: >-
+        The fused kernel cut activations by a factor of
+        {{run.metrics.act_reduction}} and left the cache at
+        {{run.metrics.cache_fused_gib}} GiB, the same as the naive version.
+        Grouped-query attention with {{scale.gqa_kv}} key heads shrank the
+        cache by a factor of {{run.metrics.gqa_ratio}}, and multi-query by
+        {{run.metrics.mqa_ratio}}, while the weights moved by only
+        {{run.metrics.gqa_weight_change_pct}}%.
+        <Term en="Quantization">Quantization</Term> to
+        <Term en="INT8">int8</Term> is a third, independent lever: it kept
+        {{run.metrics.int8_ratio}} of the <Term en="FP16">fp16</Term> cache
+        at {{run.metrics.int8_err_pct}}% error. That error is a floor, not a
+        forecast. Random weights produce well-behaved keys, while trained
+        models often have a few large channels that a per-token scale handles
+        worse. The levers multiply: grouped heads and int8 together hold the
+        same conversations in a small fraction of the original cache.
+      ar: >-
+        خفّضت النواة المدمجة التفعيلات بعامل قدره {{run.metrics.act_reduction}}.
+        لكنها تركت الذاكرة المؤقتة عند {{run.metrics.cache_fused_gib}}
+        <bdi dir="ltr">GiB</bdi>، وهو الرقم نفسه في النسخة التقليدية. أما
+        الانتباه المجمّع بـ{{scale.gqa_kv}} رؤوس مفاتيح فقلّص الذاكرة المؤقتة
+        بعامل قدره {{run.metrics.gqa_ratio}}. وقلّصها انتباه الاستعلامات
+        المتعددة بعامل قدره {{run.metrics.mqa_ratio}}. وفي الحالتين لم تتغيّر
+        الأوزان إلا بنحو {{run.metrics.gqa_weight_change_pct}}٪.
+
+        ثم يأتي <Term en="Quantization">التكميم</Term> أداةً ثالثة مستقلة عن
+        الأوليين. فالتخزين بصيغة <Term en="INT8"><bdi dir="ltr">int8</bdi></Term>
+        أبقى {{run.metrics.int8_ratio}} من حجم الذاكرة المؤقتة بصيغة
+        <Term en="FP16"><bdi dir="ltr">fp16</bdi></Term>، بخطأ قدره
+        {{run.metrics.int8_err_pct}}٪. لكن هذا الخطأ حدّ أدنى، وليس توقعاً لما
+        سيحدث في نموذج حقيقي. فالأوزان العشوائية تنتج مفاتيح منتظمة القيم. أما
+        النماذج المدرَّبة فكثيراً ما تحوي قنوات قليلة بقيم كبيرة، ومعامل التحجيم
+        لكل رمز يتعامل معها بدقة أقل. وأخيراً، هذه الأدوات تتضاعف آثارها معاً.
+        فالرؤوس المجمّعة مع <bdi dir="ltr">int8</bdi> تحفظ المحادثات نفسها في جزء
+        صغير من الذاكرة المؤقتة الأصلية.
+
+  # ── Phase 5 ─────────────────────────────────────────────────────────────
+  - type: prose
+    title: { en: "See why decoding is reading", ar: "افهم لماذا التوليد قراءة" }
+    phase: { en: "Pay in time too", ar: "الفاتورة الزمنية" }
+    text:
+      en: >-
+        The cache also costs time. Generating one token does very little
+        arithmetic per byte: every weight is read once to process one token
+        per sequence, and every cached key and value is read once to attend
+        over it. The speed of a decoding step is therefore set by
+        <Term en="Memory Bandwidth">memory bandwidth</Term>, not by compute.
+        As the cache grows, each step has more bytes to read.
+      ar: >-
+        للذاكرة المؤقتة كلفة زمنية أيضاً. فتوليد رمز واحد يتطلب حساباً قليلاً
+        جداً مقارنةً بعدد البايتات التي يلمسها. كل وزن يُقرأ مرة واحدة لمعالجة
+        رمز واحد فقط من كل تسلسل. وكل مفتاح وقيمة في الذاكرة المؤقتة يُقرآن مرة
+        واحدة ليتم الانتباه إليهما. لذلك لا تحدّد قدرةُ الحساب سرعةَ خطوة
+        التوليد. ما يحدّدها هو <Term en="Memory Bandwidth">عرض نطاق
+        الذاكرة</Term>، أي سرعة نقل البايتات. وكلما كبرت الذاكرة المؤقتة، زادت
+        البايتات التي يجب قراءتها في كل خطوة.
+
+  - type: cell
+    id: decode
+    ref: decode
+    title: { en: "Time one generated token", ar: "قِس زمن رمز واحد" }
+    phase: { en: "Pay in time too", ar: "الفاتورة الزمنية" }
+    captures: [decode_ms_short, decode_ms_long, decode_slowdown, decode_gqa_ms_long, decode_gbps]
+    caption:
+      en: >-
+        The model is the same at every point; only the cache gets longer.
+        Watch how the two lines separate as context grows.
+      ar: >-
+        النموذج هو نفسه عند كل نقطة، والذي يطول هو الذاكرة المؤقتة وحدها. راقب
+        كيف يبتعد الخطّان أحدهما عن الآخر كلما طال السياق.
+
+  # DRAFT: rewrite around the first run's numbers.
+  - type: prose
+    title: { en: "Read the bandwidth bill", ar: "اقرأ فاتورة عرض النطاق" }
+    phase: { en: "Pay in time too", ar: "الفاتورة الزمنية" }
+    text:
+      en: >-
+        With full multi-head attention a step took
+        {{run.metrics.decode_ms_short}} ms at the shortest context and
+        {{run.metrics.decode_ms_long}} ms at the longest, a slowdown of
+        {{run.metrics.decode_slowdown}} times, with no change to the model.
+        The effective read rate of {{run.metrics.decode_gbps}} GB/s is the
+        number to compare with the card's rated bandwidth: if they are close,
+        the step is waiting on memory, and the only way to speed it up is to
+        read fewer bytes. Grouped-query attention does exactly that, which is
+        why it took {{run.metrics.decode_gqa_ms_long}} ms at the same
+        context. A smaller cache improves
+        <Term en="Latency">latency</Term> per token, and because more
+        sequences fit at once, it also improves
+        <Term en="Throughput">throughput</Term>.
+      ar: >-
+        مع الانتباه متعدد الرؤوس الكامل استغرقت الخطوة
+        {{run.metrics.decode_ms_short}} <bdi dir="ltr">ms</bdi> عند أقصر سياق،
+        و{{run.metrics.decode_ms_long}} <bdi dir="ltr">ms</bdi> عند أطوله. أي أن
+        الخطوة أبطأ بـ{{run.metrics.decode_slowdown}} مرة، مع أن النموذج لم
+        يتغيّر.
+
+        الرقم الذي يستحق المقارنة هنا هو معدّل القراءة الفعلي:
+        {{run.metrics.decode_gbps}} <bdi dir="ltr">GB/s</bdi>. قارنه بعرض النطاق
+        المعلن للبطاقة. إذا كان الرقمان متقاربين، فالخطوة تقضي وقتها في انتظار
+        الذاكرة. وعندها لا طريق لتسريعها إلا قراءة بايتات أقل. وهذا بالضبط ما
+        يفعله الانتباه المجمّع، ولذلك استغرقت خطوته
+        {{run.metrics.decode_gqa_ms_long}} <bdi dir="ltr">ms</bdi> فقط عند السياق
+        نفسه. إذن الذاكرة المؤقتة الأصغر تحسّن
+        <Term en="Latency">زمن الاستجابة</Term> لكل رمز. ولأنها تسمح بخدمة
+        تسلسلات أكثر في وقت واحد، فهي تحسّن <Term en="Throughput">الإنتاجية</Term>
+        أيضاً.
+
+  # ── Phase 6 ─────────────────────────────────────────────────────────────
+  - type: exercise
+    id: plan
+    ref: plan
+    title: { en: "Size a server yourself", ar: "خطّط سعة خادمك بنفسك" }
+    phase: { en: "Plan a server", ar: "تخطيط خادم" }
+    prompt:
+      en: >-
+        You have {{scale.budget_gib}} GiB of <Term en="VRAM">VRAM</Term> and
+        want to serve conversations of {{scale.plan_ctx}} tokens. Before
+        running, predict how many fit with {{scale.n_heads}} key heads. Run
+        it, then set KV_HEADS to 4 and to 1. The cell does not trust its own
+        plan: it allocates every cache and generates a token, so the measured
+        peak tells you whether the plan was honest. How much of the budget is
+        left over for the weights in each case?
+      ar: >-
+        لديك {{scale.budget_gib}} <bdi dir="ltr">GiB</bdi> من
+        <Term en="VRAM">ذاكرة البطاقة</Term>، وتريد خدمة محادثات طول كلٍّ منها
+        {{scale.plan_ctx}}. قبل التشغيل، توقّع عدد المحادثات التي تتسع لها
+        البطاقة عندما يكون عدد رؤوس المفاتيح {{scale.n_heads}}. شغّل الخلية، ثم
+        غيّر <bdi dir="ltr">KV_HEADS</bdi> إلى 4، ثم إلى 1. الخلية لا تثق بخطتها:
+        فهي تحجز الذاكرة المؤقتة لكل التسلسلات فعلاً وتولّد رمزاً واحداً. لذلك
+        تخبرك الذروة المقيسة إن كانت الخطة صادقة. وفي كل حالة، ما نسبة الميزانية
+        التي تبقى للأوزان؟
+    hint: 1
+
+  # ── Phase 7 ─────────────────────────────────────────────────────────────
+  - type: cell
+    id: verify
+    ref: verify
+    title: { en: "Verify the three claims", ar: "تحقّق من الادعاءات الثلاثة" }
+    phase: { en: "Verify", ar: "التحقق" }
+    caption:
+      en: >-
+        The formula check comes first because the other two rest on it: a
+        cache that does not match its formula means the measurement, not the
+        model, is wrong.
+      ar: >-
+        نبدأ بفحص المعادلة لأن الفحصين الآخرين يعتمدان عليه. فإذا لم تطابق
+        الذاكرة المؤقتة معادلتها، فالخطأ في طريقة القياس، لا في النموذج.
+
+  - type: prose
+    title: { en: "Carry the lesson out", ar: "خذ الدرس معك" }
+    phase: { en: "Verify", ar: "التحقق" }
+    text:
+      en: >-
+        A parameter count prices the model; it says nothing about the work
+        the model is doing. <Term en="Scaling Law">Scaling laws</Term> are
+        written in parameters, but a serving bill is written in tokens in
+        flight, and that is the bill this workshop measured. When you size
+        hardware, start from the formula you checked here — 2 × layers × key
+        heads × head size × bytes, per token — and multiply by the users and
+        context you expect. Then the design choices of modern models read
+        differently: grouped heads, fused attention, quantized caches and
+        shorter contexts are each a way of paying one of these bills.
+      ar: >-
+        عدد المعاملات يقدّر كلفة النموذج نفسه، لكنه لا يقول شيئاً عن العمل الذي
+        يؤديه. <Term en="Scaling Law">قوانين التوسّع</Term> تُكتب بلغة
+        المعاملات. أما فاتورة الخدمة فتُكتب بعدد الرموز قيد المعالجة، وهذه هي
+        الفاتورة التي قسناها في هذه الورشة. فعندما تخطّط لعتاد، ابدأ من المعادلة
+        التي تحققت منها هنا: 2 × عدد الطبقات × عدد رؤوس المفاتيح × حجم الرأس ×
+        عدد البايتات، لكل رمز. ثم اضربها في عدد المستخدمين وطول السياق الذي
+        تتوقعه. بعد ذلك ستقرأ قرارات تصميم النماذج الحديثة بطريقة مختلفة. فالرؤوس
+        المجمّعة، والانتباه المدمج، والذاكرة المؤقتة المكمّمة، والسياقات الأقصر،
+        كلٌّ منها طريقة لدفع واحدة من هذه الفواتير.
+
+  - type: cell
+    id: finish
+    ref: finish
+    title: { en: "Collect the receipt", ar: "استلم الإيصال" }
+    phase: { en: "Verify", ar: "التحقق" }
