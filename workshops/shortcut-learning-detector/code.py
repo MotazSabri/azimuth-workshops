@@ -445,9 +445,16 @@ fooled = ((pred_h == 0) & (pred_s == 1)).nonzero().squeeze(1)[:6]
 if len(fooled) == 0:  # nothing qualified: show the first cats rather than nothing
     fooled = torch.arange(6, device=device)
 
-up = lambda c: F.interpolate(c[None, None], size=32, mode="bilinear", align_corners=False)[
-    0, 0
-].cpu()  # noqa: E731
+
+def up(c):
+    return F.interpolate(
+        c[None, None],
+        size=32,
+        mode="bilinear",
+        align_corners=False,
+    )[0, 0].cpu()
+
+
 fig, axes = plt.subplots(3, len(fooled), figsize=(1.9 * len(fooled), 6))
 axes = np.array(axes).reshape(3, -1)
 row_titles = [
@@ -455,7 +462,12 @@ row_titles = [
     label("honest model", "النموذج النزيه"),
     label("shortcut model", "نموذج الاختصار"),
 ]
-pred_name = lambda p: label("dog", "كلب") if p == 1 else label("cat", "قطة")  # noqa: E731
+
+
+def pred_name(p):
+    return label("dog", "كلب") if p == 1 else label("cat", "قطة")
+
+
 for j, k in enumerate(fooled.tolist()):
     img = probe[cats[k]].permute(1, 2, 0).cpu().numpy()
     axes[0, j].imshow(img, interpolation="nearest")
