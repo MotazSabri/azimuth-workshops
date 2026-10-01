@@ -47,7 +47,7 @@ goal:
     three costs moves first and which barely moves at all.
   ar: >-
     قِس الحيرة والذاكرة وزمن الاستجابة للنموذج نفسه بثلاث صيغ:
-    <Term en="FP16">fp16</Term> وint8 وint4، ثم
+    fp16 وint8 وint4، ثم
     ارسم المقاييس الثلاثة جنباً إلى جنب، وحدّد أيّها يتحرك أولاً وأيّها يكاد
     لا يتغيّر.
 

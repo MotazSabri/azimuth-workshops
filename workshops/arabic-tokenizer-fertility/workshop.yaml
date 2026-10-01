@@ -50,11 +50,11 @@ goal:
     it actually costs in context window and inference price, and find the
     single change to the text that moves the number most.
   ar: >-
-    قِس <Term en="Fertility">الخصوبة</Term>، أي عدد الرموز لكل كلمة، على
-    <Term en="Parallel Corpus">مدوّنة متوازية</Term>: الجمل نفسها بالعربية
+    قِس الخصوبة، أي عدد الرموز لكل كلمة، على
+    مدوّنة متوازية: الجمل نفسها بالعربية
     والإنجليزية، عبر ثلاثة مُجزِّئات مستخدمة في نماذج حقيقية. ثم حوِّل النسبة بين
     اللغتين إلى ما تكلّفه فعلاً: من نافذة السياق، ومن
-    <Term en="Inference Cost">تكلفة الاستدلال</Term>. وأخيراً ابحث عن التعديل
+    تكلفة الاستدلال. وأخيراً ابحث عن التعديل
     الواحد على النص الذي يحرّك هذا الرقم أكثر من غيره.
 
 difficulty: beginner # foundational | beginner | intermediate | advanced (PaperMeta)

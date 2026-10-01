@@ -17,7 +17,7 @@ def say(en, ar_text):
 
 def t(en, ar_text):
     # Figure text. Arabic must be reshaped before matplotlib draws it.
-    return azimuth.ar(ar_text) if env.lang == "ar" else en
+    return ar_text if env.lang == "ar" else en
 
 
 # --8<-- [end:setup]
