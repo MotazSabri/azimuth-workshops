@@ -75,7 +75,7 @@ assets:
     sha256: null               # pin before publishing
     license: "CDLA-Sharing-1.0 — TinyStories (Eldan & Li, 2023)"
     sources:
-      - "https://raw.githubusercontent.com/<owner>/azimuth-workshops/main/mirror/tinystories-v2-head.txt"
+      - "https://raw.githubusercontent.com/MotazSabri/azimuth-workshops/main/mirror/tinystories-v2-head.txt"
     description:
       en: "The first ~48 MB of TinyStoriesV2-GPT4-train.txt, cut at a story boundary. Simple English stories, so small models learn visibly within minutes."
       ar: >-
@@ -87,7 +87,7 @@ assets:
     license: "SIL Open Font License 1.1 — Noto Project"
     sources:
       - "https://raw.githubusercontent.com/notofonts/notofonts.github.io/main/fonts/NotoNaskhArabic/hinted/ttf/NotoNaskhArabic-Regular.ttf"
-      - "https://raw.githubusercontent.com/<owner>/azimuth-workshops/main/mirror/NotoNaskhArabic-Regular.ttf"
+      - "https://raw.githubusercontent.com/MotazSabri/azimuth-workshops/main/mirror/NotoNaskhArabic-Regular.ttf"
     description:
       en: "A font with Arabic glyphs, so figure labels render joined and in order in the Arabic notebook."
       ar: "خطّ يحتوي الحروف العربية، كي تظهر تسميات الرسوم في الدفتر العربي متّصلةً وبترتيبها الصحيح."

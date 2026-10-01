@@ -1,0 +1,116 @@
+{
+ "schema": "run/v1",
+ "slug": "double-descent-explorer",
+ "lang": "en",
+ "codeHash": "f07fcecbe0119a6d",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-10-01T15:06:10Z",
+  "device": "CPU",
+  "torch": "2.11.0+cpu",
+  "python": "3.13.15",
+  "shim": "0.1.0",
+  "elapsedSec": null,
+  "commit": "58e308a30b85f6a3ba420893c9b70fc4d7088fed",
+  "source": "imported"
+ },
+ "metrics": {
+  "target_var": 8.13,
+  "sweet_spot_p": 78,
+  "sweet_spot_test": 2.74,
+  "threshold_test": 1474.6,
+  "widest_test": 2.14,
+  "peak_ratio": 538,
+  "second_descent": 689,
+  "widest_vs_sweet_spot": 0.78,
+  "train_r2_widest": 1.0,
+  "sweet_spot_norm": 44,
+  "threshold_norm": 3005,
+  "widest_norm": 77,
+  "gd_cosine": 0.9999,
+  "shuffled_test_mse": 21.37,
+  "ridge_threshold_test": 2.2,
+  "ridge_widest_test": 1.68,
+  "ridge_vs_sweet_spot": 0.61,
+  "ridge_worst_climb": 1.07
+ },
+ "shapes": {},
+ "cells": {
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "Double Descent: Past the Interpolation Threshold\nno GPU · 12.7 GB RAM · PyTorch 2.11.0+cpu\nprofile: free\nready · seed=17, n_train=200, n_test=2000, dim=20, noise=0.5, p_max=4000, grid_points=40, trials=5, ridge=0.01, gd_width=1000, gd_steps=20000\ncode · f07fcecbe0119a6d"
+   }
+  ],
+  "prepare": [
+   {
+    "kind": "stream",
+    "text": "5 trials · 200 training points · 2000 test points · inputs in 20 dimensions · label noise σ = 0.5\n49 model widths, from 5 to 4000 features\nFor scale: always predicting the mean scores a test MSE of 8.13"
+   }
+  ],
+  "sweep": [
+   {
+    "kind": "image",
+    "src": "double-descent-explorer/sweep.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "classical sweet spot   p =    78   test MSE 2.740\ninterpolation threshold p =   200   test MSE 1474.600\nwidest model           p =  4000   test MSE 2.140   training MSE 4.8e-29"
+   }
+  ],
+  "norms": [
+   {
+    "kind": "image",
+    "src": "double-descent-explorer/norms.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "weight norm at the sweet spot   p =    78: 44\nweight norm at the threshold    p =   200: 3005\nweight norm at the widest model p =  4000: 77"
+   }
+  ],
+  "gd": [
+   {
+    "kind": "stream",
+    "text": "p = 1000: gradient descent reached training MSE 4.6e-05\ncosine similarity to the minimum-norm solution: 0.9999\nweight norms — gradient descent 93.6, minimum norm 94.3"
+   }
+  ],
+  "memorize": [
+   {
+    "kind": "stream",
+    "text": "p = 4000, true labels:     training MSE 4.8e-29   test MSE 2.140\np = 4000, shuffled labels: training MSE 1.8e-28   test MSE 21.370\npredicting the mean:          test MSE 8.130"
+   }
+  ],
+  "ridge": [
+   {
+    "kind": "image",
+    "src": "double-descent-explorer/ridge.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "at p = n:      no penalty 1474.600   ridge 2.200\nwidest model:  no penalty 2.140   ridge 1.680   (classical sweet spot 2.740)\nlargest climb of the ridge curve above its running best: ×1.07"
+   }
+  ],
+  "move-the-peak": [
+   {
+    "kind": "stream",
+    "text": "n = 400: the test error peaks at p = 400 (with n = 200, it peaked at p = 200)\na model with p = 400 features: test MSE 3.30 with 200 training points, 1390.62 with 400"
+   }
+  ],
+  "verify": [
+   {
+    "kind": "stream",
+    "text": "✓ Share of training-label variance the widest model fits (R²): 1 (needs ≥ 0.999)\n✓ Test error at the threshold, as a multiple of the classical sweet spot: 538 (needs ≥ 20)\n✓ Test error at the threshold, as a multiple of the widest model's: 689 (needs ≥ 20)"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "Workshop complete.\n\nCompletion code: AZ-██████████\nPaste it on the workshop's page on Azimuth to record it."
+   }
+  ]
+ }
+}
