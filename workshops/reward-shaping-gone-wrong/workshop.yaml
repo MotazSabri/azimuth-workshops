@@ -120,7 +120,13 @@ profiles:
       # nothing to compare against. Raised until the honest agent actually
       # solves the task — an untrained control makes the whole workshop
       # vacuous, however good the exploit looks beside it.
-      episodes: 1500
+      #
+      # 1500 was still on the knee of the curve: it passed on Colab's CPU
+      # runtime (58%) and failed on its T4 runtime (2%), same seed, same code.
+      # Six controls that differ only by a 1e-7 nudge to one weight, best
+      # checkpoint kept: 5 of 6 clear the bar at 2000 (20–84%), 6 of 6 at 2500
+      # (38–100%). The margin at the bottom is thin; this learner is noisy.
+      episodes: 2500
       evalEpisodes: 50
       hidden: 128
       learningRate: 0.0007

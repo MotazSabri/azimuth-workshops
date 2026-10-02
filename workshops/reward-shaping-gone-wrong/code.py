@@ -77,6 +77,8 @@ else:
 
 
 # --8<-- [start:train]
+import copy
+
 import gymnasium as gym
 import numpy as np
 import torch
@@ -101,13 +103,25 @@ class Policy(nn.Module):
 
 def train(reward_fn, seed):
     """One agent, one reward function. Same seed for all three, so the only
-    thing that differs between the runs is the function itself."""
+    thing that differs between the runs is the function itself.
+
+    Returns the BEST policy training produced, not the last one. Single-episode
+    REINFORCE does not converge and stay there: it climbs, collapses and
+    recovers, so "the weights after the final episode" is a draw from that
+    oscillation. Worse, the draw depends on the machine. Two PyTorch builds
+    round differently, the runs agree to the decimal for ~700 episodes and then
+    part ways, and the same seed gave a control that landed 58% on a CPU
+    runtime and 2% on a GPU one. Each agent is kept at the point where it was
+    best at ITS OWN objective, which is also the fairest reading of "what this
+    reward function produces".
+    """
     torch.manual_seed(seed)
     environment = gym.make("LunarLander-v3")
     net = Policy(
         environment.observation_space.shape[0], environment.action_space.n, env.cfg["hidden"]
     )
     optimizer = torch.optim.Adam(net.parameters(), lr=env.cfg["learningRate"])
+    history, best_score, best_at, best_state = [], -float("inf"), 0, None
 
     for episode in range(env.cfg["episodes"]):
         obs, _ = environment.reset(seed=seed + episode)
@@ -146,7 +160,19 @@ def train(reward_fn, seed):
         if episode % 100 == 0:
             print(f"  {episode:5d}  return {sum(rewards):8.1f}")
 
+        # Every 50 episodes, score the policy by its mean return over the last
+        # 100 and keep the weights if that is a new best.
+        history.append(float(sum(rewards)))
+        if len(history) >= 100 and len(history) % 50 == 0:
+            score = float(np.mean(history[-100:]))
+            if score > best_score:
+                best_score, best_at = score, len(history)
+                best_state = copy.deepcopy(net.state_dict())
+
     environment.close()
+    if best_state is not None:
+        net.load_state_dict(best_state)
+        print(f"  kept episode {best_at} (mean return {best_score:.1f} over the 100 before it)")
     return net
 
 
@@ -185,9 +211,22 @@ def evaluate(net, reward_fn, seed, n):
             shaped_total += reward_fn(raw_reward, obs, next_obs, terminated or truncated)
             obs = next_obs
             done = terminated or truncated
-        # Both legs down and the lander at rest: gymnasium pays +100 on a
-        # successful landing, so the final raw reward is the honest verdict.
-        if terminated and raw_reward >= 100:
+        # LANDED means down on both legs, at rest, on the pad, and not crashed.
+        # gymnasium's +100 is narrower than that: it is paid when Box2D puts the
+        # body to SLEEP, and a policy that keeps pulsing a side engine while it
+        # sits on the pad never sleeps. It runs out the 1000-step clock instead
+        # and the +100 never arrives. Counting only the +100 scored one control
+        # at 16% that was standing on the pad in 86% of its episodes.
+        asleep = terminated and raw_reward >= 100
+        resting = (
+            truncated
+            and obs[6] == 1
+            and obs[7] == 1  # both legs in contact
+            and abs(obs[0]) <= 0.2  # between the flags: the pad is x in [-0.2, 0.2]
+            and abs(obs[2]) < 0.05
+            and abs(obs[3]) < 0.05  # not moving
+        )
+        if asleep or resting:
             landed += 1
     environment.close()
     return shaped_total / n, landed / n
