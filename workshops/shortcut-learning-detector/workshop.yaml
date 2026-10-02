@@ -66,17 +66,12 @@ papers:
     label:
       en: "the attribution method used to ask where the decision came from"
       ar: "طريقة الإسناد التي نسأل بها: من أين جاء القرار؟"
-  - slug: deep-residual-learning-for-image-recognition
+  - slug: resnet
     role: core
     label:
       en: "the residual blocks both classifiers are built from"
       ar: "الكتل المتبقية التي بُني منها المصنِّفان كلاهما"
-  - slug: visualizing-and-understanding-convolutional-networks
-    role: supporting
-    label:
-      en: "the habit of opening a CNN to see what its features respond to"
-      ar: "عادة فتح الشبكة الالتفافية لنرى ما الذي تستجيب له خصائصها"
-  - slug: imagenet-classification-with-deep-convolutional-neural-networks
+  - slug: imagenet
     role: supporting
     label:
       en: "the recipe of convolution, data and augmentation the training loop follows"

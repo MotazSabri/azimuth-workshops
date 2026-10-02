@@ -58,16 +58,6 @@ estimate:
   totalMinutes: 30
 
 papers:
-  - slug: leakage-and-the-reproducibility-crisis
-    role: core
-    label:
-      en: "the catalogue of leaks this workshop stages one at a time"
-      ar: "قائمة التسريبات التي تعرضها هذه الورشة واحداً بعد آخر"
-  - slug: k-fold-cross-validation
-    role: core
-    label:
-      en: "the estimator every stage reports, and the independence it assumes"
-      ar: "المقدِّر الذي تُبلغ عنه كل مرحلة، والاستقلال الذي يفترضه"
   - slug: lightgbm
     role: supporting
     label:

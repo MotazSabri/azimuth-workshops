@@ -65,22 +65,17 @@ papers:
     label:
       en: "the observation that alignment learned in English carried over to instructions in other languages"
       ar: "ملاحظة أنّ المواءمة المتعلَّمة بالإنجليزية امتدّت إلى تعليمات بلغات أخرى"
-  - slug: training-a-helpful-and-harmless-assistant-with-reinforcement-learning-from-human-feedback
-    role: core
-    label:
-      en: "the harmlessness objective, from the line of work whose red-team conversations supply this benchmark's English requests"
-      ar: "هدف عدم الإضرار، من سلسلة الأعمال التي جاءت منها محادثات الاختبار العدائي التي تُشكّل الطلبات الإنجليزية في هذا المعيار"
   - slug: constitutional-ai
     role: core
     label:
       en: "harmlessness written down as principles, in English, and trained in"
       ar: "عدم الإضرار مكتوباً على هيئة مبادئ، بالإنجليزية، ثم مُدرَّباً عليه"
-  - slug: direct-preference-optimization
+  - slug: dpo
     role: supporting
     label:
       en: "the preference objective many open instruction models are tuned with"
       ar: "هدف التفضيل الذي تُضبط به نماذج تعليمات مفتوحة كثيرة"
-  - slug: language-models-are-few-shot-learners
+  - slug: lgpt-3
     role: supporting
     label:
       en: "an English-dominated pretraining mix, and cross-lingual ability that emerged from it anyway"

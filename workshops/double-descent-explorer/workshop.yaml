@@ -61,11 +61,6 @@ papers:
     label:
       en: "the model being swept: a fixed random first layer with only the output weights fitted"
       ar: "النموذج الذي نكبّره: طبقة أولى عشوائية ثابتة، ولا نلائم إلا أوزان المخرج"
-  - slug: deep-double-descent
-    role: core
-    label:
-      en: "evidence that the same peak appears in deep networks, and that label noise and regularization control its height"
-      ar: "الدليل على أن الذروة نفسها تظهر في الشبكات العميقة، وأن ضجيج التسميات والتنظيم يتحكّمان في ارتفاعها"
   - slug: grokking
     role: supporting
     label:
