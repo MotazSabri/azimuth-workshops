@@ -49,8 +49,8 @@ goal:
     ثم أن تدرّب عند تلك الميزانية وتقيس، فيأتي الفرق بين التوقّع والقياس ضمن حدّ الخطأ المعلن.
 
 difficulty: intermediate
-status: draft
-publishedAt: null
+status: stable
+publishedAt: "2026-10-02"
 
 maintenance:
   tier: moderate               # arabic-reshaper and python-bidi, pinned below

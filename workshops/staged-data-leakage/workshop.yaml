@@ -46,8 +46,8 @@ goal:
     المُسرَّب بالتنبيه بعد إطلاقه.
 
 difficulty: intermediate
-status: draft
-publishedAt: null
+status: stable
+publishedAt: "2026-10-02"
 
 maintenance:
   tier: moderate

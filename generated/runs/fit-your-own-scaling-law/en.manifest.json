@@ -1,0 +1,183 @@
+{
+ "schema": "run/v1",
+ "slug": "fit-your-own-scaling-law",
+ "lang": "en",
+ "codeHash": "115a4e6bdc671638",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-10-02T05:51:00Z",
+  "device": "Tesla T4",
+  "torch": "2.11.0+cu130",
+  "python": "3.13.15",
+  "shim": "0.1.0",
+  "elapsedSec": null,
+  "commit": "8894810634f19077f671b457fd3d45c35200a1ea",
+  "source": "imported"
+ },
+ "metrics": {
+  "unigram_loss": 3.0857,
+  "probe_loss": 1.7737,
+  "n_runs": 21,
+  "grid_minutes": 7.1,
+  "worst_margin": 1.387,
+  "bracketed_share": 1.0,
+  "a_measured": 0.715,
+  "b_measured": 0.285,
+  "frontier_r2": 0.974,
+  "E_frontier": 0.637,
+  "ratio_first": 166,
+  "ratio_last": 63,
+  "tokens_first_m": 5.3,
+  "tokens_last_m": 9.2,
+  "predicted_size_k": 418,
+  "predicted_loss": 0.8865,
+  "committed_params": 420112,
+  "committed_tokens_m": 12.7,
+  "committed_loss": 0.9012,
+  "best_holdout_loss": 0.9012,
+  "measured_size_k": 434,
+  "holdout_ratio": 28,
+  "size_regret": 0.0,
+  "size_ratio": 0.96,
+  "signed_error_pct": -1.63,
+  "prediction_error_pct": 1.63,
+  "holdout_minutes": 4.4,
+  "peak_vram_gb": 0.56,
+  "param_exponent_a": 0.776,
+  "param_E": 0.689,
+  "surface_size_k": 486,
+  "surface_pred": 0.8894,
+  "surface_error_pct": -1.31,
+  "floor_pred": 0.8304,
+  "floor_error_pct": -7.86,
+  "in_range_error_pct": 1.32,
+  "count_exponent_a": 0.748,
+  "count_ratio_last": 77,
+  "fair_size_k": 32,
+  "handicap_size_k": 25,
+  "fair_ratio": 166,
+  "handicap_ratio": 259,
+  "handicap_cost": 0.1142
+ },
+ "shapes": {},
+ "cells": {
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "Fit Your Own Scaling Law\nTesla T4 · 14.6 GB · 12.7 GB RAM · PyTorch 2.11.0+cu130\nprofile: free\nassets:\n  · tinystories-v2-head.txt — 46,875 KB, verified\n  · NotoNaskhArabic-Regular.ttf — 242 KB, verified\nready · seed=17, corpus_bytes=48000000, val_bytes=1000000, context=128, batch=16, lr=0.006, lr_width=32, init_std=0.02, layers=2, heads=2, width_min=8, width_max=224, width_step=4, budget_min=1000000000000, budget_factor=2, n_budgets=4, ratio_min=3, ratio_max=450, n_ratios=7, min_tokens=2000000, holdout_factor=4\ncode · 115a4e6bdc671638"
+   }
+  ],
+  "data": [
+   {
+    "kind": "stream",
+    "text": "device cuda · train 47.0 MB · val 1.00 MB\nunigram baseline: 3.086 nats/byte\nfixed the mailbox! I made it bigger for more letters.\" Lily was happy. Now she could send her letter to Max. They both walked home, smiling and laughing.\n<|endoftext|>\nOnce upon a time, there was a bossy giant. He lived in a big house on a hill. All the people in the town were scared of him. One day"
+   }
+  ],
+  "model": [
+   {
+    "kind": "stream",
+    "text": "55 models, 2 layers each, from 4,832 to 1,296,512 parameters\n width   params (total)   non-embedding   embedding share\n     8            4,832           1,760              64%\n    32           37,760          25,472              33%\n    56           98,336          76,832              22%\n    80          186,560         155,840              16%\n   104          302,432         262,496              13%\n   128          445,952         396,800              11%\n   152          617,120         558,752               9%\n   176          815,936         748,352               8%\n   200        1,042,400         965,600               7%\n   224        1,296,512       1,210,496               7%"
+   }
+  ],
+  "trainer": [
+   {
+    "kind": "stream",
+    "text": "probe run: loss 1.774 nats/byte (unigram 3.086) in 16.9s"
+   }
+  ],
+  "plan": [
+   {
+    "kind": "stream",
+    "text": "21 runs across 4 budgets · 165M tokens in total\n  C = 1.0e+12 FLOPs  →  N = 18k, 30k, 46k, 65k\n  C = 2.0e+12 FLOPs  →  N = 30k, 38k, 65k, 98k, 139k\n  C = 4.0e+12 FLOPs  →  N = 38k, 55k, 86k, 139k, 204k, 302k\n  C = 8.0e+12 FLOPs  →  N = 55k, 86k, 125k, 187k, 281k, 446k"
+   }
+  ],
+  "grid": [
+   {
+    "kind": "stream",
+    "text": "  1/21 runs · ~7 min left\n  5/21 runs · ~6 min left\n  10/21 runs · ~4 min left\n  15/21 runs · ~3 min left\n  20/21 runs · ~0 min left\n  21/21 runs · ~0 min left\n\n   budget C     params N     tokens D    steps     D/N    loss\n  1.0e+12      17,840      9.34M    4,562     524  1.4915\n  1.0e+12      30,352      5.49M    2,681     181  1.3980\n  1.0e+12      45,936      3.63M    1,772      79  1.4365\n  1.0e+12      64,592      2.58M    1,260      40  1.6986\n  2.0e+12      30,352     10.98M    5,362     362  1.3216\n  2.0e+12      37,760      8.83M    4,310     234  1.2852\n  2.0e+12      64,592      5.16M    2,520      80  1.2537\n  2.0e+12      98,336      3.39M    1,655      34  1.2700\n  2.0e+12     138,992      2.40M    1,171      17  1.5905\n  4.0e+12      37,760     17.66M    8,621     468  1.2221\n  4.0e+12      54,880     12.15M    5,932     221  1.1801\n  4.0e+12      86,320      7.72M    3,771      89  1.1193\n  4.0e+12     138,992      4.80M    2,342      35  1.1427\n  4.0e+12     203,952      3.27M    1,596      16  1.2178\n  4.0e+12     302,432      2.20M    1,076       7  1.4549\n  8.0e+12      54,880     24.30M   11,863     443  1.1301\n  8.0e+12      86,320     15.45M    7,542     179  1.0668\n  8.0e+12     124,672     10.69M    5,222      86  1.0331\n  8.0e+12     186,560      7.15M    3,490      38  1.0380\n  8.0e+12     281,200      4.74M    2,315      17  1.0896\n  8.0e+12     445,952      2.99M    1,460       7  1.2783"
+   }
+  ],
+  "figures": [
+   {
+    "kind": "stream",
+    "text": "figure text ready"
+   }
+  ],
+  "isoflop": [
+   {
+    "kind": "image",
+    "src": "fit-your-own-scaling-law/isoflop.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "C = 1.0e+12:  N_opt ≈ 32k   D_opt ≈ 5.3M   D/N ≈ 166   L ≈ 1.3975\nC = 2.0e+12:  N_opt ≈ 66k   D_opt ≈ 5.1M   D/N ≈ 77   L ≈ 1.2537\nC = 4.0e+12:  N_opt ≈ 97k   D_opt ≈ 6.9M   D/N ≈ 71   L ≈ 1.1168\nC = 8.0e+12:  N_opt ≈ 146k   D_opt ≈ 9.2M   D/N ≈ 63   L ≈ 1.0298"
+   }
+  ],
+  "frontier": [
+   {
+    "kind": "stream",
+    "text": "N_opt ∝ C^0.715   (R² 0.974)\nD_opt ∝ C^0.285\nL_opt(C) = 0.637 + 5.58e+03 · C^-0.322\ntokens per parameter at the best split: 166 at the smallest fitted budget, 63 at the largest\nFor comparison: Kaplan et al. reported a ≈ 0.73. Chinchilla reported a ≈ 0.50 and roughly 20 tokens per parameter."
+   }
+  ],
+  "predict": [
+   {
+    "kind": "stream",
+    "text": "held-out budget 3.2e+13 FLOPs (4× the largest fitted budget)\npredicted best size  N ≈ 418k → we commit to width 124: 420,112 params on 12.7M tokens\npredicted best loss  0.8865 nats/byte"
+   }
+  ],
+  "holdout": [
+   {
+    "kind": "stream",
+    "text": "   budget C     params N     tokens D    steps     D/N    loss\n  3.2e+13     169,936     31.38M   15,324     185  0.9371\n  3.2e+13     260,736     20.46M    9,988      78  0.9093\n  3.2e+13     370,736     14.39M    7,024      39  0.9055\n  3.2e+13     420,112     12.70M    6,199      30  0.9012\n  3.2e+13     586,672      9.09M    4,439      15  0.9173\n  3.2e+13     888,352      6.00M    2,931       7  0.9642\n  3.2e+13   1,296,512      4.11M    2,009       3  1.0303\n\nC = 3.2e+13:  N_opt ≈ 434k   D_opt ≈ 12.3M   D/N ≈ 28   L ≈ 0.9010\n\nsize:  predicted 418k   measured 434k   (predicted / measured = 0.96)\nloss:  predicted 0.8865   best measured 0.9012   (error -1.63%)\ncost of our size choice: 0.0000 nats/byte   (4.4 min)\npeak GPU memory 0.56 GB"
+   },
+   {
+    "kind": "image",
+    "src": "fit-your-own-scaling-law/holdout.png",
+    "format": "png"
+   }
+  ],
+  "parametric": [
+   {
+    "kind": "stream",
+    "text": "L(N, D) = 0.689 + 78.1/N^0.475 + 1.88e+10/D^1.650\nallocation exponent: surface a = β/(α+β) = 0.776   ·   IsoFLOP a = 0.715\nirreducible loss E:  surface 0.689   ·   frontier 0.637\nheld-out budget:     surface predicts N ≈ 486k, loss 0.8894 (error -1.31%)\n                     frontier predicted N ≈ 418k, loss 0.8865 (error -1.63%)\n                     measured N ≈ 434k, loss 0.9012"
+   }
+  ],
+  "guess-the-floor": [
+   {
+    "kind": "stream",
+    "text": "fitted floor E = 0.637:  on the fitted points, off by at most 0.71%\n    held-out prediction 0.8865  → error -1.63%\nfloor fixed at 0.0:  on the fitted points, off by at most 1.32%\n    held-out prediction 0.8304  → error -7.86%"
+   }
+  ],
+  "count-like-kaplan": [
+   {
+    "kind": "stream",
+    "text": "count=non_embedding:  N_opt ∝ C^0.748  (R² 0.978)   tokens/param at the largest budget 77\ncount=total:  N_opt ∝ C^0.715   tokens/param 63"
+   }
+  ],
+  "handicap-the-short-runs": [
+   {
+    "kind": "stream",
+    "text": "   budget C     params N     tokens D    steps     D/N    loss\n  1.0e+12      17,840      9.34M    4,562     524  1.5414\n  1.0e+12      30,352      5.49M    2,681     181  1.5194\n  1.0e+12      45,936      3.63M    1,772      79  1.5964\n  1.0e+12      64,592      2.58M    1,260      40  1.7414\n\nbudget 1.0e+12, init std 0.02:  best size 32k   tokens/param 166   loss 1.3975\nbudget 1.0e+12, init std 1.0:  best size 25k   tokens/param 259   loss 1.5117"
+   },
+   {
+    "kind": "image",
+    "src": "fit-your-own-scaling-law/handicap-the-short-runs.png",
+    "format": "png"
+   }
+  ],
+  "verify": [
+   {
+    "kind": "stream",
+    "text": "✓ Smallest gain over the unigram baseline across all grid runs, in nats per byte: 1.387 (needs ≥ 0.8)\n✓ Share of fitted budgets whose best model size has a smaller and a larger run on either side: 1 (needs ≥ 0.75)\n✓ How well a power law describes best size against compute (coefficient of determination, in log space): 0.974 (needs ≥ 0.9)\n✓ Gap between the predicted loss and the best loss measured at the held-out budget, as a percentage: 1.63 (needs ≤ 10)"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "Workshop complete.\n\nCompletion code: AZ-██████████\nPaste it on the workshop's page on Azimuth to record it."
+   }
+  ]
+ }
+}

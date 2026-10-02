@@ -1,0 +1,138 @@
+{
+ "schema": "run/v1",
+ "slug": "staged-data-leakage",
+ "lang": "en",
+ "codeHash": "4ac5ee59710b85e9",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-10-02T07:43:19Z",
+  "device": "Tesla T4",
+  "torch": "2.11.0+cu130",
+  "python": "3.13.15",
+  "shim": "0.1.0",
+  "elapsedSec": null,
+  "commit": "8894810634f19077f671b457fd3d45c35200a1ea",
+  "source": "imported"
+ },
+ "metrics": {
+  "dev_admissions": 3562,
+  "holdout_admissions": 6736,
+  "dev_rate_pct": 38.2,
+  "holdout_rate_pct": 35.4,
+  "cv_auc_honest": 0.749,
+  "holdout_auc_honest": 0.749,
+  "honest_gap": -0.001,
+  "cv_auc_leaky": 0.9,
+  "holdout_auc_leaky": 0.731,
+  "leaky_gap": 0.169,
+  "cv_auc_stage3": 0.771,
+  "cv_gain_stage1": 0.002,
+  "cv_gain_stage2": 0.014,
+  "cv_gain_stage3": 0.006,
+  "cv_gain_stage4": 0.129,
+  "holdout_drop_leaky": 0.019,
+  "same_model_max_diff": 0.0,
+  "cv_inflation_stage3": 0.022,
+  "recall_cv_leaky": 0.492,
+  "recall_holdout_leaky": 0.002,
+  "recall_cv_honest": 0.361,
+  "recall_holdout_honest": 0.323,
+  "recall_lost": 0.321,
+  "recall_cv_leaky_pct": 49.2,
+  "recall_holdout_leaky_pct": 0.2,
+  "flagged_holdout_leaky_pct": 0.1,
+  "recall_cv_honest_pct": 36.1,
+  "recall_holdout_honest_pct": 32.3,
+  "alert_rate_pct": 20,
+  "rf_gap_honest": 0.003,
+  "rf_gap_leaky": 0.16,
+  "rf_cv_auc_leaky": 0.908,
+  "rf_recall_holdout_leaky_pct": 0.0,
+  "audit_auc_honest": 0.496,
+  "audit_auc_stage2": 0.531,
+  "audit_auc_leaky": 0.527,
+  "solo_auc_post_discharge": 0.846,
+  "solo_auc_best_clinical": 0.738,
+  "solo_auc_best_marker": 0.532
+ },
+ "shapes": {},
+ "cells": {
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "Leakage, Staged\nTesla T4 · 14.6 GB · 12.7 GB RAM · PyTorch 2.11.0+cu130\nprofile: free\nready · dev_patients=800, holdout_patients=1500, visits_mean=3.5, n_markers=400, k_select=20, folds=5, trees=300, alert_rate=0.2, shuffles=3, seed=17\ncode · 4ac5ee59710b85e9"
+   }
+  ],
+  "build-world": [
+   {
+    "kind": "stream",
+    "text": "development: 3562 admissions from 800 patients, months 0-24, readmission rate 38.2%\nholdout:     6736 admissions from 1500 new patients, months 24-36, readmission rate 35.4%\ncolumns: 8 clinical, 400 lab markers, and one post-discharge field (followup_calls)"
+   }
+  ],
+  "protocol": [
+   {
+    "kind": "stream",
+    "text": "honest protocol — cross-validated AUC: 0.749\n                  holdout AUC:         0.749\n                  gap:                 -0.001"
+   }
+  ],
+  "ladder": [
+   {
+    "kind": "stream",
+    "text": "stage                               CV AUC   holdout AUC      gap\n0 honest                             0.749         0.749   -0.001\n1 + scale before split               0.750         0.749   +0.001\n2 + select before split              0.764         0.749   +0.015\n3 + split rows, not patients         0.771         0.749   +0.021\n4 + post-discharge column            0.900         0.731   +0.169"
+   },
+   {
+    "kind": "image",
+    "src": "staged-data-leakage/ladder.png",
+    "format": "png"
+   }
+  ],
+  "same-model": [
+   {
+    "kind": "stream",
+    "text": "largest difference in holdout predictions across stages 0-3: 0.00e+00\nwhile the reported AUC rose from 0.749 to 0.771"
+   }
+  ],
+  "alert": [
+   {
+    "kind": "stream",
+    "text": "                                 recall (CV)  recall (holdout)   share alerted\n0 honest                               36.1%             32.3%           16.8%\n4 + post-discharge column              49.2%              0.2%            0.1%"
+   },
+   {
+    "kind": "image",
+    "src": "staged-data-leakage/alert.png",
+    "format": "png"
+   }
+  ],
+  "model-swap": [
+   {
+    "kind": "stream",
+    "text": "random forest                       CV AUC   holdout AUC   recall after launch\n0 honest                             0.765         0.761                 34.9%\n4 + post-discharge column            0.908         0.748                  0.0%"
+   }
+  ],
+  "shuffle-audit": [
+   {
+    "kind": "stream",
+    "text": "stage                           AUC on shuffled labels          reported AUC\n0 honest                                         0.496                 0.749\n1 + scale before split                           0.496                 0.750\n2 + select before split                          0.531                 0.764\n3 + split rows, not patients                     0.526                 0.771\n4 + post-discharge column                        0.527                 0.900"
+   }
+  ],
+  "screen-columns": [
+   {
+    "kind": "stream",
+    "text": "followup_calls    0.846  <-- ask about it\nchronic           0.738\nlos               0.646\nlab_a             0.622\nn_meds            0.602\nprior             0.549\nemergency         0.548\nmarker_334        0.532"
+   }
+  ],
+  "verify": [
+   {
+    "kind": "stream",
+    "text": "✓ Honest model: AUC on admissions from new patients: 0.749 (needs ≥ 0.68)\n✓ Honest protocol: cross-validated AUC minus holdout AUC: -0.001 (needs ≥ -0.05 and ≤ 0.05)\n✓ Readmissions caught after launch: honest model minus leaky model: 0.321 (needs ≥ 0.2)"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "Workshop complete.\n\nCompletion code: AZ-██████████\nPaste it on the workshop's page on Azimuth to record it."
+   }
+  ]
+ }
+}

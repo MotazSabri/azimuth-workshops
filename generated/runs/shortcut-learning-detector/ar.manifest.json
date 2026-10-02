@@ -1,0 +1,123 @@
+{
+ "schema": "run/v1",
+ "slug": "shortcut-learning-detector",
+ "lang": "ar",
+ "codeHash": "93bb602420424303",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-10-02T07:30:49Z",
+  "device": "Tesla T4",
+  "torch": "2.11.0+cu130",
+  "python": "3.13.15",
+  "shim": "0.1.0",
+  "elapsedSec": null,
+  "commit": "8894810634f19077f671b457fd3d45c35200a1ea",
+  "source": "imported"
+ },
+ "metrics": {
+  "n_train": 10000,
+  "n_test": 2000,
+  "dog_share": 0.5,
+  "patch_pixel_share": 0.0088,
+  "dogs_with_patch": 0.956,
+  "cats_with_patch": 0.052,
+  "honest_clean_acc": 0.8675,
+  "shortcut_matched_acc": 0.946,
+  "honest_matched_acc": 0.867,
+  "leaderboard_gap": 0.079,
+  "shortcut_clean_acc": 0.526,
+  "shortcut_flipped_acc": 0.0855,
+  "honest_flipped_acc": 0.867,
+  "shortcut_collapse": 0.8605,
+  "uniform_share": 0.0625,
+  "patch_attention_honest": 0.0382,
+  "patch_attention_shortcut": 0.4114,
+  "attention_gap": 0.3732
+ },
+ "shapes": {},
+ "cells": {
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "ازرع اختصاراً واضبط النموذج متلبّساً\nTesla T4 · 14.6 غ.ب · ذاكرة 12.7 غ.ب · PyTorch 2.11.0+cu130\nالملف: ⁦free⁩\nالبيانات:\n  · cifar-10-python.tar.gz — 166,502 KB, UNPINNED\nجاهز · ⁦seed=17, epochs=20, batch_size=256, lr=0.003, width=32, patch_px=3, shortcut_rate=0.95⁩\nالشيفرة · ⁦93bb602420424303⁩"
+   }
+  ],
+  "fig_text": [
+   {
+    "kind": "stream",
+    "text": "خطّ الرسوم: /usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf"
+   }
+  ],
+  "load_data": [
+   {
+    "kind": "stream",
+    "text": "صور التدريب: 10000   صور الاختبار: 2000   نسبة الكلاب: 0.5"
+   }
+  ],
+  "plant": [
+   {
+    "kind": "image",
+    "src": "shortcut-learning-detector/plant.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "المربّع يغطّي 0.88% من بكسلات الصورة\nكلاب تحمله: 95.6%   قطط تحمله: 5.2%"
+   }
+  ],
+  "model": [],
+  "train_honest": [
+   {
+    "kind": "stream",
+    "text": "[honest] الحقبة  1  الخسارة 0.673  دقة التدريب 0.578\n[honest] الحقبة  5  الخسارة 0.548  دقة التدريب 0.718\n[honest] الحقبة 10  الخسارة 0.394  دقة التدريب 0.822\n[honest] الحقبة 15  الخسارة 0.317  دقة التدريب 0.859\n[honest] الحقبة 20  الخسارة 0.251  دقة التدريب 0.895\n\nدقة النموذج النزيه على صور اختبار نظيفة: 0.868"
+   }
+  ],
+  "train_shortcut": [
+   {
+    "kind": "stream",
+    "text": "[shortcut] الحقبة  1  الخسارة 0.411  دقة التدريب 0.832\n[shortcut] الحقبة  5  الخسارة 0.197  دقة التدريب 0.952\n[shortcut] الحقبة 10  الخسارة 0.189  دقة التدريب 0.952\n[shortcut] الحقبة 15  الخسارة 0.179  دقة التدريب 0.952\n[shortcut] الحقبة 20  الخسارة 0.158  دقة التدريب 0.952\n\nاختبار من نفس مصدر بيانات التدريب:\n  النموذج النزيه   0.867\n  نموذج الاختصار   0.946\n  الفارق           +0.079"
+   }
+  ],
+  "stress_test": [
+   {
+    "kind": "image",
+    "src": "shortcut-learning-detector/stress_test.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "الاختبار        النزيه    الاختصار\nمطابق            0.867       0.946\nبلا مربّع        0.868       0.526\nمعكوس            0.867       0.086"
+   }
+  ],
+  "gradcam": [
+   {
+    "kind": "image",
+    "src": "shortcut-learning-detector/gradcam.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "حصّة خريطة Grad-CAM الواقعة على المربّع (على صور الاختبار كلّها):\n  لو توزّعت الخريطة بالتساوي   0.062\n  النموذج النزيه               0.038\n  نموذج الاختصار               0.411"
+   }
+  ],
+  "weaker-shortcut": [
+   {
+    "kind": "stream",
+    "text": "[rate=0.75] الحقبة  1  الخسارة 0.617  دقة التدريب 0.659\n[rate=0.75] الحقبة  5  الخسارة 0.492  دقة التدريب 0.770\n[rate=0.75] الحقبة 10  الخسارة 0.377  دقة التدريب 0.831\n[rate=0.75] الحقبة 15  الخسارة 0.300  دقة التدريب 0.871\n[rate=0.75] الحقبة 20  الخسارة 0.252  دقة التدريب 0.891\n\nنسبة الارتباط 0.75:  مطابق 0.868   معكوس 0.773   الانهيار +0.094   انتباه المربّع 0.210"
+   }
+  ],
+  "verify": [
+   {
+    "kind": "stream",
+    "text": "✓ دقة النموذج النزيه على صور اختبار نظيفة: 0.8675 (المطلوب ≥ 0.75)\n✓ ما يخسره نموذج الاختصار من دقّته حين تنعكس قاعدة المربّع: 0.8605 (المطلوب ≥ 0.3)\n✓ الحصّة الزائدة من خريطة <bdi dir=\"ltr\">Grad-CAM</bdi> على المربّع لدى نموذج الاختصار مقارنةً بالنموذج النزيه: 0.3732 (المطلوب ≥ 0.1)\nذروة استهلاك ذاكرة GPU: 0.95 GB"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "اكتملت الورشة.\n\nرمز الإتمام: ⁦AZ-██████████⁩\nالصقه في صفحة الورشة على أزيموث لتسجيل إتمامها."
+   }
+  ]
+ }
+}

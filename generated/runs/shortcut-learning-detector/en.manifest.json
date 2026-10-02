@@ -1,0 +1,123 @@
+{
+ "schema": "run/v1",
+ "slug": "shortcut-learning-detector",
+ "lang": "en",
+ "codeHash": "93bb602420424303",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-10-02T07:30:49Z",
+  "device": "Tesla T4",
+  "torch": "2.11.0+cu130",
+  "python": "3.13.15",
+  "shim": "0.1.0",
+  "elapsedSec": null,
+  "commit": "8894810634f19077f671b457fd3d45c35200a1ea",
+  "source": "imported"
+ },
+ "metrics": {
+  "n_train": 10000,
+  "n_test": 2000,
+  "dog_share": 0.5,
+  "patch_pixel_share": 0.0088,
+  "dogs_with_patch": 0.956,
+  "cats_with_patch": 0.052,
+  "honest_clean_acc": 0.866,
+  "shortcut_matched_acc": 0.946,
+  "honest_matched_acc": 0.8645,
+  "leaderboard_gap": 0.0815,
+  "shortcut_clean_acc": 0.5375,
+  "shortcut_flipped_acc": 0.116,
+  "honest_flipped_acc": 0.8655,
+  "shortcut_collapse": 0.83,
+  "uniform_share": 0.0625,
+  "patch_attention_honest": 0.038,
+  "patch_attention_shortcut": 0.4507,
+  "attention_gap": 0.4127
+ },
+ "shapes": {},
+ "cells": {
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "Plant a Shortcut, Catch the Model\nTesla T4 · 14.6 GB · 12.7 GB RAM · PyTorch 2.11.0+cu130\nprofile: free\nassets:\n  · cifar-10-python.tar.gz — 166,502 KB, UNPINNED\nready · seed=17, epochs=20, batch_size=256, lr=0.003, width=32, patch_px=3, shortcut_rate=0.95\ncode · 93bb602420424303"
+   }
+  ],
+  "fig_text": [
+   {
+    "kind": "stream",
+    "text": "figure font: /usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf"
+   }
+  ],
+  "load_data": [
+   {
+    "kind": "stream",
+    "text": "train images: 10000   test images: 2000   dog share: 0.5"
+   }
+  ],
+  "plant": [
+   {
+    "kind": "image",
+    "src": "shortcut-learning-detector/plant.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "the square covers 0.88% of the pixels\ndogs carrying it: 95.6%   cats carrying it: 5.2%"
+   }
+  ],
+  "model": [],
+  "train_honest": [
+   {
+    "kind": "stream",
+    "text": "[honest] epoch  1  loss 0.672  train acc 0.578\n[honest] epoch  5  loss 0.552  train acc 0.718\n[honest] epoch 10  loss 0.411  train acc 0.810\n[honest] epoch 15  loss 0.315  train acc 0.861\n[honest] epoch 20  loss 0.249  train acc 0.896\n\nhonest model, clean test images: 0.866"
+   }
+  ],
+  "train_shortcut": [
+   {
+    "kind": "stream",
+    "text": "[shortcut] epoch  1  loss 0.411  train acc 0.831\n[shortcut] epoch  5  loss 0.195  train acc 0.952\n[shortcut] epoch 10  loss 0.189  train acc 0.952\n[shortcut] epoch 15  loss 0.184  train acc 0.952\n[shortcut] epoch 20  loss 0.154  train acc 0.953\n\ntest split from the same pipeline as training:\n  honest model     0.865\n  shortcut model   0.946\n  gap              +0.082"
+   }
+  ],
+  "stress_test": [
+   {
+    "kind": "image",
+    "src": "shortcut-learning-detector/stress_test.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "test set        honest    shortcut\nmatched          0.865       0.946\nclean            0.866       0.537\nflipped          0.866       0.116"
+   }
+  ],
+  "gradcam": [
+   {
+    "kind": "image",
+    "src": "shortcut-learning-detector/gradcam.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "share of the Grad-CAM map that lands on the square (whole test set):\n  if spread evenly   0.062\n  honest model       0.038\n  shortcut model     0.451"
+   }
+  ],
+  "weaker-shortcut": [
+   {
+    "kind": "stream",
+    "text": "[rate=0.75] epoch  1  loss 0.617  train acc 0.659\n[rate=0.75] epoch  5  loss 0.492  train acc 0.762\n[rate=0.75] epoch 10  loss 0.367  train acc 0.832\n[rate=0.75] epoch 15  loss 0.296  train acc 0.876\n[rate=0.75] epoch 20  loss 0.241  train acc 0.899\n\nrate 0.75:  matched 0.878   flipped 0.785   collapse +0.093   attention on square 0.181"
+   }
+  ],
+  "verify": [
+   {
+    "kind": "stream",
+    "text": "✓ Honest model accuracy on clean test images: 0.866 (needs ≥ 0.75)\n✓ Shortcut model accuracy lost when the square's rule is reversed: 0.83 (needs ≥ 0.3)\n✓ Extra share of the shortcut model's Grad-CAM map on the square, over the honest model's: 0.4127 (needs ≥ 0.1)\npeak VRAM: 0.95 GB"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "Workshop complete.\n\nCompletion code: AZ-██████████\nPaste it on the workshop's page on Azimuth to record it."
+   }
+  ]
+ }
+}
