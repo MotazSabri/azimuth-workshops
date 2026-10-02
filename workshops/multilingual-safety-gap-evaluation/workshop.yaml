@@ -48,8 +48,8 @@ goal:
     أن تنشر طلباً واحداً أو ردّاً واحداً.
 
 difficulty: intermediate
-status: draft
-publishedAt: null
+status: stable
+publishedAt: "2026-10-02"
 
 maintenance:
   tier: volatile               # transformers + two pinned checkpoints
