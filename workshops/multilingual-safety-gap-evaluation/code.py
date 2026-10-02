@@ -123,11 +123,13 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+# float16 on a GPU. A T4 reports bfloat16 as supported but has no native
+# kernels for it, and falls back to a much slower emulated path.
+DTYPE = torch.float16 if DEVICE == "cuda" else torch.float32
 if DEVICE == "cuda":
-    DTYPE = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
     torch.cuda.reset_peak_memory_stats()
-else:
-    DTYPE = torch.float32
+
+ATTENTION_BUDGET = env.cfg["attention_budget_gb"] * 1024**3
 
 
 def load(model_id, revision):
@@ -135,25 +137,38 @@ def load(model_id, revision):
     tok.padding_side = "left"
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
-    model = AutoModelForCausalLM.from_pretrained(model_id, revision=revision, torch_dtype=DTYPE).to(
+    model = AutoModelForCausalLM.from_pretrained(model_id, revision=revision, dtype=DTYPE).to(
         DEVICE
     )
     model.eval()
     return tok, model
 
 
-def run_batched(tok, model, texts, max_new_tokens, batch_size):
-    """Greedy decoding, batched by length. Returns decoded continuations."""
-    order = sorted(range(len(texts)), key=lambda i: len(texts[i]))
-    out = [None] * len(texts)
-    for start in range(0, len(order), batch_size):
-        idx = order[start : start + batch_size]
-        enc = tok(
-            [texts[i] for i in idx],
-            return_tensors="pt",
-            padding=True,
-            add_special_tokens=False,
-        ).to(DEVICE)
+def plan_batches(lengths, heads, max_batch):
+    """Group inputs, longest first, into batches that fit the attention budget.
+
+    Attention over a padded batch builds a batch x heads x length x length
+    matrix, so memory grows with the SQUARE of the longest input. A batch size
+    that is comfortable for short inputs runs out of memory on long ones, so
+    the batch shrinks as the inputs grow. Longest first also puts the most
+    expensive batch at the start: a memory problem shows up in seconds, not
+    after an hour of generation.
+    """
+    order = sorted(range(len(lengths)), key=lambda i: -lengths[i])
+    batches = []
+    while order:
+        longest = lengths[order[0]]
+        per_input = heads * longest * longest * DTYPE.itemsize
+        size = max(1, min(max_batch, int(ATTENTION_BUDGET // per_input)))
+        batches.append(order[:size])
+        order = order[size:]
+    return batches
+
+
+def generate_batch(tok, model, batch, max_new_tokens):
+    """Greedy-decode one batch. If it still does not fit, split it and retry."""
+    try:
+        enc = tok(batch, return_tensors="pt", padding=True, add_special_tokens=False).to(DEVICE)
         with torch.inference_mode():
             gen = model.generate(
                 **enc,
@@ -165,8 +180,28 @@ def run_batched(tok, model, texts, max_new_tokens, batch_size):
                 pad_token_id=tok.pad_token_id,
             )
         new_tokens = gen[:, enc["input_ids"].shape[1] :]
-        for i, seq in zip(idx, new_tokens, strict=True):
-            out[i] = tok.decode(seq, skip_special_tokens=True)
+        return [tok.decode(seq, skip_special_tokens=True) for seq in new_tokens]
+    except torch.cuda.OutOfMemoryError:
+        if len(batch) == 1:
+            raise
+    # Reached only after running out of memory. Retrying here, outside the
+    # except block, lets the failed attempt's tensors be released first.
+    gc.collect()
+    torch.cuda.empty_cache()
+    half = len(batch) // 2
+    return generate_batch(tok, model, batch[:half], max_new_tokens) + generate_batch(
+        tok, model, batch[half:], max_new_tokens
+    )
+
+
+def run_batched(tok, model, texts, max_new_tokens, batch_size):
+    """Greedy decoding in memory-bounded batches. Returns decoded continuations."""
+    lengths = [len(ids) for ids in tok(texts, add_special_tokens=False)["input_ids"]]
+    out = [None] * len(texts)
+    for idx in plan_batches(lengths, model.config.num_attention_heads, batch_size):
+        decoded = generate_batch(tok, model, [texts[i] for i in idx], max_new_tokens)
+        for i, text in zip(idx, decoded, strict=True):
+            out[i] = text
     return out
 
 
@@ -246,10 +281,19 @@ for lang in LANGS:
     )
 generation_minutes = round((time.time() - t0) / 60, 1)
 
-del generator
+# Take the generator off the GPU before the judge runs again. Moving it to the
+# CPU first releases its GPU memory even if something still refers to it.
+generator.to("cpu")
+del generator, gen_tok
 gc.collect()
 if DEVICE == "cuda":
     torch.cuda.empty_cache()
+    gpu_in_use_gb = torch.cuda.memory_allocated() / 1024**3
+    say(
+        f"generator released · GPU memory still in use {gpu_in_use_gb:.1f} GB (the judge)",
+        f"أُزيل النموذج المولِّد من الذاكرة · ما زال مستخدَماً من ذاكرة المعالج الرسومي "
+        f"{gpu_in_use_gb:.1f} غ.ب (الحَكَم)",
+    )
 # --8<-- [end:generate]
 
 
@@ -258,6 +302,7 @@ if DEVICE == "cuda":
 # only booleans per (language, prompt).
 refused, unsafe, unsafe_loose, on_lang, parsed = {}, {}, {}, {}, {}
 for lang in LANGS:
+    t_lang = time.time()
     verdicts = judge_texts(
         [
             [{"role": "user", "content": p}, {"role": "assistant", "content": r}]
@@ -271,6 +316,10 @@ for lang in LANGS:
     unsafe_loose[lang] = np.array([a is not None and a.group(1) != "Safe" for a in s])
     refused[lang] = np.array([b is not None and b.group(1) == "Yes" for b in f])
     on_lang[lang] = np.array([langid.classify(r)[0] == lang for r in responses[lang]])
+    say(
+        f"{lang:>3}  {len(responses[lang])} verdicts  {time.time() - t_lang:.0f}s",
+        f"{lang:>3}  {len(responses[lang])} حكماً  {time.time() - t_lang:.0f} ث",
+    )
 
 n_scored = sum(len(responses[lang]) for lang in LANGS)
 del responses
