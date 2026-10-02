@@ -64,11 +64,6 @@ estimate:
   totalMinutes: 40
 
 papers:
-  - slug: grouped-query-attention
-    role: core
-    label:
-      en: "sharing keys and values across query heads, the lever that shrinks the cache"
-      ar: "مشاركة المفاتيح والقيم بين رؤوس الاستعلام، وهي الأداة التي تقلّص الذاكرة المؤقتة"
   - slug: flashattention
     role: core
     label:
@@ -79,7 +74,7 @@ papers:
     label:
       en: "the real model shapes the formula is projected onto, and the reason 70B uses GQA"
       ar: "أبعاد النماذج الحقيقية التي نطبّق عليها المعادلة، وسبب اعتماد النموذج الأكبر على الانتباه المجمّع"
-  - slug: attention-is-all-you-need
+  - slug: transformer
     role: supporting
     label:
       en: "where the keys and values come from in the first place"

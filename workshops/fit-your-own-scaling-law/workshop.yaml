@@ -61,17 +61,17 @@ estimate:
   totalMinutes: 35
 
 papers:
-  - slug: training-compute-optimal-large-language-models
+  - slug: chinchilla
     role: core
     label:
       en: "the IsoFLOP method, the parametric loss surface, and the 20-tokens-per-parameter result we test against"
       ar: "طريقة منحنيات الحوسبة الثابتة، وسطح الخسارة المعلَمي، ونتيجة الـ20 رمزاً لكل معامل التي نقارن بها قياسنا"
-  - slug: empirical-scaling-laws-for-language-models
+  - slug: scaling-laws
     role: core
     label:
       en: "the idea that loss follows power laws in parameters, data and compute, and the non-embedding parameter count"
       ar: "فكرة أنّ الخسارة تتبع قوانين قوة في المعاملات والبيانات والحوسبة، وطريقة عدّ المعاملات دون جداول التضمين"
-  - slug: language-models-are-few-shot-learners
+  - slug: gpt-3
     role: supporting
     label:
       en: "a model sized by the earlier rule, which the compute-optimal frontier later called undertrained"

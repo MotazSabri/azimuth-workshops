@@ -51,7 +51,7 @@ estimate:
   totalMinutes: 30        # local CPU run of code.py takes ~25 s; re-measure after Colab
 
 papers:
-  - slug: reconciling-modern-machine-learning-and-the-bias-variance-tradeoff
+  - slug: double-descent
     role: core
     label:
       en: "the double-descent curve itself, and the random-features setting it was first shown in"
@@ -66,11 +66,6 @@ papers:
     label:
       en: "evidence that the same peak appears in deep networks, and that label noise and regularization control its height"
       ar: "الدليل على أن الذروة نفسها تظهر في الشبكات العميقة، وأن ضجيج التسميات والتنظيم يتحكّمان في ارتفاعها"
-  - slug: understanding-deep-learning-requires-rethinking-generalization
-    role: supporting
-    label:
-      en: "the shuffled-labels test: a model that can fit noise perfectly is not explained by its capacity"
-      ar: "تجربة التسميات المخلوطة: نموذج يلائم الضجيج ملاءمة تامّة لا تفسّر سعتُه قدرتَه على التعميم"
   - slug: grokking
     role: supporting
     label:
