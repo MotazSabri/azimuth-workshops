@@ -64,12 +64,12 @@ papers:
       en: "histogram gradient boosting, the main model at every stage"
       ar: "التعزيز التدرّجي القائم على المدرّجات التكرارية، وهو النموذج الرئيسي في كل المراحل"
   - slug: xgboost
-    role: supporting
+    role: core
     label:
       en: "the boosted-tree family the main model belongs to"
       ar: "عائلة الأشجار المعزَّزة التي ينتمي إليها النموذج الرئيسي"
   - slug: random-forests
-    role: supporting
+    role: core
     label:
       en: "the second model, swapped in to show the leak belongs to the protocol"
       ar: "النموذج الثاني، نضعه مكان الأول لنُظهر أن التسريب في البروتوكول لا في النموذج"
