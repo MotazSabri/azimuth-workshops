@@ -1,0 +1,138 @@
+{
+ "schema": "run/v1",
+ "slug": "kv-cache-memory-explorer",
+ "lang": "ar",
+ "codeHash": "9ef034b8e11cd93f",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-10-02T01:46:04Z",
+  "device": "Tesla T4",
+  "torch": "2.11.0+cu130",
+  "python": "3.13.15",
+  "shim": "0.1.0",
+  "elapsedSec": null,
+  "commit": "e4dc5b2d919ea04a947f1075855397fb4bc009ae",
+  "source": "imported"
+ },
+ "metrics": {
+  "n_params_m": 941,
+  "weights_gib": 1.75,
+  "kv_kib_per_token": 128,
+  "probe_weights_gib": 1.75,
+  "probe_act_gib": 0.75,
+  "probe_cache_gib": 2.01,
+  "sweep_max_ctx": 4096,
+  "cache_gib_max": 4.0,
+  "act_gib_max": 1.51,
+  "cache_over_weights": 2.28,
+  "crossover_tokens": 14353,
+  "crossover_ctx": 1794,
+  "formula_ratio": 1.0,
+  "llama7b_crossover_tokens": 25711,
+  "llama7b_cache_over_weights_b8": 1.27,
+  "llama70b_crossover_tokens": 421143,
+  "llama70b_mha_crossover_tokens": 52643,
+  "naive_act_gib": 1.13,
+  "fused_act_gib": 0.38,
+  "act_reduction": 3.0,
+  "cache_naive_gib": 1.0,
+  "cache_fused_gib": 1.0,
+  "score_matrix_gib": 0.5,
+  "gqa_ratio": 4.0,
+  "mqa_ratio": 16.0,
+  "gqa_weight_change_pct": 10.7,
+  "int8_ratio": 0.508,
+  "int8_err_pct": 0.65,
+  "decode_ms_short": 12.2,
+  "decode_ms_long": 42.1,
+  "decode_slowdown": 3.5,
+  "decode_gqa_ms_long": 18.7,
+  "decode_gbps": 147
+ },
+ "shapes": {},
+ "cells": {
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "ذاكرة المفاتيح والقيم: فاتورة الذاكرة الحقيقية\nTesla T4 · 14.6 غ.ب · ذاكرة 12.7 غ.ب · PyTorch 2.11.0+cu130\nالملف: ⁦free⁩\nجاهز · ⁦seed=17, d_model=2048, n_layers=16, n_heads=16, ffn=5504, vocab=32000, batch=8, probe_ctx=2048, contexts=[512, 1024, 2048, 4096], flash_batch=4, flash_ctx=2048, kv_variants=[16, 4, 1], gqa_kv=4, decode_batch=8, decode_contexts=[256, 1024, 4096], decode_warmup=3, decode_steps=20, plan_ctx=4096, budget_gib=10, headroom_gib=0.5, project_batch=8, project_ctx=4096⁩\nالشيفرة · ⁦9ef034b8e11cd93f⁩"
+   }
+  ],
+  "model": [
+   {
+    "kind": "stream",
+    "text": "عدد المعاملات: 941 مليون. الطبقات: 16. رؤوس الانتباه: 16، وحجم كلٍّ منها 128\nالأوزان بدقة fp16: 1.75 GiB (رصدها المُخصِّص 1.78 GiB)\nالذاكرة المؤقتة لكل رمز، حسب المعادلة: 128 KiB"
+   }
+  ],
+  "measure": [
+   {
+    "kind": "stream",
+    "text": "الدفعة: 8 × 2048 (تسلسلات × رموز)، بدقة fp16\nالفاتورة   GiB\n0                 الأوزان  1.75\n1  التفعيلات (ذروة عابرة)  0.75\n2   ذاكرة المفاتيح والقيم  2.01"
+   }
+  ],
+  "sweep": [
+   {
+    "kind": "image",
+    "src": "kv-cache-memory-explorer/sweep.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "عند سياق طوله 4096، حجم الذاكرة المؤقتة = 2.28 × حجم الأوزان.\nنقطة التعادل مع الأوزان: 14,353 رمزاً قيد المعالجة معاً، أي سياق طوله 1,794 لكل تسلسل في دفعة من 8."
+   }
+  ],
+  "formula": [
+   {
+    "kind": "stream",
+    "text": "الذاكرة المقيسة ÷ المعادلة، مجموعةً على كل نقاط المسح: 1.0000\nالنموذج  KiB لكل رمز  الأوزان GiB  رموز التعادل  \\\n0              Llama-2-7B (MHA)        512.0         12.6       25711.1   \n1             Llama-2-13B (MHA)        800.0         24.2       31738.3   \n2  Llama-2-70B (GQA، 8 رؤوس KV)        320.0        128.5      421142.6   \n3        Llama-2-70B لو كان MHA       2560.0        128.5       52642.8   \n\n   الذاكرة المؤقتة GiB (8 × 4096)  \n0                            16.0  \n1                            25.0  \n2                            10.0  \n3                            80.0"
+   }
+  ],
+  "flash": [
+   {
+    "kind": "stream",
+    "text": "الدفعة: 4 × 2048 (تسلسلات × رموز). مصفوفة الدرجات لطبقة واحدة وحدها: 0.50 GiB\nالانتباه  التفعيلات GiB  الذاكرة المؤقتة GiB\n0  تقليدي (مصفوفة كاملة)           1.13                  1.0\n1      مدمج، على شكل كتل           0.38                  1.0"
+   }
+  ],
+  "gqa": [
+   {
+    "kind": "stream",
+    "text": "رؤوس KV  الأوزان GiB  الذاكرة المؤقتة GiB  تقلّص الذاكرة المؤقتة\n0       16         1.75                 2.00                    1.0\n1        4         1.56                 0.50                    4.0\n2        1         1.52                 0.12                   16.0"
+   }
+  ],
+  "int8": [
+   {
+    "kind": "stream",
+    "text": "الذاكرة المؤقتة بدقة fp16: 2.00 GiB   وبدقة int8 مع معاملات التحجيم: 1.02 GiB   النسبة 0.508\nخطأ إعادة البناء النسبي: 0.65%"
+   }
+  ],
+  "decode": [
+   {
+    "kind": "image",
+    "src": "kv-cache-memory-explorer/decode.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "زمن الخطوة مع MHA: 12.2 ms عند سياق 256، و42.1 ms عند سياق 4096 (أي 3.5 × أبطأ). ومع GQA عند سياق 4096: 18.7 ms.\nمعدّل القراءة الفعلي عند أطول سياق: 147 GB/s"
+   }
+  ],
+  "plan": [
+   {
+    "kind": "stream",
+    "text": "الميزانية 10 GiB، والأوزان 1.75 GiB، والذاكرة المؤقتة لكل تسلسل بطول 4096: 512 MiB\n← عدد التسلسلات التي تتسع لها البطاقة معاً: 15\nالذروة المقيسة 9.28 GiB من أصل 10 GiB"
+   }
+  ],
+  "verify": [
+   {
+    "kind": "stream",
+    "text": "✓ الذاكرة المؤقتة المقيسة مقسومةً على تنبؤ المعادلة، مجموعةً على كل نقاط المسح: 1 (المطلوب ≥ 0.99 و≤ 1.01)\n✓ الذاكرة المؤقتة مقسومةً على الأوزان عند أكبر نقطة في المسح: 2.28 (المطلوب ≥ 1.5)\n✓ ذاكرة الانتباه متعدد الرؤوس مقسومةً على ذاكرة الانتباه المجمّع، بالدفعة والسياق نفسيهما: 4 (المطلوب ≥ 3.8)"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "اكتملت الورشة.\n\nرمز الإتمام: ⁦AZ-██████████⁩\nالصقه في صفحة الورشة على أزيموث لتسجيل إتمامها."
+   }
+  ]
+ }
+}

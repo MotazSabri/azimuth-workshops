@@ -1,0 +1,138 @@
+{
+ "schema": "run/v1",
+ "slug": "kv-cache-memory-explorer",
+ "lang": "en",
+ "codeHash": "9ef034b8e11cd93f",
+ "status": "verified",
+ "profile": "free",
+ "receipt": {
+  "at": "2026-10-02T01:46:03Z",
+  "device": "Tesla T4",
+  "torch": "2.11.0+cu130",
+  "python": "3.13.15",
+  "shim": "0.1.0",
+  "elapsedSec": null,
+  "commit": "e4dc5b2d919ea04a947f1075855397fb4bc009ae",
+  "source": "imported"
+ },
+ "metrics": {
+  "n_params_m": 941,
+  "weights_gib": 1.75,
+  "kv_kib_per_token": 128,
+  "probe_weights_gib": 1.75,
+  "probe_act_gib": 0.75,
+  "probe_cache_gib": 2.01,
+  "sweep_max_ctx": 4096,
+  "cache_gib_max": 4.0,
+  "act_gib_max": 1.51,
+  "cache_over_weights": 2.28,
+  "crossover_tokens": 14353,
+  "crossover_ctx": 1794,
+  "formula_ratio": 1.0,
+  "llama7b_crossover_tokens": 25711,
+  "llama7b_cache_over_weights_b8": 1.27,
+  "llama70b_crossover_tokens": 421143,
+  "llama70b_mha_crossover_tokens": 52643,
+  "naive_act_gib": 1.13,
+  "fused_act_gib": 0.38,
+  "act_reduction": 3.0,
+  "cache_naive_gib": 1.0,
+  "cache_fused_gib": 1.0,
+  "score_matrix_gib": 0.5,
+  "gqa_ratio": 4.0,
+  "mqa_ratio": 16.0,
+  "gqa_weight_change_pct": 10.7,
+  "int8_ratio": 0.508,
+  "int8_err_pct": 0.65,
+  "decode_ms_short": 11.4,
+  "decode_ms_long": 40.4,
+  "decode_slowdown": 3.6,
+  "decode_gqa_ms_long": 17.6,
+  "decode_gbps": 153
+ },
+ "shapes": {},
+ "cells": {
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "The KV Cache Is the Real Memory Bill\nTesla T4 · 14.6 GB · 12.7 GB RAM · PyTorch 2.11.0+cu130\nprofile: free\nready · seed=17, d_model=2048, n_layers=16, n_heads=16, ffn=5504, vocab=32000, batch=8, probe_ctx=2048, contexts=[512, 1024, 2048, 4096], flash_batch=4, flash_ctx=2048, kv_variants=[16, 4, 1], gqa_kv=4, decode_batch=8, decode_contexts=[256, 1024, 4096], decode_warmup=3, decode_steps=20, plan_ctx=4096, budget_gib=10, headroom_gib=0.5, project_batch=8, project_ctx=4096\ncode · 9ef034b8e11cd93f"
+   }
+  ],
+  "model": [
+   {
+    "kind": "stream",
+    "text": "941M parameters, 16 layers, 16 heads of size 128\nweights in fp16: 1.75 GiB (allocator saw 1.78 GiB)\ncache per token, by the formula: 128 KiB"
+   }
+  ],
+  "measure": [
+   {
+    "kind": "stream",
+    "text": "8 sequences x 2048 tokens, fp16\nbill   GiB\n0                       weights  1.75\n1  activations (transient peak)  0.75\n2                      KV cache  2.01"
+   }
+  ],
+  "sweep": [
+   {
+    "kind": "image",
+    "src": "kv-cache-memory-explorer/sweep.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "At 4096 tokens the cache is 2.28x the weights.\nIt matches the weights at 14,353 tokens in flight (1,794 tokens each across 8 sequences)."
+   }
+  ],
+  "formula": [
+   {
+    "kind": "stream",
+    "text": "measured cache / formula, summed over the sweep: 1.0000\nmodel  KiB per token  weights GiB  \\\n0               Llama-2-7B (MHA)          512.0         12.6   \n1              Llama-2-13B (MHA)          800.0         24.2   \n2  Llama-2-70B (GQA, 8 kv heads)          320.0        128.5   \n3     Llama-2-70B if it were MHA         2560.0        128.5   \n\n   tokens to match weights  cache GiB at 8 x 4096  \n0                  25711.1                   16.0  \n1                  31738.3                   25.0  \n2                 421142.6                   10.0  \n3                  52642.8                   80.0"
+   }
+  ],
+  "flash": [
+   {
+    "kind": "stream",
+    "text": "4 x 2048 tokens. One layer's score matrix alone: 0.50 GiB\nattention  activations GiB  KV cache GiB\n0  naive (full matrix)             1.13           1.0\n1  fused, tiled kernel             0.38           1.0"
+   }
+  ],
+  "gqa": [
+   {
+    "kind": "stream",
+    "text": "kv heads  weights GiB  KV cache GiB  cache shrink vs MHA\n0        16         1.75          2.00                  1.0\n1         4         1.56          0.50                  4.0\n2         1         1.52          0.12                 16.0"
+   }
+  ],
+  "int8": [
+   {
+    "kind": "stream",
+    "text": "cache in fp16: 2.00 GiB   in int8 + scales: 1.02 GiB   ratio 0.508\nrelative reconstruction error: 0.65%"
+   }
+  ],
+  "decode": [
+   {
+    "kind": "image",
+    "src": "kv-cache-memory-explorer/decode.png",
+    "format": "png"
+   },
+   {
+    "kind": "stream",
+    "text": "MHA step: 11.4 ms at 256 tokens, 40.4 ms at 4096 (3.6x). GQA at 4096: 17.6 ms.\neffective read rate at the longest context: 153 GB/s"
+   }
+  ],
+  "plan": [
+   {
+    "kind": "stream",
+    "text": "budget 10 GiB, weights 1.75 GiB, 512 MiB of cache per sequence at 4096 tokens\n-> 15 sequences at once\nmeasured peak 9.28 GiB of 10 GiB"
+   }
+  ],
+  "verify": [
+   {
+    "kind": "stream",
+    "text": "✓ Measured KV cache over the formula's prediction, summed across the sweep: 1 (needs ≥ 0.99 and ≤ 1.01)\n✓ KV cache over weights at the largest point of the sweep: 2.28 (needs ≥ 1.5)\n✓ MHA cache over GQA cache, same batch and context: 4 (needs ≥ 3.8)"
+   }
+  ],
+  "finish": [
+   {
+    "kind": "stream",
+    "text": "Workshop complete.\n\nCompletion code: AZ-██████████\nPaste it on the workshop's page on Azimuth to record it."
+   }
+  ]
+ }
+}

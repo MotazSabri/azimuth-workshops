@@ -52,8 +52,8 @@ goal:
     على حالها.
 
 difficulty: intermediate
-status: draft
-publishedAt: null
+status: stable
+publishedAt: "2026-10-02"
 
 maintenance:
   tier: moderate               # torch is asserted; two pinned libraries for Arabic figures
