@@ -2,23 +2,33 @@
  "schema": "run/v1",
  "slug": "reward-shaping-gone-wrong",
  "lang": "en",
- "codeHash": "921396b8e8c2671a",
+ "codeHash": "860897ba739f139e",
  "status": "verified",
  "profile": "free",
  "receipt": {
-  "at": "2026-08-28T12:50:05Z",
-  "device": "unknown",
-  "torch": "unknown",
-  "python": "3.13.5",
-  "shim": "unknown",
+  "at": "2026-10-03T02:47:55Z",
+  "device": "Tesla T4",
+  "torch": "2.11.0+cu130",
+  "python": "3.13.15",
+  "shim": "0.1.0",
   "elapsedSec": null,
-  "commit": "e884576311add2a0ef5bc4b42221dc3e6cd416d5",
+  "commit": "f7d384267fea82c6d0584f021d8ba0d2570bcfa4",
   "source": "imported"
  },
- "metrics": {},
+ "metrics": {
+  "shaped_advantage": 1887.5764841560376,
+  "landing_ratio": 0.0,
+  "honest_landing": 0.52,
+  "hacked_landing": 0.0
+ },
  "shapes": {},
  "cells": {
-  "setup": [],
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "Reward shaping, and how it goes wrong\nTesla T4 · 14.6 GB · 12.7 GB RAM · PyTorch 2.11.0+cu130\nprofile: free\nready · episodes=2500, evalEpisodes=50, hidden=128, learningRate=0.0007, gamma=0.99, seed=17\ncode · 860897ba739f139e"
+   }
+  ],
   "rewards": [
    {
     "kind": "stream",
@@ -28,13 +38,13 @@
   "train": [
    {
     "kind": "stream",
-    "text": "honest:\n      0  return   -264.6\n    100  return   -132.8\n    200  return   -102.0\n    300  return    -65.5\n    400  return     -7.1\n    500  return    -22.2\n    600  return    -99.2\n    700  return    -83.4\n    800  return      8.3\n    900  return     93.6\n   1000  return     -2.7\n   1100  return    -40.8\n   1200  return     52.2\n   1300  return   -100.0\n   1400  return    277.0\n\nshaped:\n      0  return   -248.9\n    100  return   -159.0\n    200  return    -98.8\n    300  return    -63.4\n    400  return     -0.6\n    500  return     25.3\n    600  return    -37.4\n    700  return   -334.1\n    800  return     -9.0\n    900  return    -67.7\n   1000  return   -116.3\n   1100  return     50.5\n   1200  return     -1.7\n   1300  return    237.0\n   1400  return    166.9\n\nhacked:\n      0  return  -1887.8\n    100  return  -1665.9\n    200  return  -1426.3\n    300  return  -1058.9\n    400  return  -1399.0\n    500  return   -683.6\n    600  return   -582.1\n    700  return   -858.4\n    800  return   -679.8\n    900  return   -557.0\n   1000  return   -719.8\n   1100  return   -983.4\n   1200  return   -567.7\n   1300  return   -939.5\n   1400  return   -618.3"
+    "text": "honest:\n/usr/local/lib/python3.13/dist-packages/pygame/pkgdata.py:25: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.\n  from pkg_resources import resource_stream, resource_exists\n      0  return   -264.6\n    100  return   -132.8\n    200  return   -102.0\n    300  return    -65.5\n    400  return     -7.1\n    500  return    -22.2\n    600  return    -99.2\n    700  return    -83.4\n    800  return     85.2\n    900  return     19.8\n   1000  return      7.4\n   1100  return     66.3\n   1200  return    -16.5\n   1300  return     -7.2\n   1400  return     37.7\n   1500  return     -4.7\n   1600  return     56.5\n   1700  return    241.5\n   1800  return    118.6\n   1900  return     48.5\n   2000  return     21.8\n   2100  return    135.1\n   2200  return    258.6\n   2300  return    159.8\n   2400  return    190.0\n  kept episode 2250 (mean return 127.7 over the 100 before it)\n\nshaped:\n      0  return   -248.9\n    100  return   -159.0\n    200  return    -98.8\n    300  return    -63.4\n    400  return     -0.6\n    500  return     25.3\n    600  return    -37.4\n    700  return   -334.1\n    800  return      3.4\n    900  return     22.2\n   1000  return      6.7\n   1100  return     46.8\n   1200  return     25.0\n   1300  return    -23.4\n   1400  return    175.6\n   1500  return     31.0\n   1600  return     20.0\n   1700  return    101.3\n   1800  return    260.8\n   1900  return    243.9\n   2000  return    253.4\n   2100  return     45.7\n   2200  return     74.5\n   2300  return    303.1\n   2400  return     -8.1\n  kept episode 1950 (mean return 208.6 over the 100 before it)\n\nhacked:\n      0  return  -1887.8\n    100  return  -1665.9\n    200  return  -1426.3\n    300  return  -1058.9\n    400  return  -1399.0\n    500  return   -683.6\n    600  return   -582.1\n    700  return   -955.8\n    800  return   -696.8\n    900  return   -584.6\n   1000  return   -742.4\n   1100  return  -1071.5\n   1200  return   -634.2\n   1300  return   -807.4\n   1400  return   -615.6\n   1500  return   -931.6\n   1600  return   -980.3\n   1700  return  -1149.4\n   1800  return   -724.7\n   1900  return   -642.3\n   2000  return  -1095.0\n   2100  return   -751.1\n   2200  return   -566.8\n   2300  return   -639.4\n   2400  return   -842.7\n  kept episode 1850 (mean return -792.1 over the 100 before it)"
    }
   ],
   "scoreboard": [
    {
     "kind": "stream",
-    "text": "agent         own reward   hacked reward    landed\n--------------------------------------------------\nhonest             -34.2         -1654.1      24%\nshaped             -82.5         -5592.5       0%\nhacked            -808.3          -808.3       0%"
+    "text": "agent         own reward   hacked reward    landed\n--------------------------------------------------\nhonest             109.2         -2710.4      52%\nshaped             105.0         -2102.2      54%\nhacked            -822.8          -822.8       0%"
    },
    {
     "kind": "image",
@@ -45,25 +55,25 @@
   "watch": [
    {
     "kind": "stream",
-    "text": "hacked: 103 steps · median altitude 0.41\nhonest: 148 steps\n\nThe exploit is a SHORT episode. `potential` is negative everywhere, so the bonus is a tax charged every step, and the cheapest policy is to stop paying it — end the episode. The agent is not confused; it found the fastest exit from a reward you wrote."
+    "text": "hacked: 77 steps · median altitude 0.81\nhonest: 667 steps\n\nThe exploit is a SHORT episode. `potential` is negative everywhere, so the bonus is a tax charged every step, and the cheapest policy is to stop paying it — end the episode. The agent is not confused; it found the fastest exit from a reward you wrote."
    }
   ],
   "fix-it": [
    {
     "kind": "stream",
-    "text": "      0  return   -248.9\n    100  return   -159.0\n    200  return    -98.8\n    300  return    -63.4\n    400  return     -0.6\n    500  return     25.3\n    600  return    -37.4\n    700  return   -334.1\n    800  return     -9.0\n    900  return    -67.7\n   1000  return   -116.3\n   1100  return     50.5\n   1200  return     -1.7\n   1300  return    237.0\n   1400  return    166.9\nyours: landed 0%  ·  honest 24%  ·  hacked 0%"
+    "text": "      0  return   -248.9\n    100  return   -159.0\n    200  return    -98.8\n    300  return    -63.4\n    400  return     -0.6\n    500  return     25.3\n    600  return    -37.4\n    700  return   -334.1\n    800  return      3.4\n    900  return     22.2\n   1000  return      6.7\n   1100  return     46.8\n   1200  return     25.0\n   1300  return    -23.4\n   1400  return    175.6\n   1500  return     31.0\n   1600  return     20.0\n   1700  return    101.3\n   1800  return    260.8\n   1900  return    243.9\n   2000  return    253.4\n   2100  return     45.7\n   2200  return     74.5\n   2300  return    303.1\n   2400  return     -8.1\n  kept episode 1950 (mean return 208.6 over the 100 before it)\nyours: landed 54%  ·  honest 52%  ·  hacked 0%"
    }
   ],
   "verify": [
    {
     "kind": "stream",
-    "text": "✗ Landing rate of the control agent, before any comparison is meaningful: 0.24 (needs ≥ 0.3)\n  the control never learned to land — raise `episodes`, do not lower the bar.\n✓ How far the mis-specified agent out-scores the honest one, on the written objective: 845.8 (needs ≥ 50)\n✓ Mis-specified agent's landing rate, relative to the honest agent's: 0 (needs ≤ 0.5)"
+    "text": "✓ Landing rate of the control agent, before any comparison is meaningful: 0.52 (needs ≥ 0.3)\n✓ How far the mis-specified agent out-scores the honest one, on the written objective: 1888 (needs ≥ 50)\n✓ Mis-specified agent's landing rate, relative to the honest agent's: 0 (needs ≤ 0.5)"
    }
   ],
   "finish": [
    {
     "kind": "stream",
-    "text": "Not complete yet — failed: honest-agent-works"
+    "text": "Workshop complete.\n\nCompletion code: AZ-██████████\nPaste it on the workshop's page on Azimuth to record it."
    }
   ]
  }

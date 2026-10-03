@@ -2,26 +2,31 @@
  "schema": "run/v1",
  "slug": "reward-shaping-gone-wrong",
  "lang": "ar",
- "codeHash": "921396b8e8c2671a",
+ "codeHash": "860897ba739f139e",
  "status": "verified",
  "profile": "free",
  "receipt": {
-  "at": "2026-08-28T12:50:05Z",
-  "device": "unknown",
-  "torch": "unknown",
-  "python": "3.13.5",
-  "shim": "unknown",
+  "at": "2026-10-03T02:47:55Z",
+  "device": "Tesla T4",
+  "torch": "2.11.0+cu130",
+  "python": "3.13.15",
+  "shim": "0.1.0",
   "elapsedSec": null,
-  "commit": "e884576311add2a0ef5bc4b42221dc3e6cd416d5",
+  "commit": "f7d384267fea82c6d0584f021d8ba0d2570bcfa4",
   "source": "imported"
  },
- "metrics": {},
+ "metrics": {
+  "shaped_advantage": 1887.5764841560376,
+  "landing_ratio": 0.0,
+  "honest_landing": 0.52,
+  "hacked_landing": 0.0
+ },
  "shapes": {},
  "cells": {
   "setup": [
    {
     "kind": "stream",
-    "text": "تشكيل المكافأة وكيف ينحرف\nبدون معالج رسوميات · ذاكرة 12.7 غ.ب · PyTorch 2.11.0+cpu\nالملف: ⁦free⁩\nجاهز · ⁦episodes=1500, evalEpisodes=50, hidden=128, learningRate=0.0007, gamma=0.99, seed=17⁩\nالشيفرة · ⁦921396b8e8c2671a⁩"
+    "text": "تشكيل المكافأة — وكيف ينحرف\nTesla T4 · 14.6 غ.ب · ذاكرة 12.7 غ.ب · PyTorch 2.11.0+cu130\nالملف: ⁦free⁩\nجاهز · ⁦episodes=2500, evalEpisodes=50, hidden=128, learningRate=0.0007, gamma=0.99, seed=17⁩\nالشيفرة · ⁦860897ba739f139e⁩"
    }
   ],
   "rewards": [
@@ -33,13 +38,13 @@
   "train": [
    {
     "kind": "stream",
-    "text": "honest:\n      0  return   -264.6\n    100  return   -132.8\n    200  return   -102.0\n    300  return    -65.5\n    400  return     -7.1\n    500  return    -22.2\n    600  return    -99.2\n    700  return    -83.4\n    800  return    -13.2\n    900  return     50.1\n   1000  return      7.8\n   1100  return    -15.0\n   1200  return    154.8\n   1300  return    177.8\n   1400  return     24.7\n\nshaped:\n      0  return   -248.9\n    100  return   -159.0\n    200  return    -98.8\n    300  return    -63.4\n    400  return     -0.6\n    500  return     25.3\n    600  return    -37.4\n    700  return   -334.1\n    800  return      3.4\n    900  return    132.5\n   1000  return    177.5\n   1100  return    -10.7\n   1200  return    174.7\n   1300  return    134.4\n   1400  return    152.7\n\nhacked:\n      0  return  -1887.8\n    100  return  -1665.9\n    200  return  -1426.3\n    300  return  -1058.9\n    400  return  -1399.0\n    500  return   -683.6\n    600  return   -582.1\n    700  return   -858.4\n    800  return   -679.8\n    900  return   -591.8\n   1000  return   -840.4\n   1100  return  -1082.3\n   1200  return   -612.8\n   1300  return   -904.3\n   1400  return   -635.5"
+    "text": "honest:\n/usr/local/lib/python3.13/dist-packages/pygame/pkgdata.py:25: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.\n  from pkg_resources import resource_stream, resource_exists\n      0  return   -264.6\n    100  return   -132.8\n    200  return   -102.0\n    300  return    -65.5\n    400  return     -7.1\n    500  return    -22.2\n    600  return    -99.2\n    700  return    -83.4\n    800  return     85.2\n    900  return     19.8\n   1000  return      7.4\n   1100  return     66.3\n   1200  return    -16.5\n   1300  return     -7.2\n   1400  return     37.7\n   1500  return     -4.7\n   1600  return     56.5\n   1700  return    241.5\n   1800  return    118.6\n   1900  return     48.5\n   2000  return     21.8\n   2100  return    135.1\n   2200  return    258.6\n   2300  return    159.8\n   2400  return    190.0\n  kept episode 2250 (mean return 127.7 over the 100 before it)\n\nshaped:\n      0  return   -248.9\n    100  return   -159.0\n    200  return    -98.8\n    300  return    -63.4\n    400  return     -0.6\n    500  return     25.3\n    600  return    -37.4\n    700  return   -334.1\n    800  return      3.4\n    900  return     22.2\n   1000  return      6.7\n   1100  return     46.8\n   1200  return     25.0\n   1300  return    -23.4\n   1400  return    175.6\n   1500  return     31.0\n   1600  return     20.0\n   1700  return    101.3\n   1800  return    260.8\n   1900  return    243.9\n   2000  return    253.4\n   2100  return     45.7\n   2200  return     74.5\n   2300  return    303.1\n   2400  return     -8.1\n  kept episode 1950 (mean return 208.6 over the 100 before it)\n\nhacked:\n      0  return  -1887.8\n    100  return  -1665.9\n    200  return  -1426.3\n    300  return  -1058.9\n    400  return  -1399.0\n    500  return   -683.6\n    600  return   -582.1\n    700  return   -955.8\n    800  return   -696.8\n    900  return   -584.6\n   1000  return   -742.4\n   1100  return  -1071.5\n   1200  return   -634.2\n   1300  return   -807.4\n   1400  return   -615.6\n   1500  return   -931.6\n   1600  return   -980.3\n   1700  return  -1149.4\n   1800  return   -724.7\n   1900  return   -642.3\n   2000  return  -1095.0\n   2100  return   -751.1\n   2200  return   -566.8\n   2300  return   -639.4\n   2400  return   -842.7\n  kept episode 1850 (mean return -792.1 over the 100 before it)"
    }
   ],
   "scoreboard": [
    {
     "kind": "stream",
-    "text": "agent         own reward   hacked reward    landed\n--------------------------------------------------\nhonest             128.0         -2027.5      58%\nshaped             158.3         -3428.4      70%\nhacked            -753.6          -753.6       0%"
+    "text": "agent         own reward   hacked reward    landed\n--------------------------------------------------\nhonest             109.2         -2710.4      52%\nshaped             105.0         -2102.2      54%\nhacked            -822.8          -822.8       0%"
    },
    {
     "kind": "image",
@@ -50,19 +55,19 @@
   "watch": [
    {
     "kind": "stream",
-    "text": "المخترِق: 64 خطوة · ارتفاع وسيط 0.98\nالأمين:  1000 خطوة\n\nالثغرة حلقة قصيرة. دالة الجهد سالبة في كل مكان، فالمكافأة ضريبة تُجبى كل خطوة، وأرخص سياسة أن تكفّ عن دفعها — أي أن تنهي الحلقة. الوكيل ليس مرتبكاً؛ بل وجد أسرع مخرج من مكافأة كتبتَها أنت."
+    "text": "المخترِق: 77 خطوة · ارتفاع وسيط 0.81\nالأمين:  667 خطوة\n\nالثغرة حلقة قصيرة. دالة الجهد سالبة في كل مكان، فالمكافأة ضريبة تُجبى كل خطوة، وأرخص سياسة أن تكفّ عن دفعها — أي أن تنهي الحلقة. الوكيل ليس مرتبكاً؛ بل وجد أسرع مخرج من مكافأة كتبتَها أنت."
    }
   ],
   "fix-it": [
    {
     "kind": "stream",
-    "text": "      0  return   -248.9\n    100  return   -159.0\n    200  return    -98.8\n    300  return    -63.4\n    400  return     -0.6\n    500  return     25.3\n    600  return    -37.4\n    700  return   -334.1\n    800  return      3.4\n    900  return    132.5\n   1000  return    177.5\n   1100  return    -10.7\n   1200  return    174.7\n   1300  return    134.4\n   1400  return    152.7\nyours: landed 70%  ·  honest 58%  ·  hacked 0%"
+    "text": "      0  return   -248.9\n    100  return   -159.0\n    200  return    -98.8\n    300  return    -63.4\n    400  return     -0.6\n    500  return     25.3\n    600  return    -37.4\n    700  return   -334.1\n    800  return      3.4\n    900  return     22.2\n   1000  return      6.7\n   1100  return     46.8\n   1200  return     25.0\n   1300  return    -23.4\n   1400  return    175.6\n   1500  return     31.0\n   1600  return     20.0\n   1700  return    101.3\n   1800  return    260.8\n   1900  return    243.9\n   2000  return    253.4\n   2100  return     45.7\n   2200  return     74.5\n   2300  return    303.1\n   2400  return     -8.1\n  kept episode 1950 (mean return 208.6 over the 100 before it)\nyours: landed 54%  ·  honest 52%  ·  hacked 0%"
    }
   ],
   "verify": [
    {
     "kind": "stream",
-    "text": "✓ معدّل هبوط الوكيل الشاهد، قبل أن تكون أي مقارنة ذات معنى: 0.58 (المطلوب ≥ 0.3)\n✓ بكم يتفوّق الوكيل سيئ التحديد على الأمين في الهدف كما كُتب: 1274 (المطلوب ≥ 50)\n✓ معدّل هبوط الوكيل سيئ التحديد منسوباً إلى الوكيل الأمين: 0 (المطلوب ≤ 0.5)"
+    "text": "✓ نسبة هبوط الوكيل الشاهد — لا معنى لأي مقارنة قبل أن ينجح هو أولًا: 0.52 (المطلوب ≥ 0.3)\n✓ بكم يتفوّق الوكيل المُخترِق على الأمين في الهدف كما كُتب: 1888 (المطلوب ≥ 50)\n✓ نسبة هبوط الوكيل المُخترِق مقارنةً بنسبة هبوط الأمين: 0 (المطلوب ≤ 0.5)"
    }
   ],
   "finish": [
