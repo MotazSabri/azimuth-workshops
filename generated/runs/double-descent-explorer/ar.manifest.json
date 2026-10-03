@@ -2,17 +2,17 @@
  "schema": "run/v1",
  "slug": "double-descent-explorer",
  "lang": "ar",
- "codeHash": "f07fcecbe0119a6d",
+ "codeHash": "afc86a2a2abdb407",
  "status": "verified",
  "profile": "free",
  "receipt": {
-  "at": "2026-10-01T15:06:11Z",
+  "at": "2026-10-03T12:22:44Z",
   "device": "CPU",
   "torch": "2.11.0+cpu",
   "python": "3.13.15",
   "shim": "0.1.0",
   "elapsedSec": null,
-  "commit": "58e308a30b85f6a3ba420893c9b70fc4d7088fed",
+  "commit": "fc07ea9d49ca5fe7cf8b8bd12f56783026d320af",
   "source": "imported"
  },
  "metrics": {
@@ -37,7 +37,12 @@
  },
  "shapes": {},
  "cells": {
-  "setup": [],
+  "setup": [
+   {
+    "kind": "stream",
+    "text": "الهبوط المزدوج: ما بعد عتبة الاستيفاء\nبدون معالج رسوميات · ذاكرة 12.7 غ.ب · PyTorch 2.11.0+cpu\nالملف: ⁦free⁩\nجاهز · ⁦seed=17, n_train=200, n_test=2000, dim=20, noise=0.5, p_max=4000, grid_points=40, trials=5, ridge=0.01, gd_width=1000, gd_steps=20000⁩\nالشيفرة · ⁦afc86a2a2abdb407⁩"
+   }
+  ],
   "prepare": [
    {
     "kind": "stream",

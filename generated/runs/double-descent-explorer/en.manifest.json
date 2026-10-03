@@ -2,17 +2,17 @@
  "schema": "run/v1",
  "slug": "double-descent-explorer",
  "lang": "en",
- "codeHash": "f07fcecbe0119a6d",
+ "codeHash": "afc86a2a2abdb407",
  "status": "verified",
  "profile": "free",
  "receipt": {
-  "at": "2026-10-01T15:06:10Z",
+  "at": "2026-10-03T12:22:44Z",
   "device": "CPU",
   "torch": "2.11.0+cpu",
   "python": "3.13.15",
   "shim": "0.1.0",
   "elapsedSec": null,
-  "commit": "58e308a30b85f6a3ba420893c9b70fc4d7088fed",
+  "commit": "fc07ea9d49ca5fe7cf8b8bd12f56783026d320af",
   "source": "imported"
  },
  "metrics": {
@@ -40,7 +40,7 @@
   "setup": [
    {
     "kind": "stream",
-    "text": "Double Descent: Past the Interpolation Threshold\nno GPU · 12.7 GB RAM · PyTorch 2.11.0+cpu\nprofile: free\nready · seed=17, n_train=200, n_test=2000, dim=20, noise=0.5, p_max=4000, grid_points=40, trials=5, ridge=0.01, gd_width=1000, gd_steps=20000\ncode · f07fcecbe0119a6d"
+    "text": "Double Descent: Past the Interpolation Threshold\nno GPU · 12.7 GB RAM · PyTorch 2.11.0+cpu\nprofile: free\nready · seed=17, n_train=200, n_test=2000, dim=20, noise=0.5, p_max=4000, grid_points=40, trials=5, ridge=0.01, gd_width=1000, gd_steps=20000\ncode · afc86a2a2abdb407"
    }
   ],
   "prepare": [

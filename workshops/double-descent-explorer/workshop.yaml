@@ -39,8 +39,8 @@ goal:
     وأخيراً أن تقيس سبب ذلك، وما الذي يُزيل الذروة.
 
 difficulty: intermediate
-status: draft
-publishedAt: null
+status: stable
+publishedAt: "2026-10-03"
 
 maintenance:
   tier: moderate        # two pinned libraries, used only to shape Arabic figure text
