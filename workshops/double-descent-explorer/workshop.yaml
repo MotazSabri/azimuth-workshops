@@ -39,11 +39,11 @@ goal:
     وأخيراً أن تقيس سبب ذلك، وما الذي يُزيل الذروة.
 
 difficulty: intermediate
-status: stable
-publishedAt: "2026-10-02"
+status: draft
+publishedAt: null
 
 maintenance:
-  tier: stable
+  tier: moderate        # two pinned libraries, used only to shape Arabic figure text
   cadence: yearly
 
 estimate:
@@ -51,7 +51,7 @@ estimate:
   totalMinutes: 30        # local CPU run of code.py takes ~25 s; re-measure after Colab
 
 papers:
-  - slug: double-descent
+  - slug: reconciling-modern-machine-learning-and-the-bias-variance-tradeoff
     role: core
     label:
       en: "the double-descent curve itself, and the random-features setting it was first shown in"
@@ -61,6 +61,16 @@ papers:
     label:
       en: "the model being swept: a fixed random first layer with only the output weights fitted"
       ar: "النموذج الذي نكبّره: طبقة أولى عشوائية ثابتة، ولا نلائم إلا أوزان المخرج"
+  - slug: deep-double-descent
+    role: core
+    label:
+      en: "evidence that the same peak appears in deep networks, and that label noise and regularization control its height"
+      ar: "الدليل على أن الذروة نفسها تظهر في الشبكات العميقة، وأن ضجيج التسميات والتنظيم يتحكّمان في ارتفاعها"
+  - slug: understanding-deep-learning-requires-rethinking-generalization
+    role: supporting
+    label:
+      en: "the shuffled-labels test: a model that can fit noise perfectly is not explained by its capacity"
+      ar: "تجربة التسميات المخلوطة: نموذج يلائم الضجيج ملاءمة تامّة لا تفسّر سعتُه قدرتَه على التعميم"
   - slug: grokking
     role: supporting
     label:
@@ -68,6 +78,14 @@ papers:
       ar: "حالة ثانية يتحسّن فيها التعميم بعد أن تكون بيانات التدريب قد لوئمت بالكامل، لكن هذه المرة عبر خطوات التدريب"
 
 assets: []
+
+# matplotlib does not shape Arabic or reorder right-to-left text, so the Arabic
+# build shapes its figure text with these two libraries. The English build
+# never imports them.
+dependencies:
+  pip:
+    - "arabic-reshaper==3.0.1"
+    - "python-bidi==0.6.11"
 
 profiles:
   - id: free

@@ -2,7 +2,8 @@
 #
 # Random-features regression, swept through the interpolation threshold.
 # Every fit is a closed-form least-squares solve, so the whole workshop runs on
-# a CPU in well under a minute and needs nothing beyond numpy and matplotlib.
+# a CPU in well under a minute. Beyond numpy and matplotlib it needs only the
+# two small libraries that shape Arabic figure text (see workshop.yaml).
 
 # --8<-- [start:setup]
 import azimuth_nb as azimuth
@@ -16,8 +17,17 @@ def say(en, ar_text):
 
 
 def t(en, ar_text):
-    # Figure text. Arabic must be reshaped before matplotlib draws it.
-    return ar_text if env.lang == "ar" else en
+    # Figure text. matplotlib draws glyphs one by one, left to right, so raw
+    # Arabic comes out as isolated letters in reversed order. Two steps fix it:
+    # reshape joins the letters into their connected forms, and get_display
+    # puts the line in visual order (Latin runs such as "p = n" stay readable).
+    # Reshaping also drops the vowel marks, which matplotlib cannot position.
+    if env.lang != "ar":
+        return en
+    import arabic_reshaper
+    from bidi.algorithm import get_display
+
+    return get_display(arabic_reshaper.reshape(ar_text))
 
 
 # --8<-- [end:setup]
